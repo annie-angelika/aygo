@@ -20,7 +20,7 @@ export type Destination = {
   reviews: number;
   img: string;
   hero: string;
-  guide: { name: string; city: string };
+  guide: { name: string; city: string; phone?: string };
 };
 
 export type Event = {
@@ -40,6 +40,7 @@ export type Guide = {
   trips: number;
   rating: number;
   avatar: string;
+  phone?: string;
 };
 
 export type UserProfile = {
