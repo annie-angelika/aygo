@@ -1,5 +1,5 @@
-import AppMockup from "./_components/app-mockup";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return <AppMockup />;
+export default function RootPage() {
+  redirect("/home");
 }
