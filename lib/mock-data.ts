@@ -1,41 +1,7 @@
 // Mock data for the Aygo app — all places & events are Bolivian.
 // Photos use Picsum so we don't need to register a Next.js image domain.
 
-export type Vibe = "Naturaleza" | "Cultura" | "Aventura" | "Fiestas" | "Gastronomía";
-
-export type Destination = {
-  id: string;
-  name: string;
-  region: string;
-  tagline: string;
-  vibe: Vibe;
-  priceFrom: number; // BOB
-  accessible: boolean;
-  rating: number;
-  reviews: number;
-  img: string;
-  hero: string;
-  guide: { name: string; city: string };
-};
-
-export type Event = {
-  id: string;
-  name: string;
-  region: string;
-  date: string;
-  vibe: Vibe;
-  img: string;
-};
-
-export type Guide = {
-  id: string;
-  name: string;
-  city: string;
-  focus: string;
-  trips: number;
-  rating: number;
-  avatar: string;
-};
+import type { Destination, Event, Guide } from "@/types";
 
 const pic = (seed: string, w = 800, h = 1000) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
