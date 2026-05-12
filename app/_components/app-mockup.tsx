@@ -106,7 +106,10 @@ function HomeScreen({ onOpen }: { onOpen: (d: Destination) => void }) {
         </h1>
       </header>
 
-      <SearchBar placeholder="Busca lugares, eventos, guías…" />
+      <SearchBar
+        placeholder="Busca lugares, eventos, guías…"
+        onSelectDestination={onOpen}
+      />
 
       <Section title="Hoy según tu perfil" subtitle="AI Insights">
         <div className="grid grid-cols-3 gap-2.5">
@@ -208,7 +211,10 @@ function VibesScreen({ onOpen }: { onOpen: (d: Destination) => void }) {
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Vibes</h1>
       </header>
 
-      <SearchBar placeholder="Busca por vibe, lugar, etiqueta…" />
+      <SearchBar
+        placeholder="Busca por vibe, lugar, etiqueta…"
+        onSelectDestination={onOpen}
+      />
 
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {filters.map((f, i) => (
@@ -728,25 +734,252 @@ function Section({
   );
 }
 
-function SearchBar({ placeholder }: { placeholder: string }) {
+const QUICK_SUGGESTIONS = ["Uyuni", "La Paz", "Naturaleza", "Carnaval", "Santa Cruz"];
+
+function SearchBar({
+  placeholder,
+  onSelectDestination,
+}: {
+  placeholder: string;
+  onSelectDestination?: (d: Destination) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  const q = query.trim().toLowerCase();
+  const matches = (h: string) => h.toLowerCase().includes(q);
+
+  const matchedDestinations = q
+    ? destinations
+        .filter(
+          (d) =>
+            matches(d.name) ||
+            matches(d.region) ||
+            matches(d.vibe) ||
+            matches(d.tagline),
+        )
+        .slice(0, 4)
+    : [];
+  const matchedEvents = q
+    ? events
+        .filter(
+          (e) => matches(e.name) || matches(e.region) || matches(e.vibe),
+        )
+        .slice(0, 3)
+    : [];
+  const matchedGuides = q
+    ? guides
+        .filter(
+          (g) => matches(g.name) || matches(g.city) || matches(g.focus),
+        )
+        .slice(0, 3)
+    : [];
+  const hasResults =
+    matchedDestinations.length + matchedEvents.length + matchedGuides.length >
+    0;
+  const showPanel = focused;
+  const showResults = q.length > 0;
+
+  const pickDestination = (d: Destination) => {
+    setQuery("");
+    setFocused(false);
+    onSelectDestination?.(d);
+  };
+
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-white/70 px-3.5 py-3 ring-1 ring-white shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-        <circle cx="11" cy="11" r="7" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
-      <input
-        readOnly
-        placeholder={placeholder}
-        className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder:text-slate-400 outline-none"
-      />
-      <button aria-label="Voz" className="text-slate-500">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="9" y="3" width="6" height="12" rx="3" />
-          <path d="M5 11a7 7 0 0 0 14 0" />
-          <path d="M12 18v3" />
+    <div className="relative">
+      <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur focus-within:ring-amber-300">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
         </svg>
-      </button>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          // Delay blur so clicks on dropdown items register before the panel closes.
+          onBlur={() => setTimeout(() => setFocused(false), 120)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setQuery("");
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          placeholder={placeholder}
+          className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder:text-slate-400 outline-none"
+        />
+        {query ? (
+          <button
+            aria-label="Limpiar"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setQuery("")}
+            className="grid size-5 place-items-center rounded-full bg-slate-200 text-[11px] text-slate-600"
+          >
+            ×
+          </button>
+        ) : (
+          <span aria-hidden className="text-slate-500">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="3" width="6" height="12" rx="3" />
+              <path d="M5 11a7 7 0 0 0 14 0" />
+              <path d="M12 18v3" />
+            </svg>
+          </span>
+        )}
+      </div>
+
+      {showPanel && (
+        <div
+          // Prevent the blur from firing before the click on a result registers.
+          onMouseDown={(e) => e.preventDefault()}
+          className="absolute inset-x-0 top-[calc(100%+8px)] z-30 max-h-[60vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-[0_18px_40px_-18px_rgba(15,23,42,0.35)] ring-1 ring-slate-200/70 backdrop-blur"
+        >
+          {!showResults && (
+            <div className="px-2 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                Pruebas rápidas
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {QUICK_SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setQuery(s)}
+                    className="rounded-full bg-amber-50 px-3 py-1 text-[12px] font-semibold text-slate-700 ring-1 ring-amber-200"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-slate-500">
+                Probá un destino (“Uyuni”), una región (“La Paz”), una vibe
+                (“Naturaleza”) o el nombre de un guía.
+              </p>
+            </div>
+          )}
+
+          {showResults && !hasResults && (
+            <p className="px-3 py-4 text-[12.5px] text-slate-500">
+              Sin coincidencias para{" "}
+              <span className="font-semibold text-slate-700">“{query}”</span>.
+              Probá con “Uyuni”, “Carnaval” o “Santa Cruz”.
+            </p>
+          )}
+
+          {matchedDestinations.length > 0 && (
+            <ResultGroup title={`Destinos · ${matchedDestinations.length}`}>
+              {matchedDestinations.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => pickDestination(d)}
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-amber-50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={d.img}
+                    alt=""
+                    className="size-10 shrink-0 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-slate-900">
+                      {d.name}
+                    </p>
+                    <p className="truncate text-[11.5px] text-slate-500">
+                      {d.region} · {d.vibe} · Bs {d.priceFrom}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-700">
+                    ★ {d.rating}
+                  </span>
+                </button>
+              ))}
+            </ResultGroup>
+          )}
+
+          {matchedEvents.length > 0 && (
+            <ResultGroup title={`Eventos · ${matchedEvents.length}`}>
+              {matchedEvents.map((ev) => (
+                <button
+                  key={ev.id}
+                  onClick={() => {
+                    setQuery("");
+                    setFocused(false);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-amber-50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ev.img}
+                    alt=""
+                    className="size-10 shrink-0 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-slate-900">
+                      {ev.name}
+                    </p>
+                    <p className="truncate text-[11.5px] text-slate-500">
+                      {ev.region} · {ev.date}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10.5px] font-semibold text-slate-900">
+                    {ev.vibe}
+                  </span>
+                </button>
+              ))}
+            </ResultGroup>
+          )}
+
+          {matchedGuides.length > 0 && (
+            <ResultGroup title={`Guías · ${matchedGuides.length}`}>
+              {matchedGuides.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => {
+                    setQuery("");
+                    setFocused(false);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-amber-50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={g.avatar}
+                    alt=""
+                    className="size-10 shrink-0 rounded-full object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-slate-900">
+                      {g.name}{" "}
+                      <span className="text-slate-400">· {g.city}</span>
+                    </p>
+                    <p className="truncate text-[11.5px] text-slate-500">
+                      {g.focus} · {g.trips} viajes
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-700">
+                    ★ {g.rating}
+                  </span>
+                </button>
+              ))}
+            </ResultGroup>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="px-1 pb-1 last:pb-0">
+      <p className="px-2 pt-2 pb-1 text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+        {title}
+      </p>
+      <div className="flex flex-col">{children}</div>
     </div>
   );
 }
