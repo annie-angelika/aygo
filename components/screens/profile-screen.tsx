@@ -4,6 +4,7 @@ import { useGuides } from "@/hooks/use-guides";
 import { useProfile } from "@/hooks/use-profile";
 import { useSavedPlaces } from "@/hooks/use-saved-places";
 import { useTrips } from "@/hooks/use-trips";
+import { waLink } from "@/lib/whatsapp";
 import { PinIcon } from "@/components/ui/icons";
 import { ProfileRow, Stat } from "@/components/ui/primitives";
 
@@ -118,7 +119,7 @@ export function ProfileScreen() {
                   </p>
                 </div>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Hola ${g.name}, te encontré en Aygo`)}`}
+                  href={waLink(g.phone, `Hola ${g.name}, te encontré en Aygo`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-full bg-emerald-500 px-3 py-1 text-[11px] font-semibold text-white"

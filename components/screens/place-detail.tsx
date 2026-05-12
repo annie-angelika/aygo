@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useSavedPlaces } from "@/hooks/use-saved-places";
+import { waLink } from "@/lib/whatsapp";
 import type { Destination } from "@/types";
 import { HeartIcon } from "@/components/ui/icons";
 import { ReviewRow, Stars } from "@/components/ui/primitives";
@@ -106,7 +107,10 @@ export function PlaceDetail({ destination: d }: { destination: Destination }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex justify-center px-5">
         <div className="pointer-events-auto w-full max-w-md">
           <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Hola ${d.guide.name}, te encontré en Aygo. Me interesa ${d.name}.`)}`}
+            href={waLink(
+              d.guide.phone,
+              `Hola ${d.guide.name}, te encontré en Aygo. Me interesa ${d.name}.`,
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 py-3.5 text-[14px] font-semibold text-white shadow-[0_12px_30px_-12px_rgba(15,23,42,0.5)]"

@@ -19,7 +19,7 @@ export const destinations: Destination[] = [
     reviews: 1284,
     img: pic("uyuni-salt-flat"),
     hero: pic("uyuni-hero", 1200, 1400),
-    guide: { name: "Marcelo C.", city: "Uyuni" },
+    guide: { name: "Dani", city: "Uyuni", phone: "+59171527005" },
   },
   {
     id: "valle-luna",
