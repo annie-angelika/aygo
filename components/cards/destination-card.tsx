@@ -24,8 +24,8 @@ export function DestinationCard({
     <Link
       href={`/place/${d.id}`}
       className={cn(
-        "relative block overflow-hidden rounded-3xl text-left ring-1 ring-white/60 shadow-[0_8px_24px_-12px_rgba(15,23,42,0.25)]",
-        "h-[230px] w-[180px] shrink-0",
+        "relative block overflow-hidden rounded-3xl text-left ring-1 ring-white/10 shadow-[0_18px_36px_-20px_rgba(0,0,0,0.7)]",
+        "h-[252px] w-[196px] shrink-0 transition-transform duration-150 active:scale-[0.98]",
         className,
       )}
     >
@@ -35,7 +35,7 @@ export function DestinationCard({
         alt={d.name}
         className="h-full w-full object-cover"
       />
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3 pt-10 text-white">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 pt-10 text-white">
         <p className="text-[10px] font-medium uppercase tracking-wider text-white/80">
           {d.region}
         </p>
@@ -44,8 +44,11 @@ export function DestinationCard({
         </p>
         <p className="mt-0.5 text-[11px] text-white/80">{d.tagline}</p>
       </div>
-      <span className="absolute right-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-900">
-        ★ {d.rating}
+      <span className="absolute right-2.5 top-2.5 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-semibold text-white ring-1 ring-white/25 backdrop-blur">
+        <span className="text-amber-300">★</span> {d.rating}
+      </span>
+      <span className="absolute left-2.5 top-2.5 rounded-full bg-black/35 px-2 py-0.5 text-[10px] font-semibold text-white ring-1 ring-white/25 backdrop-blur">
+        Bs {d.priceFrom}
       </span>
     </Link>
   );

@@ -8,6 +8,8 @@ export const STORAGE_KEYS = {
   savedPlaces: "aygo.savedPlaces",
   recentSearches: "aygo.recentSearches",
   trips: "aygo.trips",
+  account: "aygo.account",
+  comments: "aygo.comments",
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
