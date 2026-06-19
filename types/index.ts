@@ -56,6 +56,22 @@ export type UserProfile = {
   endDate: string | null;
 };
 
+// Mock account for the social layer (stored locally for now).
+export type Account = {
+  name: string;
+  email: string;
+  createdAt: string; // ISO
+};
+
+// A community comment left on a place's detail screen.
+export type PlaceComment = {
+  id: string;
+  placeId: string;
+  author: string;
+  text: string;
+  createdAt: string; // ISO
+};
+
 export type TripStatus = "draft" | "confirmed" | "done";
 
 export type Trip = {

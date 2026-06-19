@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Destination } from "@/types";
 
+import { useAccount } from "@/hooks/use-account";
+import { useComments } from "@/hooks/use-comments";
 import { SaveButton } from "@/components/ui/save-button";
 import { PrimaryCta } from "@/components/ui/primary-cta";
+import { AuthForm } from "@/components/ui/auth-form";
 import { ReviewRow, Stars } from "@/components/ui/primitives";
 import { waLink } from "@/lib/whatsapp";
 
@@ -89,7 +93,95 @@ function PlaceContent({ destination: d }: { destination: Destination }) {
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 text-center">
+        <FactCell label="Desde" value={`Bs ${d.priceFrom}`} />
+        <FactCell label="Accesibilidad" value={d.accessible ? "Sí" : "Parcial"} />
+      </div>
+
+      <CommunitySection placeId={d.id} />
+    </div>
+  );
+}
+
+/** Social layer: registered people share their experience for this place. */
+function CommunitySection({ placeId }: { placeId: string }) {
+  const { account } = useAccount();
+  const { comments, add } = useComments(placeId);
+  const [text, setText] = useState("");
+  const [registering, setRegistering] = useState(false);
+
+  const submit = () => {
+    if (!account || !text.trim()) return;
+    add(account.name, text);
+    setText("");
+  };
+
+  return (
+    <section className="mt-8">
+      <p className="text-[12.5px] font-semibold uppercase tracking-wider text-slate-500">
+        Comparte tu experiencia
+      </p>
+
+      {account ? (
+        <div className="mt-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={2}
+            placeholder={`¿Cómo te fue, ${account.name.split(" ")[0]}?`}
+            className="w-full resize-none bg-transparent text-[14px] text-slate-900 placeholder:text-slate-400 outline-none"
+          />
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-[11.5px] text-slate-400">
+              Comentas como {account.name}
+            </span>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={!text.trim()}
+              className="rounded-full bg-slate-900 px-4 py-1.5 text-[12.5px] font-semibold text-white transition active:scale-95 disabled:opacity-40"
+            >
+              Publicar
+            </button>
+          </div>
+        </div>
+      ) : registering ? (
+        <div className="mt-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+          <p className="mb-2.5 text-[13px] text-slate-600">
+            Crea tu cuenta para unirte a la conversación.
+          </p>
+          <AuthForm onDone={() => setRegistering(false)} />
+          <button
+            type="button"
+            onClick={() => setRegistering(false)}
+            className="mt-2 w-full text-center text-[12.5px] font-medium text-slate-500"
+          >
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setRegistering(true)}
+          className="mt-3 flex w-full items-center justify-between rounded-2xl bg-slate-900 px-4 py-3 text-left text-white transition active:scale-[0.99]"
+        >
+          <span className="text-[13.5px] font-semibold">
+            Regístrate para comentar
+          </span>
+          <span className="text-[13px] text-white/70">→</span>
+        </button>
+      )}
+
+      <div className="mt-4 flex flex-col gap-3">
+        {comments.map((c) => (
+          <ReviewRow
+            key={c.id}
+            avatar={encodeURIComponent(c.author)}
+            name={c.author}
+            text={c.text}
+          />
+        ))}
+        {/* Seed reviews so the space never feels empty. */}
         <ReviewRow
           avatar="rev1"
           name="Lucía P."
@@ -101,12 +193,7 @@ function PlaceContent({ destination: d }: { destination: Destination }) {
           text="Recomendaciones a la medida. Llegamos a un mirador que no aparece en Google."
         />
       </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 text-center">
-        <FactCell label="Desde" value={`Bs ${d.priceFrom}`} />
-        <FactCell label="Accesibilidad" value={d.accessible ? "Sí" : "Parcial"} />
-      </div>
-    </div>
+    </section>
   );
 }
 

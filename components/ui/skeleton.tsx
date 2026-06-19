@@ -1,22 +1,36 @@
 import { cn } from "@/lib/utils";
 
+type Tone = "light" | "dark";
+
 /** Base shimmer block. Compose with width/height utilities. */
-export function Skeleton({ className }: { className?: string }) {
+export function Skeleton({
+  tone = "light",
+  className,
+}: {
+  tone?: Tone;
+  className?: string;
+}) {
   return (
     <div
       aria-hidden
-      className={cn("animate-pulse rounded-3xl bg-white/60", className)}
+      className={cn(
+        "animate-pulse rounded-3xl",
+        tone === "dark" ? "bg-white/10" : "bg-white/60",
+        className,
+      )}
     />
   );
 }
 
 export function SkeletonCarousel({
   count = 3,
-  itemClassName = "h-[230px] w-[180px]",
+  itemClassName = "h-[252px] w-[196px]",
+  tone = "light",
   className,
 }: {
   count?: number;
   itemClassName?: string;
+  tone?: Tone;
   className?: string;
 }) {
   return (
@@ -24,7 +38,7 @@ export function SkeletonCarousel({
       className={cn("-mx-5 flex gap-3 overflow-hidden px-5", className)}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className={cn("shrink-0", itemClassName)} />
+        <Skeleton key={i} tone={tone} className={cn("shrink-0", itemClassName)} />
       ))}
     </div>
   );
@@ -33,16 +47,18 @@ export function SkeletonCarousel({
 export function SkeletonList({
   count = 3,
   itemClassName = "h-[64px] rounded-2xl",
+  tone = "light",
   className,
 }: {
   count?: number;
   itemClassName?: string;
+  tone?: Tone;
   className?: string;
 }) {
   return (
     <div className={cn("flex flex-col gap-2.5", className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className={itemClassName} />
+        <Skeleton key={i} tone={tone} className={itemClassName} />
       ))}
     </div>
   );

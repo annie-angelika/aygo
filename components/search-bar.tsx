@@ -7,10 +7,19 @@ import type { Destination, Event, Guide } from "@/types";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { useSearch } from "@/hooks/use-search";
 import { SearchIcon, MicIcon } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 const QUICK_SUGGESTIONS = ["Uyuni", "La Paz", "Naturaleza", "Carnaval", "Santa Cruz"];
 
-export function SearchBar({ placeholder }: { placeholder: string }) {
+export function SearchBar({
+  placeholder,
+  tone = "light",
+}: {
+  placeholder: string;
+  /** Visual tone of the visible input — `dark` is used over the home backdrop. */
+  tone?: "light" | "dark";
+}) {
+  const dark = tone === "dark";
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
@@ -39,8 +48,15 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 rounded-2xl bg-white/80 px-3.5 py-3 ring-1 ring-white shadow-[0_1px_0_rgba(0,0,0,0.04)] backdrop-blur focus-within:ring-amber-300">
-        <SearchIcon className="text-slate-400" />
+      <div
+        className={cn(
+          "flex items-center gap-2 rounded-2xl px-3.5 py-3 backdrop-blur",
+          dark
+            ? "bg-white/[0.05] ring-1 ring-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] focus-within:ring-violet-400/60"
+            : "bg-white/80 ring-1 ring-white shadow-[0_1px_0_rgba(0,0,0,0.04)] focus-within:ring-amber-300",
+        )}
+      >
+        <SearchIcon className={dark ? "text-violet-300/70" : "text-slate-400"} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -57,19 +73,29 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
             }
           }}
           placeholder={placeholder}
-          className="flex-1 bg-transparent text-[13px] text-slate-700 placeholder:text-slate-400 outline-none"
+          className={cn(
+            "flex-1 bg-transparent text-[13px] outline-none",
+            dark
+              ? "text-white placeholder:text-violet-200/40"
+              : "text-slate-700 placeholder:text-slate-400",
+          )}
         />
         {query ? (
           <button
             aria-label="Limpiar"
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setQuery("")}
-            className="grid size-5 place-items-center rounded-full bg-slate-200 text-[11px] text-slate-600"
+            className={cn(
+              "grid size-5 place-items-center rounded-full text-[11px]",
+              dark
+                ? "bg-white/10 text-violet-100"
+                : "bg-slate-200 text-slate-600",
+            )}
           >
             ×
           </button>
         ) : (
-          <span aria-hidden className="text-slate-500">
+          <span aria-hidden className={dark ? "text-violet-300/70" : "text-slate-500"}>
             <MicIcon />
           </span>
         )}

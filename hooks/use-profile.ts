@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { readStorage, STORAGE_KEYS, writeStorage } from "@/lib/storage";
+import { useStorageValue, useHydrated } from "@/hooks/use-storage";
 import type { UserProfile } from "@/types";
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -18,37 +19,19 @@ export const DEFAULT_PROFILE: UserProfile = {
 };
 
 export function useProfile() {
-  // Start with default so the server-rendered HTML matches the first client
-  // render; we hydrate from localStorage in the effect below.
-  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setProfile(readStorage(STORAGE_KEYS.profile, DEFAULT_PROFILE));
-    setHydrated(true);
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ key: string }>).detail;
-      if (detail?.key === STORAGE_KEYS.profile) {
-        setProfile(readStorage(STORAGE_KEYS.profile, DEFAULT_PROFILE));
-      }
-    };
-    window.addEventListener("aygo:storage", handler);
-    return () => window.removeEventListener("aygo:storage", handler);
-  }, []);
+  // Server snapshot is DEFAULT_PROFILE so the SSR HTML matches the first client
+  // render; useStorageValue swaps in the stored profile after hydration.
+  const profile = useStorageValue(STORAGE_KEYS.profile, DEFAULT_PROFILE);
+  const hydrated = useHydrated();
 
   const save = useCallback((next: UserProfile) => {
-    setProfile(next);
     writeStorage(STORAGE_KEYS.profile, next);
   }, []);
 
-  const patch = useCallback(
-    (partial: Partial<UserProfile>) => {
-      const next = { ...profile, ...partial };
-      setProfile(next);
-      writeStorage(STORAGE_KEYS.profile, next);
-    },
-    [profile],
-  );
+  const patch = useCallback((partial: Partial<UserProfile>) => {
+    const current = readStorage(STORAGE_KEYS.profile, DEFAULT_PROFILE);
+    writeStorage(STORAGE_KEYS.profile, { ...current, ...partial });
+  }, []);
 
   return { profile, save, patch, hydrated };
 }

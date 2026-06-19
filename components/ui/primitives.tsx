@@ -1,38 +1,62 @@
 // Tiny presentational primitives reused across screens. Pure components,
 // no data — keep them dumb so they're easy to compose.
 
+import { cn } from "@/lib/utils";
+
 export function Section({
   title,
   subtitle,
   action,
   onAction,
+  tone = "light",
   children,
 }: {
   title: string;
   subtitle?: string;
   action?: string;
   onAction?: () => void;
+  /** Visual tone — `dark` is used over the violet home backdrop. */
+  tone?: "light" | "dark";
   children: React.ReactNode;
 }) {
+  const dark = tone === "dark";
   return (
     <section>
       <div className="mb-2.5 flex items-end justify-between px-0.5">
         <div>
           {subtitle && (
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-amber-600">
+            <p
+              className={cn(
+                "text-[10.5px] font-semibold uppercase tracking-wider",
+                dark ? "text-fuchsia-300/90" : "text-amber-600",
+              )}
+            >
               {subtitle}
             </p>
           )}
-          <h2 className="text-[16px] font-semibold tracking-tight text-slate-900">
+          <h2
+            className={cn(
+              "text-[16px] font-semibold tracking-tight",
+              dark ? "text-white" : "text-slate-900",
+            )}
+          >
             {title}
           </h2>
         </div>
         {action && (
           <button
             onClick={onAction}
-            className="text-[12px] font-semibold text-slate-500"
+            className={cn(
+              "inline-flex items-center gap-0.5 text-[12px] font-semibold transition-colors",
+              dark ? "text-violet-200/90 hover:text-white" : "text-slate-500",
+            )}
           >
             {action}
+            {dark && (
+              <span aria-hidden className="text-[13px] leading-none">
+                ›
+              </span>
+            )}
           </button>
         )}
       </div>
