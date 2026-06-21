@@ -4,12 +4,8 @@
  */
 
 export const STORAGE_KEYS = {
-  profile: "aygo.profile",
-  savedPlaces: "aygo.savedPlaces",
-  recentSearches: "aygo.recentSearches",
-  trips: "aygo.trips",
-  account: "aygo.account",
-  comments: "aygo.comments",
+  going: "aygo.going", // string[] of event ids the user is attending
+  stamps: "aygo.stamps", // Stamp[] collected in the passport
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
