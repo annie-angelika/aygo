@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aygo — Descubre viajes hechos a tu medida",
+  title: "aygo — Events near you",
   description:
-    "Aygo conecta viajeros con guías y experiencias locales que encajan con tu perfil, presupuesto y forma de viajar. Sin intermediarios, contacto directo.",
+    "Discover events in your city, register in one tap, and coordinate over WhatsApp. Collect every experience in your passport.",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

@@ -1,85 +1,69 @@
 // Single source of truth for domain types. Everything that crosses module
 // boundaries (data layer, hooks, components) imports from here.
+//
+// aygo is an events app: you discover an event, say you're going, coordinate
+// over WhatsApp, attend, and collect a passport stamp.
 
-export type Vibe =
-  | "Naturaleza"
-  | "Cultura"
-  | "Aventura"
-  | "Fiestas"
-  | "Gastronomía";
+export type Category =
+  | "Party"
+  | "Music"
+  | "Culture"
+  | "Food"
+  | "Outdoors"
+  | "Sports";
 
-export type Destination = {
-  id: string;
+export type Host = {
   name: string;
-  region: string;
-  tagline: string;
-  vibe: Vibe;
-  priceFrom: number; // BOB
-  accessible: boolean;
-  rating: number;
-  reviews: number;
-  img: string;
-  hero: string;
-  guide: { name: string; city: string; phone?: string };
-};
-
-export type Event = {
-  id: string;
-  name: string;
-  region: string;
-  date: string;
-  vibe: Vibe;
-  img: string;
-};
-
-export type Guide = {
-  id: string;
-  name: string;
-  city: string;
-  focus: string;
-  trips: number;
-  rating: number;
   avatar: string;
+  /** For the WhatsApp deep link. Missing → generic chooser. */
   phone?: string;
 };
 
-export type UserProfile = {
-  name: string;
-  country: string;
-  language: "es" | "en" | "pt";
-  age: number | null;
-  interests: string[];
-  budget: "bajo" | "medio" | "alto";
-  tripType: "solo" | "pareja" | "familia" | "grupo";
-  accessibility: boolean;
-  startDate: string | null; // ISO yyyy-mm-dd
-  endDate: string | null;
-};
-
-// Mock account for the social layer (stored locally for now).
-export type Account = {
-  name: string;
-  email: string;
-  createdAt: string; // ISO
-};
-
-// A community comment left on a place's detail screen.
-export type PlaceComment = {
+export type AygoEvent = {
   id: string;
-  placeId: string;
-  author: string;
-  text: string;
-  createdAt: string; // ISO
+  title: string;
+  category: Category;
+  cover: string;
+  // when
+  startsAt: string; // ISO — sort key
+  dayKey: string; // "2026-06-27" — groups rows under one date header
+  dayLabel: string; // "Today", "Tomorrow", "Sat, Jun 27"
+  weekday: string; // "Saturday"
+  timeLabel: string; // "20:00"
+  isPast: boolean;
+  // where
+  place: string; // "Plaza Murillo"
+  city: string; // "La Paz"
+  // who
+  host: Host;
+  attendees: number;
+  attendeeAvatars: string[];
+  // what
+  price: number | null; // null/0 → free (BOB otherwise)
+  blurb: string;
 };
 
-export type TripStatus = "draft" | "confirmed" | "done";
+/** A collected experience — earned by attending an event. */
+export type Stamp = {
+  eventId: string;
+  title: string;
+  category: Category;
+};
 
-export type Trip = {
+/** A gamification tier, reached at `min` stamps. */
+export type Level = {
+  index: number;
+  name: string;
+  min: number;
+};
+
+/** A place a traveler visited and rated — the social-tourism feed. */
+export type Visit = {
   id: string;
-  destinationId: string;
-  startDate: string | null;
-  endDate: string | null;
-  budget: UserProfile["budget"];
-  status: TripStatus;
-  createdAt: string;
+  place: string;
+  city: string;
+  cover: string;
+  category: Category;
+  rating: number; // 1–5
+  date: string; // "Jun 14, 2026"
 };

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { fetchEvents } from "@/lib/api/events";
-import type { Event } from "@/types";
+import type { AygoEvent } from "@/types";
 
 export function useEvents() {
-  const [data, setData] = useState<Event[]>([]);
+  const [data, setData] = useState<AygoEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
