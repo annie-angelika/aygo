@@ -5,7 +5,7 @@ export function DateGroup({
   children,
 }: {
   label: string;
-  weekday: string;
+  weekday?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -20,9 +20,11 @@ export function DateGroup({
       />
       <div className="mb-3 flex items-baseline gap-2">
         <h2 className="text-[15px] font-semibold text-foreground">{label}</h2>
-        <span className="text-[13px] capitalize text-muted-foreground">
-          {weekday}
-        </span>
+        {weekday && (
+          <span className="text-[13px] capitalize text-muted-foreground">
+            {weekday}
+          </span>
+        )}
       </div>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
