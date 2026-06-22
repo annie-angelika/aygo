@@ -57,7 +57,7 @@ export type Level = {
   min: number;
 };
 
-/** A place a traveler visited and rated — the social-tourism feed. */
+/** A place a traveler visited and rated — a stop on their routes. */
 export type Visit = {
   id: string;
   place: string;
@@ -66,4 +66,20 @@ export type Visit = {
   category: Category;
   rating: number; // 1–5
   date: string; // "Jun 14, 2026"
+  likes: number; // hearts from other travelers
+};
+
+/**
+ * A traveler you can discover (via shared events), follow, and whose routes you
+ * can heart. There is no messaging — the social actions are follow + heart.
+ */
+export type TravelerProfile = {
+  username: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  location: string;
+  followers: number;
+  following: number;
+  visits: Visit[];
 };

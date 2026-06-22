@@ -1,11 +1,9 @@
 import { Stars } from "@/components/ui/stars";
-import { CATEGORY_META } from "@/lib/events-data";
-import { cn } from "@/lib/utils";
+import { HeartButton } from "@/components/profile/heart-button";
 import type { Visit } from "@/types";
 
-/** A visited, rated place in the tourism feed: thumbnail, place, rating. */
+/** A stop on a traveler's routes: thumbnail, place, rating, and hearts. */
 export function VisitCard({ visit }: { visit: Visit }) {
-  const { Icon, accent } = CATEGORY_META[visit.category];
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-card p-2.5 ring-1 ring-border">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -23,7 +21,7 @@ export function VisitCard({ visit }: { visit: Visit }) {
         </p>
         <Stars value={visit.rating} className="mt-1" />
       </div>
-      <Icon className={cn("size-4 shrink-0", accent)} aria-hidden />
+      <HeartButton count={visit.likes} />
     </div>
   );
 }

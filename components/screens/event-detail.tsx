@@ -6,13 +6,15 @@ import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { CategoryChip } from "@/components/event/category-chip";
 import { EventMeta } from "@/components/event/event-meta";
-import { Attendees } from "@/components/event/attendees";
+import { GroupBar } from "@/components/event/group-bar";
 import { HostCard } from "@/components/event/host-card";
 import { EventActions } from "@/components/event/event-actions";
+import { attendeesFor } from "@/lib/users-data";
 import type { AygoEvent } from "@/types";
 
 export function EventDetail({ event }: { event: AygoEvent }) {
   const free = event.price == null;
+  const going = attendeesFor(event.id);
   return (
     <div className="min-h-svh pb-32">
       <div className="relative h-[300px]">
@@ -46,12 +48,7 @@ export function EventDetail({ event }: { event: AygoEvent }) {
           <EventMeta event={event} className="mt-1.5 text-[13px]" />
         </div>
 
-        <Card className="flex-row items-center justify-between p-4 [--card-spacing:0px]">
-          <Attendees event={event} />
-          <span className="text-[12px] text-muted-foreground">
-            Join the group
-          </span>
-        </Card>
+        <GroupBar event={event} people={going} />
 
         <p className="text-[14px] leading-relaxed text-foreground/80">
           {event.blurb}

@@ -34,19 +34,22 @@ export function HomeScreen({ period }: { period: Period }) {
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-4">
-      <ScreenHeader eyebrow="La Paz" title="Events" />
-
-      <Tabs
-        value={period}
-        onValueChange={(v) =>
-          router.replace(`/home?period=${v}`, { scroll: false })
+      <ScreenHeader
+        title="Events"
+        trailing={
+          <Tabs
+            value={period}
+            onValueChange={(v) =>
+              router.replace(`/home?period=${v}`, { scroll: false })
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+              <TabsTrigger value="past">Past</TabsTrigger>
+            </TabsList>
+          </Tabs>
         }
-      >
-        <TabsList>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="past">Past</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      />
 
       {loading ? (
         <div className="flex flex-col gap-3 pt-2">

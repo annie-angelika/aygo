@@ -52,6 +52,15 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Hide the scrollbar on horizontal carousels while keeping them scrollable. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 :root {
   /* Warm "cultural" theme — sand surfaces, slate ink, amber accent. */
   --background: oklch(0.965 0.009 85);

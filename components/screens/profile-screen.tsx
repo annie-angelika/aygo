@@ -12,26 +12,35 @@ import { FollowButton } from "@/components/profile/follow-button";
 import { VisitCard } from "@/components/profile/visit-card";
 import { LevelCard } from "@/components/passport/level-card";
 import { StampGrid } from "@/components/passport/stamp-grid";
-import { CURRENT_USER } from "@/lib/events-data";
-import { PROFILE, VISITS } from "@/lib/profile-data";
+import { USERS, findUser, CURRENT_USERNAME } from "@/lib/users-data";
+import type { Stamp } from "@/types";
 
 export function ProfileScreen({ username }: { username?: string }) {
   const { stamps } = useRegistrations();
-  const slots = Math.max(8, Math.ceil((stamps.length + 1) / 4) * 4);
-  const handle = username ?? CURRENT_USER.username;
-  const isSelf = handle === CURRENT_USER.username;
+  const user = findUser(username ?? CURRENT_USERNAME) ?? USERS[CURRENT_USERNAME];
+  const isSelf = user.username === CURRENT_USERNAME;
+
+  // Your stamps live in localStorage; other travelers' come from their routes.
+  const displayStamps: Stamp[] = isSelf
+    ? stamps
+    : user.visits.map((v) => ({
+        eventId: v.id,
+        title: v.place,
+        category: v.category,
+      }));
+  const slots = Math.max(8, Math.ceil((displayStamps.length + 1) / 4) * 4);
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-4">
       <ProfileHeader
-        name={CURRENT_USER.name}
-        handle={handle}
-        avatar={CURRENT_USER.avatar}
-        bio={PROFILE.bio}
-        location={PROFILE.location}
-        followers={PROFILE.followers}
-        following={PROFILE.following}
-        visited={VISITS.length}
+        name={user.name}
+        handle={user.username}
+        avatar={user.avatar}
+        bio={user.bio}
+        location={user.location}
+        followers={user.followers}
+        following={user.following}
+        visited={user.visits.length}
         action={
           <>
             {isSelf ? (
@@ -42,8 +51,8 @@ export function ProfileScreen({ username }: { username?: string }) {
               <FollowButton />
             )}
             <ShareButton
-              title={`${CURRENT_USER.name} on aygo`}
-              text={`Follow @${handle} on aygo.`}
+              title={`${user.name} on aygo`}
+              text={`Follow @${user.username} on aygo.`}
               className="grid size-8 place-items-center rounded-full bg-card text-foreground ring-1 ring-border"
             >
               <LuShare2 className="size-4" aria-hidden />
@@ -52,37 +61,41 @@ export function ProfileScreen({ username }: { username?: string }) {
         }
       />
 
-      <LevelCard count={stamps.length} />
+      <LevelCard count={displayStamps.length} />
 
-      <Tabs defaultValue="visited">
+      <Tabs defaultValue="routes">
         <TabsList>
-          <TabsTrigger value="visited">Visited</TabsTrigger>
+          <TabsTrigger value="routes">Routes</TabsTrigger>
           <TabsTrigger value="stamps">Stamps</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="visited" className="mt-4">
-          {VISITS.length ? (
+        <TabsContent value="routes" className="mt-4">
+          {user.visits.length ? (
             <div className="flex flex-col gap-2.5">
-              {VISITS.map((v) => (
+              {user.visits.map((v) => (
                 <VisitCard key={v.id} visit={v} />
               ))}
             </div>
           ) : (
             <EmptyState
               icon={LuMapPinned}
-              title="No places visited yet"
-              subtitle="Check in to an event to add your first place."
+              title={isSelf ? "No routes yet" : "No routes shared yet"}
+              subtitle={
+                isSelf
+                  ? "Check in to an event to add your first place."
+                  : "When they check in somewhere, it shows up here."
+              }
             />
           )}
         </TabsContent>
 
         <TabsContent value="stamps" className="mt-4">
-          {stamps.length ? (
-            <StampGrid stamps={stamps} slots={slots} />
+          {displayStamps.length ? (
+            <StampGrid stamps={displayStamps} slots={slots} />
           ) : (
             <EmptyState
               icon={LuStamp}
-              title="Your passport is waiting for its first stamp"
+              title="No stamps yet"
               subtitle="Go to an event and check in to start collecting."
             />
           )}
