@@ -15,7 +15,7 @@ export function ScreenHeader({
   className,
 }: ScreenHeaderProps) {
   return (
-    <header className={cn("flex items-start justify-between gap-3", className)}>
+    <header className={cn("flex items-center justify-between gap-3", className)}>
       <div className="min-w-0">
         {eyebrow && (
           <p className="text-[13px] font-medium text-muted-foreground">
