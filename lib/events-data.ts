@@ -52,6 +52,14 @@ export const CATEGORIES: Category[] = [
   "Sports",
 ];
 
+/** URL slug for a category page (/discover/category/<slug>). */
+export const categorySlug = (c: Category) => c.toLowerCase();
+
+/** Resolve a category from a URL slug (case-insensitive). */
+export function findCategory(slug: string): Category | undefined {
+  return CATEGORIES.find((c) => c.toLowerCase() === slug.toLowerCase());
+}
+
 /** Explorer tiers. Reached when stamp count ≥ `min`. */
 export const LEVELS: Level[] = [
   { index: 1, name: "Curious", min: 0 },
