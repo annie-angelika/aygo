@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "aygo — Events near you",
   description:
-    "Discover events in your city, register in one tap, and coordinate over WhatsApp. Collect every experience in your passport.",
+    "Discover events in your city, apply in one tap, and get approved by the host. Collect every experience in your passport.",
 };
 
 export default function RootLayout({

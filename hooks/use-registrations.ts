@@ -7,14 +7,17 @@ import type { AygoEvent, Stamp } from "@/types";
 
 // Stable module-level fallbacks (required by useSyncExternalStore).
 const NO_GOING: string[] = [];
+const NO_APPLIED: string[] = [];
 const NO_STAMPS: Stamp[] = [];
 
 /**
  * The whole gamification state, backed by localStorage and reactive across the
- * app: which events you're going to, and the stamps you've collected.
+ * app: which events you're going to, which you've requested to join (pending the
+ * host's approval), and the stamps you've collected.
  */
 export function useRegistrations() {
   const going = useStorageValue<string[]>(STORAGE_KEYS.going, NO_GOING);
+  const applied = useStorageValue<string[]>(STORAGE_KEYS.applied, NO_APPLIED);
   const stamps = useStorageValue<Stamp[]>(STORAGE_KEYS.stamps, NO_STAMPS);
   const hydrated = useHydrated();
 
@@ -25,6 +28,19 @@ export function useRegistrations() {
       isGoing(id) ? going.filter((g) => g !== id) : [...going, id],
     );
 
+  const isApplied = (id: string) => applied.includes(id);
+  // Submitting a request: drops a pending marker, never touches "going".
+  const apply = (id: string) => {
+    if (isApplied(id)) return;
+    writeStorage(STORAGE_KEYS.applied, [...applied, id]);
+  };
+  const withdraw = (id: string) =>
+    writeStorage(STORAGE_KEYS.applied, applied.filter((a) => a !== id));
+  // Instant join (no approval needed): straight into "going".
+  const join = (id: string) => {
+    if (!isGoing(id)) writeStorage(STORAGE_KEYS.going, [...going, id]);
+  };
+
   const hasStamp = (id: string) => stamps.some((s) => s.eventId === id);
   const addStamp = (event: AygoEvent) => {
     if (hasStamp(event.id)) return;
@@ -34,11 +50,25 @@ export function useRegistrations() {
       category: event.category,
     };
     writeStorage(STORAGE_KEYS.stamps, [...stamps, stamp]);
-    // Once attended, it leaves the "going" list.
+    // Once attended, it leaves the "going" and "applied" lists.
     writeStorage(STORAGE_KEYS.going, going.filter((g) => g !== event.id));
+    writeStorage(STORAGE_KEYS.applied, applied.filter((a) => a !== event.id));
   };
 
-  return { going, stamps, hydrated, isGoing, toggleGoing, hasStamp, addStamp };
+  return {
+    going,
+    applied,
+    stamps,
+    hydrated,
+    isGoing,
+    toggleGoing,
+    isApplied,
+    apply,
+    withdraw,
+    join,
+    hasStamp,
+    addStamp,
+  };
 }
 
 /** Current level, next level, and progress (0–1) toward it, for a stamp count. */
