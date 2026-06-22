@@ -38,6 +38,8 @@ export const USERS: Record<string, TravelerProfile> = {
     avatar: CURRENT_USER.avatar,
     bio: "Chasing sunsets, street food, and good company across the Andes.",
     location: "La Paz, Bolivia",
+    joined: "March 2024",
+    socials: { instagram: "aleregex", x: "aleregex", linkedin: "aleregex" },
     followers: 342,
     following: 188,
     visits: [
@@ -53,6 +55,8 @@ export const USERS: Record<string, TravelerProfile> = {
     avatar: face("u-mara"),
     bio: "Hiking the cordillera one summit at a time. Always up for a trail.",
     location: "La Paz, Bolivia",
+    joined: "January 2024",
+    socials: { instagram: "mara.trails" },
     followers: 1280,
     following: 204,
     visits: [
@@ -67,6 +71,8 @@ export const USERS: Record<string, TravelerProfile> = {
     avatar: face("u-diego"),
     bio: "Live music, peñas, and late-night cumbia. Tag me to your next gig.",
     location: "Cochabamba, Bolivia",
+    joined: "August 2023",
+    socials: { instagram: "diego.rocha", x: "diegorocha" },
     followers: 540,
     following: 312,
     visits: [
@@ -80,6 +86,8 @@ export const USERS: Record<string, TravelerProfile> = {
     avatar: face("u-sol"),
     bio: "Ceramics, fairs, and slow Saturdays. Collecting makers, not things.",
     location: "Sucre, Bolivia",
+    joined: "May 2024",
+    socials: { instagram: "sol.makes", linkedin: "solmedina" },
     followers: 870,
     following: 145,
     visits: [
@@ -94,6 +102,8 @@ export const USERS: Record<string, TravelerProfile> = {
     avatar: face("u-tomas"),
     bio: "Food-first traveler. Salteñas, markets, and anything grilled.",
     location: "Santa Cruz, Bolivia",
+    joined: "November 2023",
+    socials: { instagram: "tomas.eats", x: "tomaseats" },
     followers: 2100,
     following: 98,
     visits: [
@@ -107,6 +117,8 @@ export const USERS: Record<string, TravelerProfile> = {
     avatar: face("u-ana"),
     bio: "Weekend explorer. If there's a viewpoint, I've probably been.",
     location: "La Paz, Bolivia",
+    joined: "February 2025",
+    socials: { instagram: "ana.flores" },
     followers: 410,
     following: 367,
     visits: [
@@ -120,6 +132,26 @@ export function findUser(username: string): TravelerProfile | undefined {
   return USERS[username];
 }
 
+/**
+ * Maps a route stop (visit) to the past event it came from, so a tapped route
+ * opens that event's detail. Stops with no matching event are left non-linked.
+ */
+export const VISIT_EVENT: Record<string, string> = {
+  "v-killi": "sunset-killi",
+  "v-jazz": "jazz-sopocachi",
+  "m-muela": "trail-muela",
+  "m-cumbre": "cumbre-bici",
+  "d-pena": "pena-marka",
+  "d-prado": "after-prado",
+  "s-feria": "feria-miraflores",
+  "s-ceramica": "taller-ceramica",
+  "s-libro": "feria-libro",
+  "t-saltena": "salteneada",
+  "t-sunset": "sunset-killi",
+  "a-sunset": "sunset-killi",
+  "a-jazz": "jazz-sopocachi",
+};
+
 /** Travelers you can follow (everyone but you). */
 const SOCIAL = Object.values(USERS).filter(
   (u) => u.username !== CURRENT_USERNAME,
@@ -132,9 +164,9 @@ const SOCIAL = Object.values(USERS).filter(
 export function attendeesFor(eventId: string): TravelerProfile[] {
   const hash = [...eventId].reduce((a, c) => a + c.charCodeAt(0), 0);
   const start = hash % SOCIAL.length;
-  const count = 3 + (hash % 2); // 3 or 4 people
+  // Show the whole social pool so the group preview always has a few faces.
   return Array.from(
-    { length: count },
+    { length: SOCIAL.length },
     (_, i) => SOCIAL[(start + i) % SOCIAL.length],
   );
 }

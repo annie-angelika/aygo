@@ -1,15 +1,47 @@
-import { LuMapPin } from "react-icons/lu";
+import { LuMapPin, LuCalendar, LuInstagram, LuTwitter, LuLinkedin } from "react-icons/lu";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Stat } from "@/components/ui/stat";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import type { Socials } from "@/types";
 
-/** Identity block for a tourism profile: cover, avatar, bio, stats, actions. */
+const SOCIAL_LINKS = [
+  { key: "instagram", Icon: LuInstagram, base: "https://instagram.com/", label: "Instagram" },
+  { key: "x", Icon: LuTwitter, base: "https://x.com/", label: "X" },
+  { key: "linkedin", Icon: LuLinkedin, base: "https://linkedin.com/in/", label: "LinkedIn" },
+] as const;
+
+function SocialRow({ socials, className }: { socials: Socials; className?: string }) {
+  const items = SOCIAL_LINKS.filter((s) => socials[s.key]);
+  if (!items.length) return null;
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      {items.map(({ key, Icon, base, label }) => (
+        <a
+          key={key}
+          href={`${base}${socials[key]}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={label}
+          className="grid size-8 place-items-center rounded-full text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Icon className="size-4" aria-hidden />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/** Luma-style identity block: avatar beside name + socials, then meta + stats. */
 export function ProfileHeader({
   name,
   handle,
   avatar,
   bio,
   location,
+  joined,
+  socials,
   followers,
   following,
   visited,
@@ -20,6 +52,8 @@ export function ProfileHeader({
   avatar: string;
   bio: string;
   location: string;
+  joined: string;
+  socials?: Socials;
   followers: number;
   following: number;
   visited: number;
@@ -27,34 +61,49 @@ export function ProfileHeader({
 }) {
   return (
     <div>
-      <div className="relative">
-        <div className="h-24 rounded-3xl bg-gradient-to-br from-amber-200 via-orange-100 to-rose-100 ring-1 ring-border" />
-        <Avatar className="absolute -bottom-7 left-4 size-20 ring-4 ring-background">
+      <div className="flex items-start gap-4">
+        <Avatar className="size-20 shrink-0 ring-1 ring-border">
           <AvatarImage src={avatar} alt={name} />
         </Avatar>
-      </div>
 
-      <div className="mt-9 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-[20px] font-semibold tracking-tight text-foreground">
-            {name}
-          </h1>
-          <p className="text-[12.5px] text-muted-foreground">@{handle}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h1 className="truncate text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+                {name}
+              </h1>
+              <p className="text-[13px] text-muted-foreground">@{handle}</p>
+            </div>
+            {action && (
+              <div className="flex shrink-0 items-center gap-2">{action}</div>
+            )}
+          </div>
+          {socials && <SocialRow socials={socials} className="mt-2.5" />}
         </div>
-        {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
       </div>
 
-      <p className="mt-2 text-[13px] leading-snug text-foreground/80">{bio}</p>
-      <p className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-muted-foreground">
-        <LuMapPin className="size-3.5" aria-hidden />
-        {location}
-      </p>
+      {bio && (
+        <p className="mt-3 text-[13px] leading-snug text-foreground/80">{bio}</p>
+      )}
 
-      <div className="mt-4 flex items-center gap-7">
-        <Stat value={followers} label="Followers" />
-        <Stat value={following} label="Following" />
-        <Stat value={visited} label="Visited" />
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <LuMapPin className="size-3.5" aria-hidden />
+          {location}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <LuCalendar className="size-3.5" aria-hidden />
+          Joined {joined}
+        </span>
       </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Stat inline value={followers} label="Followers" />
+        <Stat inline value={following} label="Following" />
+        <Stat inline value={visited} label="Visited" />
+      </div>
+
+      <Separator className="mt-4" />
     </div>
   );
 }
