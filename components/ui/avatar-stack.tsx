@@ -10,27 +10,30 @@ export function AvatarStack({
   srcs,
   max = 3,
   total,
+  size = "sm",
   className,
 }: {
   srcs: string[];
   max?: number;
   /** Real total, when larger than what's shown — drives the "+N" bubble. */
   total?: number;
+  size?: "sm" | "default" | "lg";
   className?: string;
 }) {
   const shown = srcs.slice(0, max);
   const extra = (total ?? srcs.length) - shown.length;
+  // The count bubble matches the avatar size; AvatarGroupCount reads the group.
+  const countSize =
+    size === "lg" ? "size-10 text-[11px]" : size === "default" ? "size-8 text-[11px]" : "size-6 text-[10px]";
   return (
     <AvatarGroup className={className}>
       {shown.map((src, i) => (
-        <Avatar key={i} size="sm">
+        <Avatar key={i} size={size}>
           <AvatarImage src={src} alt="" />
         </Avatar>
       ))}
       {extra > 0 && (
-        <AvatarGroupCount className="size-6 text-[10px]">
-          +{extra}
-        </AvatarGroupCount>
+        <AvatarGroupCount className={countSize}>+{extra}</AvatarGroupCount>
       )}
     </AvatarGroup>
   );

@@ -17,12 +17,10 @@ export function EventDetail({ event }: { event: AygoEvent }) {
   const going = attendeesFor(event.id);
   return (
     <div className="min-h-svh pb-32">
-      <div className="relative h-[300px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={event.cover} alt="" className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-background" />
-        <div className="absolute inset-x-4 top-4 flex items-center justify-between">
-          <BackButton />
+      {/* Always-on-top controls — stay pinned as the page scrolls. */}
+      <div className="fixed inset-x-0 top-0 z-40 px-4 pt-4">
+        <div className="mx-auto flex w-full max-w-md items-center justify-between">
+          <BackButton className="ring-1 ring-border" />
           <ShareButton
             title={event.title}
             text={`Check out "${event.title}" on aygo`}
@@ -32,6 +30,12 @@ export function EventDetail({ event }: { event: AygoEvent }) {
             <LuShare2 className="size-4" aria-hidden />
           </ShareButton>
         </div>
+      </div>
+
+      <div className="relative h-[300px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={event.cover} alt="" className="size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-background" />
       </div>
 
       <div className="relative -mt-10 flex flex-col gap-4 px-5">

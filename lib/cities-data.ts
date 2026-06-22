@@ -28,14 +28,16 @@ export type City = {
   Icon: IconType;
   /** Background tint for the circular landmark icon. */
   tint: string;
+  /** One- or two-line blurb under the title on the city page (Luma-style). */
+  tagline?: string;
 };
 
 export const REGIONS: Region[] = ["South America", "North America", "Europe"];
 
 export const CITIES: City[] = [
-  { slug: "la-paz", name: "La Paz", country: "Bolivia", region: "South America", eventCount: 10, subscribed: true, Icon: LuMountainSnow, tint: "bg-amber-500" },
-  { slug: "bogota", name: "Bogotá", country: "Colombia", region: "South America", eventCount: 8, Icon: LuLandmark, tint: "bg-orange-400" },
-  { slug: "buenos-aires", name: "Buenos Aires", country: "Argentina", region: "South America", subscribed: true, eventCount: 14, Icon: LuTheater, tint: "bg-rose-400" },
+  { slug: "la-paz", name: "La Paz", country: "Bolivia", region: "South America", eventCount: 10, subscribed: true, Icon: LuMountainSnow, tint: "bg-amber-500", tagline: "Peñas, ferias, hikes and rooftop sunsets. Everything happening across the highest city in the world, in one place." },
+  { slug: "bogota", name: "Bogotá", country: "Colombia", region: "South America", eventCount: 8, Icon: LuLandmark, tint: "bg-orange-400", tagline: "Markets, music and mountain escapes. Discover what's on around the Colombian capital." },
+  { slug: "buenos-aires", name: "Buenos Aires", country: "Argentina", region: "South America", subscribed: true, eventCount: 14, Icon: LuTheater, tint: "bg-rose-400", tagline: "Tango nights, art openings and late dinners. The pulse of the city, curated for you." },
   { slug: "medellin", name: "Medellín", country: "Colombia", region: "South America", eventCount: 2, Icon: LuBuilding, tint: "bg-sky-500" },
   { slug: "rio-de-janeiro", name: "Rio de Janeiro", country: "Brazil", region: "South America", eventCount: 5, Icon: LuMountain, tint: "bg-emerald-600" },
   { slug: "sao-paulo", name: "São Paulo", country: "Brazil", region: "South America", eventCount: 6, Icon: LuBuilding2, tint: "bg-slate-500" },
