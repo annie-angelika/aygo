@@ -7,7 +7,7 @@ import type { Calendar } from "@/lib/discover-data";
 export function CalendarCard({ calendar }: { calendar: Calendar }) {
   return (
     <Link
-      href="/discover/la-paz"
+      href={`/discover/calendar/${calendar.id}`}
       className="flex w-[250px] shrink-0 flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border transition-colors hover:bg-accent/40"
     >
       <div className="relative h-24">
