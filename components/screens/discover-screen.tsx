@@ -2,6 +2,7 @@ import { SectionTitle } from "@/components/ui/section-title";
 import { CategoryCard } from "@/components/discover/category-card";
 import { CalendarCard } from "@/components/discover/calendar-card";
 import { CityExplorer } from "@/components/city/city-explorer";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { CATEGORY_BROWSE, FEATURED_CALENDARS } from "@/lib/discover-data";
 
 export function DiscoverScreen() {
@@ -19,24 +20,35 @@ export function DiscoverScreen() {
 
       <section>
         <SectionTitle>Browse by interest</SectionTitle>
-        <div className="grid grid-cols-2 gap-2.5">
-          {CATEGORY_BROWSE.map((c) => (
-            <CategoryCard
-              key={c.category}
-              category={c.category}
-              count={c.count}
-              image={c.image}
-            />
-          ))}
+        {/* One compact row that scrolls sideways — minimal vertical space, and
+            the cards peek off-screen to signal there's more. px-4 lives on the
+            row so the right gutter is honored at the end of the scroll. */}
+        <div className="no-scrollbar -mx-4 overflow-x-auto py-1.5">
+          {/* w-max so the row wraps its content — without it the row only fills
+              the viewport and the right px-4 lands inside it, not after the last
+              card, so the last card collides with the edge at the scroll end. */}
+          <div className="flex w-max gap-2 px-4">
+            {CATEGORY_BROWSE.map((c) => (
+              <CategoryCard
+                key={c.category}
+                category={c.category}
+                count={c.count}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       <section>
         <SectionTitle>Featured calendars</SectionTitle>
-        <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-          {FEATURED_CALENDARS.map((cal) => (
-            <CalendarCard key={cal.id} calendar={cal} />
-          ))}
+        {/* px-4 lives on the inner row so the right gutter survives to the
+            end of the scroll (a scroll container drops its own end padding). */}
+        <div className="no-scrollbar -mx-4 overflow-x-auto pb-1">
+          <div className="flex gap-3 px-4">
+            {FEATURED_CALENDARS.map((cal) => (
+              <CalendarCard key={cal.id} calendar={cal} />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -44,6 +56,10 @@ export function DiscoverScreen() {
         <SectionTitle>Explore local events</SectionTitle>
         <CityExplorer />
       </section>
+
+      <div className="-mx-4">
+        <SiteFooter />
+      </div>
     </div>
   );
 }

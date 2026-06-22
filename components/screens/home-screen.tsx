@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EventTimeline } from "@/components/event/event-timeline";
+import { SiteFooter } from "@/components/layout/site-footer";
 import type { AygoEvent } from "@/types";
 
 export type Period = "upcoming" | "past";
@@ -75,6 +76,10 @@ export function HomeScreen({ period }: { period: Period }) {
       ) : (
         <EventTimeline events={list} isGoing={isGoing} />
       )}
+
+      <div className="-mx-4">
+        <SiteFooter />
+      </div>
     </div>
   );
 }
