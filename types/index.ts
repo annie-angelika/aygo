@@ -43,6 +43,22 @@ export type AygoEvent = {
   blurb: string;
 };
 
+/** The identity fields you can change from "Edit profile" (stored locally). */
+export type ProfileEdits = {
+  name: string;
+  bio: string;
+  location: string;
+  avatar: string;
+  socials: Socials;
+};
+
+/** Optional social handles shown as icon links on a profile (Luma-style). */
+export type Socials = {
+  instagram?: string;
+  x?: string;
+  linkedin?: string;
+};
+
 /** A collected experience — earned by attending an event. */
 export type Stamp = {
   eventId: string;
@@ -79,6 +95,8 @@ export type TravelerProfile = {
   avatar: string;
   bio: string;
   location: string;
+  joined: string; // "March 2024" — when they joined aygo
+  socials?: Socials;
   followers: number;
   following: number;
   visits: Visit[];

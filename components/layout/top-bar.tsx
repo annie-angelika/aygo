@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LuTicket, LuCompass } from "react-icons/lu";
 
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { useRegistrations, levelFor } from "@/hooks/use-registrations";
-import { CURRENT_USER } from "@/lib/events-data";
+import { ProfileMenu } from "@/components/layout/profile-menu";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,11 +14,9 @@ import { cn } from "@/lib/utils";
  */
 export function TopBar() {
   const pathname = usePathname();
-  const { stamps, hydrated } = useRegistrations();
-  const level = levelFor(stamps.length).current.index;
   const onHome = pathname.startsWith("/home");
   const onDiscover = pathname.startsWith("/discover");
-  const onProfile = pathname.startsWith("/user");
+  const onProfile = pathname.startsWith("/user") || pathname.startsWith("/settings");
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
@@ -42,26 +38,7 @@ export function TopBar() {
             <LuTicket className="size-[18px]" />
           </NavIcon>
 
-          <Link
-            href={`/user/${CURRENT_USER.username}`}
-            aria-label="Your profile"
-            aria-current={onProfile ? "page" : undefined}
-            className="relative"
-          >
-            <Avatar
-              className={cn(
-                "size-9 ring-2",
-                onProfile ? "ring-amber-400" : "ring-background",
-              )}
-            >
-              <AvatarImage src={CURRENT_USER.avatar} alt="Your profile" />
-            </Avatar>
-            {hydrated && (
-              <span className="absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background">
-                {level}
-              </span>
-            )}
-          </Link>
+          <ProfileMenu active={onProfile} />
         </nav>
       </div>
     </header>
