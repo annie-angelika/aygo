@@ -56,7 +56,27 @@ export type ProfileEdits = {
 export type Socials = {
   instagram?: string;
   x?: string;
+  youtube?: string;
+  tiktok?: string;
   linkedin?: string;
+  website?: string;
+};
+
+/** Appearance theme, mirrored from the device or forced. */
+export type ThemePref = "system" | "light" | "dark";
+
+/** UI language. */
+export type LanguagePref = "en" | "es";
+
+/** A channel a notification can be delivered through. */
+export type NotificationChannel = "email" | "whatsapp" | "push";
+
+/** Locally-saved app preferences (Preferences tab). */
+export type Preferences = {
+  theme: ThemePref;
+  language: LanguagePref;
+  /** Per notification-type id → the channels it's delivered on. */
+  notifications: Record<string, NotificationChannel[]>;
 };
 
 /** A collected experience — earned by attending an event. */

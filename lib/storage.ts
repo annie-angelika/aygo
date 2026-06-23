@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   stamps: "aygo.stamps", // Stamp[] collected in the passport
   profile: "aygo.profile", // ProfileEdits — your editable identity fields
   featured: "aygo.featured", // string[] of stamp eventIds pinned to your passport
+  preferences: "aygo.preferences", // Preferences — theme, language, notifications
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

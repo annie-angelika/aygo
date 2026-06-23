@@ -34,7 +34,7 @@ export function HomeScreen({ period }: { period: Period }) {
   const list = period === "past" ? past : upcoming;
 
   return (
-    <div className="flex min-h-[calc(100svh-7.5rem)] flex-col gap-4 px-4 pt-4">
+    <div className="flex min-h-[calc(100svh-3.5rem)] -mb-16 flex-col gap-4 px-4 pt-4">
       <ScreenHeader
         title="Events"
         trailing={
