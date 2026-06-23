@@ -30,6 +30,7 @@ export function CityScreen({
         city={city}
         subscribed={subscribed}
         onToggleSubscribe={() => setSubscribed((s) => !s)}
+        mapHref={`/${slug}/map`}
       />
       <EventsBoard defaultInterest={defaultInterest} />
     </div>

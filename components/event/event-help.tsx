@@ -35,7 +35,7 @@ export function EventHelp({ event }: { event: AygoEvent }) {
       </div>
 
       <Link
-        href={`/discover/category/${categorySlug(event.category)}`}
+        href={`/${categorySlug(event.category)}`}
         className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-medium text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
       >
         <span className="text-muted-foreground/60">#</span>

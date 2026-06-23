@@ -6,14 +6,7 @@
 import { CURRENT_USER } from "@/lib/events-data";
 import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
 
-/** Cover themes — the look applied to the invite card (Minimal / Quantum / Warp). */
-export type ThemeId = "minimal" | "quantum" | "warp";
-
-export const THEMES: { id: ThemeId; name: string; swatch: string }[] = [
-  { id: "minimal", name: "Minimal", swatch: "bg-neutral-200" },
-  { id: "quantum", name: "Quantum", swatch: "bg-gradient-to-br from-sky-400 to-fuchsia-500" },
-  { id: "warp", name: "Warp", swatch: "bg-gradient-to-br from-violet-700 to-indigo-950" },
-];
+export type { ThemeId } from "@/lib/create-themes";
 
 /** Who an event can be seen by. */
 export type Visibility = "public" | "private";
@@ -38,7 +31,7 @@ export const TIMEZONES = [
 export type EventDraft = {
   id: string;
   title: string;
-  theme: ThemeId;
+  theme: string; // theme id, see lib/create-themes
   cover: string | null;
   calendarId: string;
   visibility: Visibility;
@@ -55,15 +48,9 @@ export type EventDraft = {
 
 /** Stock cover images shown in the image picker (Picsum, like the rest of the app). */
 export const STOCK_COVERS = [
-  "world-cup",
-  "previous-events",
-  "sports",
-  "spring",
-  "july-4th",
-  "climate",
-  "music-fest",
-  "art-night",
-  "food-market",
+  "world-cup", "previous-events", "sports", "spring", "july-4th", "climate",
+  "music-fest", "art-night", "food-market", "mountains", "beach", "city-lights",
+  "festival", "garden", "studio", "neon-room", "desert", "forest",
 ].map((seed) => `https://picsum.photos/seed/aygo-${seed}/600/600`);
 
 /** Append a created event to local storage so the flow has a real effect. */

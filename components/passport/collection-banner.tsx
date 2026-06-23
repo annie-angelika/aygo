@@ -1,105 +1,55 @@
-import {
-  LuMountainSnow,
-  LuSun,
-  LuLandmark,
-  LuTrees,
-  LuCloud,
-  LuStar,
-  LuSparkles,
-  LuLeaf,
-} from "react-icons/lu";
-import type { IconType } from "react-icons";
+import { LuCat, LuStar } from "react-icons/lu";
 
 import { cn } from "@/lib/utils";
 
 /**
- * A calm, looping decorative scene that sits at the top of your collection and
- * shifts with where you are — a lightweight stand-in for a gif (drifting marks
- * + a slow gradient sheen, CSS-only). Themes are keyed by city, with a generic
- * fallback so any location still reads alive.
+ * A playful rainbow-cat banner (Nyan-cat vibe) recreated in CSS — a little cat
+ * flying across a starry sky trailing a streaming rainbow. Lightweight and
+ * looping, so it reads "alive" like a gif without shipping one. Respects
+ * reduced-motion (the trail and bob simply hold still).
  */
-type BannerTheme = {
-  /** Layered gradient that slowly pans (the "sheen"). */
-  gradient: string;
-  /** Decorative marks that drift over the scene. */
-  marks: IconType[];
-};
 
-const THEMES: Record<string, BannerTheme> = {
-  "la paz": {
-    gradient: "from-violet-500 via-indigo-500 to-sky-400",
-    marks: [LuMountainSnow, LuCloud, LuStar],
-  },
-  cochabamba: {
-    gradient: "from-amber-400 via-orange-500 to-rose-400",
-    marks: [LuSun, LuLeaf, LuCloud],
-  },
-  sucre: {
-    gradient: "from-rose-400 via-fuchsia-500 to-violet-500",
-    marks: [LuLandmark, LuSparkles, LuSun],
-  },
-  "santa cruz": {
-    gradient: "from-emerald-400 via-teal-500 to-lime-400",
-    marks: [LuTrees, LuLeaf, LuSun],
-  },
-  potosí: {
-    gradient: "from-slate-500 via-sky-500 to-indigo-500",
-    marks: [LuMountainSnow, LuCloud, LuStar],
-  },
-};
-
-const DEFAULT_THEME: BannerTheme = {
-  gradient: "from-violet-500 via-fuchsia-500 to-sky-400",
-  marks: [LuSparkles, LuStar, LuCloud],
-};
-
-/** "La Paz, Bolivia" → "la paz". */
-function cityKey(location: string) {
-  return location.split(",")[0]?.trim().toLowerCase() ?? "";
-}
-
-/** Fixed spots for the drifting marks so the scene composes the same each render. */
-const SPOTS = [
-  "left-5 top-4 size-9 [animation-duration:7s]",
-  "right-7 top-6 size-12 [animation-duration:9s] [animation-delay:-2s]",
-  "right-16 bottom-3 size-7 [animation-duration:6s] [animation-delay:-1s]",
+// Faint twinkling stars scattered over the sky.
+const STARS = [
+  "left-6 top-5 size-3 [animation-delay:-0.2s]",
+  "left-[38%] top-7 size-2.5 [animation-delay:-0.9s]",
+  "right-10 top-4 size-3.5 [animation-delay:-1.4s]",
+  "right-5 bottom-6 size-2.5 [animation-delay:-0.6s]",
+  "left-[28%] bottom-5 size-2 [animation-delay:-1.1s]",
 ] as const;
 
-export function CollectionBanner({
-  location,
-  className,
-}: {
-  location: string;
-  className?: string;
-}) {
-  const theme = THEMES[cityKey(location)] ?? DEFAULT_THEME;
-
+export function CollectionBanner({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative h-32 overflow-hidden bg-gradient-to-br bg-[length:200%_200%] animate-[aygo-sheen_9s_ease-in-out_infinite] motion-reduce:animate-none",
-        theme.gradient,
+        "relative h-32 overflow-hidden bg-gradient-to-b from-indigo-400 via-violet-400 to-sky-300",
         className,
       )}
     >
-      {/* Soft light pooling for depth over the flat gradient. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(120%_90%_at_15%_-10%,rgba(255,255,255,0.45),transparent_55%)]"
-      />
-
-      {/* Drifting decorative marks — the "alive" element. The scene quietly
-          shifts with where you are; no place label, that read as noise. */}
-      {theme.marks.map((Mark, i) => (
-        <Mark
-          key={i}
+      {STARS.map((spot) => (
+        <LuStar
+          key={spot}
           aria-hidden
           className={cn(
-            "absolute text-white/30 drop-shadow-sm animate-[aygo-float_7s_ease-in-out_infinite] motion-reduce:animate-none",
-            SPOTS[i % SPOTS.length],
+            "absolute fill-white/80 text-white/80 animate-pulse motion-reduce:animate-none",
+            spot,
           )}
         />
       ))}
+
+      {/* The rainbow trail, streaming in from off-screen behind the cat. */}
+      <div className="absolute left-0 top-1/2 h-14 w-[68%] -translate-y-1/2 overflow-hidden rounded-r-md shadow-[0_6px_16px_-8px_rgba(15,23,42,0.5)]">
+        <div className="size-full bg-[linear-gradient(to_bottom,#ff5a5f_0_16.66%,#ff924c_16.66%_33.33%,#ffca3a_33.33%_50%,#8ac926_50%_66.66%,#1982c4_66.66%_83.33%,#6a4c93_83.33%_100%)]" />
+        {/* Scrolling speed-lines for the sense of motion. */}
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.35)_0_11px,transparent_11px_22px)] animate-[aygo-stream_0.5s_linear_infinite] motion-reduce:animate-none" />
+      </div>
+
+      {/* The cat, riding the leading edge of the trail and gently bobbing. */}
+      <div className="absolute left-[60%] top-1/2 -translate-y-1/2 animate-[aygo-float_1.6s_ease-in-out_infinite] motion-reduce:animate-none">
+        <span className="grid size-14 place-items-center rounded-2xl bg-pink-200 text-slate-800 shadow-md ring-2 ring-white/70">
+          <LuCat className="size-8" aria-hidden />
+        </span>
+      </div>
     </div>
   );
 }
