@@ -1,4 +1,13 @@
-import { LuMapPin, LuCalendar, LuInstagram, LuTwitter, LuLinkedin } from "react-icons/lu";
+import {
+  LuMapPin,
+  LuCalendar,
+  LuInstagram,
+  LuTwitter,
+  LuLinkedin,
+  LuYoutube,
+  LuGlobe,
+} from "react-icons/lu";
+import { FaTiktok } from "react-icons/fa6";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Stat } from "@/components/ui/stat";
@@ -9,8 +18,15 @@ import type { Socials } from "@/types";
 const SOCIAL_LINKS = [
   { key: "instagram", Icon: LuInstagram, base: "https://instagram.com/", label: "Instagram" },
   { key: "x", Icon: LuTwitter, base: "https://x.com/", label: "X" },
+  { key: "youtube", Icon: LuYoutube, base: "https://youtube.com/@", label: "YouTube" },
+  { key: "tiktok", Icon: FaTiktok, base: "https://tiktok.com/@", label: "TikTok" },
   { key: "linkedin", Icon: LuLinkedin, base: "https://linkedin.com/in/", label: "LinkedIn" },
+  { key: "website", Icon: LuGlobe, base: "", label: "Website" },
 ] as const;
+
+/** Website handles store a full URL; everything else stores a handle. */
+const hrefFor = (base: string, value: string) =>
+  base ? `${base}${value}` : /^https?:\/\//.test(value) ? value : `https://${value}`;
 
 function SocialRow({ socials, className }: { socials: Socials; className?: string }) {
   const items = SOCIAL_LINKS.filter((s) => socials[s.key]);
@@ -20,7 +36,7 @@ function SocialRow({ socials, className }: { socials: Socials; className?: strin
       {items.map(({ key, Icon, base, label }) => (
         <a
           key={key}
-          href={`${base}${socials[key]}`}
+          href={hrefFor(base, socials[key]!)}
           target="_blank"
           rel="noreferrer"
           aria-label={label}

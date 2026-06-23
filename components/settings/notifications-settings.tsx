@@ -1,98 +1,132 @@
 "use client";
 
-import type { IconType } from "react-icons";
-import { LuBell, LuMail } from "react-icons/lu";
-import { FaWhatsapp } from "react-icons/fa6";
+import { LuChevronsUpDown } from "react-icons/lu";
 
+import {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+  MenuCheckboxItem,
+  MenuSeparator,
+} from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
 import type { NotificationChannel } from "@/types";
 
-const CHANNELS: { id: NotificationChannel; label: string; Icon: IconType }[] = [
-  { id: "email", label: "Email", Icon: LuMail },
-  { id: "whatsapp", label: "WhatsApp", Icon: FaWhatsapp },
-  { id: "push", label: "Push", Icon: LuBell },
+const CHANNELS: {
+  id: NotificationChannel;
+  summary: string;
+  menuLabel: string;
+}[] = [
+  { id: "email", summary: "Email", menuLabel: "Email" },
+  { id: "whatsapp", summary: "WhatsApp", menuLabel: "WhatsApp" },
+  { id: "push", summary: "Push", menuLabel: "Push Notification" },
 ];
 
-// What you can be notified about. Grouped the way Luma groups them.
-const TYPES: { id: string; label: string; hint: string }[] = [
-  { id: "invites", label: "Event Invites", hint: "When a host invites you to an event." },
-  { id: "reminders", label: "Event Reminders", hint: "Before an event you're attending starts." },
-  { id: "blasts", label: "Event Blasts", hint: "Announcements a host sends to attendees." },
-  { id: "updates", label: "Event Updates", hint: "Time, place or detail changes." },
-  { id: "feedback", label: "Feedback Requests", hint: "After an event, to rate your experience." },
+// What you can be notified about. `hint` shows inside the dropdown.
+const TYPES: { id: string; label: string; hint?: string }[] = [
+  { id: "invites", label: "Event Invites" },
+  { id: "reminders", label: "Event Reminders" },
+  { id: "blasts", label: "Event Blasts" },
+  {
+    id: "updates",
+    label: "Event Updates",
+    hint: "If you turn off email updates, your calendar invite may become outdated.",
+  },
+  { id: "feedback", label: "Feedback Requests" },
 ];
 
-function ChannelToggle({
-  Icon,
+const summarize = (channels: NotificationChannel[]) =>
+  channels.length
+    ? CHANNELS.filter((c) => channels.includes(c.id))
+        .map((c) => c.summary)
+        .join(", ")
+    : "Off";
+
+function NotificationRow({
   label,
-  active,
-  onClick,
+  hint,
+  channels,
+  onChange,
 }: {
-  Icon: IconType;
   label: string;
-  active: boolean;
-  onClick: () => void;
+  hint?: string;
+  channels: NotificationChannel[];
+  onChange: (next: NotificationChannel[]) => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      aria-label={label}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors",
-        active
-          ? "bg-foreground text-background"
-          : "text-muted-foreground ring-1 ring-border hover:bg-muted",
-      )}
-    >
-      <Icon className="size-3.5" aria-hidden />
-      {label}
-    </button>
+    <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+      <span className="min-w-0 text-[13px] font-semibold text-foreground">
+        {label}
+      </span>
+      <Menu>
+        <MenuTrigger
+          aria-label={`${label} delivery channels`}
+          className="inline-flex shrink-0 items-center gap-1.5 text-[13px] text-muted-foreground outline-none transition-colors hover:text-foreground"
+        >
+          {summarize(channels)}
+          <LuChevronsUpDown className="size-3.5" aria-hidden />
+        </MenuTrigger>
+        <MenuContent className="min-w-60">
+          <MenuItem
+            onClick={() => onChange([])}
+            className={cn(channels.length === 0 && "bg-muted")}
+          >
+            Off
+          </MenuItem>
+          <MenuSeparator />
+          {CHANNELS.map(({ id, menuLabel }) => (
+            <MenuCheckboxItem
+              key={id}
+              checked={channels.includes(id)}
+              onCheckedChange={(checked) =>
+                onChange(
+                  checked
+                    ? [...channels, id]
+                    : channels.filter((c) => c !== id),
+                )
+              }
+            >
+              {menuLabel}
+            </MenuCheckboxItem>
+          ))}
+          {hint && (
+            <p className="px-2.5 pt-1.5 pb-1 text-[11.5px] leading-snug text-muted-foreground">
+              {hint}
+            </p>
+          )}
+        </MenuContent>
+      </Menu>
+    </div>
   );
 }
 
 /**
- * Notifications section — per event-type, toggle which channels deliver it.
- * Each change auto-persists via the parent's `onToggle`.
+ * Notifications section — per event-type, a dropdown to pick which channels
+ * deliver it (or turn it Off). Each change auto-persists via `onSetChannels`.
  */
 export function NotificationsSettings({
   value,
-  onToggle,
+  onSetChannels,
 }: {
   value: Record<string, NotificationChannel[]>;
-  onToggle: (typeId: string, channel: NotificationChannel) => void;
+  onSetChannels: (typeId: string, channels: NotificationChannel[]) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
-      {TYPES.map(({ id, label, hint }, i) => {
-        const channels = value[id] ?? [];
-        return (
-          <div
-            key={id}
-            className={cn(
-              "flex flex-col gap-2.5 px-3.5 py-3",
-              i > 0 && "border-t border-border",
-            )}
-          >
-            <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-foreground">{label}</p>
-              <p className="text-[11.5px] text-muted-foreground">{hint}</p>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {CHANNELS.map(({ id: cid, label: clabel, Icon }) => (
-                <ChannelToggle
-                  key={cid}
-                  Icon={Icon}
-                  label={clabel}
-                  active={channels.includes(cid)}
-                  onClick={() => onToggle(id, cid)}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
+      {TYPES.map(({ id, label, hint }, i) => (
+        <div
+          key={id}
+          className={cn(i > 0 && "border-t border-border")}
+        >
+          <NotificationRow
+            label={label}
+            hint={hint}
+            channels={value[id] ?? []}
+            onChange={(next) => onSetChannels(id, next)}
+          />
+        </div>
+      ))}
     </div>
   );
 }

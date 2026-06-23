@@ -19,7 +19,7 @@ const LANGUAGES: { value: LanguagePref; label: string }[] = [
 
 /** Preferences tab — appearance, language and notification channels. */
 export function PreferencesForm() {
-  const { prefs, update, toggleChannel } = usePreferences();
+  const { prefs, update, setChannels } = usePreferences();
 
   return (
     <div className="flex flex-col gap-7">
@@ -38,7 +38,11 @@ export function PreferencesForm() {
           onValueChange={(v) => update({ language: (v as LanguagePref) })}
         >
           <SelectTrigger className="h-10 w-full rounded-xl bg-card px-3.5 text-[13px]">
-            <SelectValue />
+            <SelectValue>
+              {(value) =>
+                LANGUAGES.find((l) => l.value === value)?.label ?? "English"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent alignItemWithTrigger={false}>
             {LANGUAGES.map(({ value, label }) => (
@@ -63,7 +67,7 @@ export function PreferencesForm() {
         </p>
         <NotificationsSettings
           value={prefs.notifications}
-          onToggle={toggleChannel}
+          onSetChannels={setChannels}
         />
       </section>
     </div>

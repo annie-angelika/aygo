@@ -30,14 +30,9 @@ export function usePreferences() {
   const update = (patch: Partial<Preferences>) =>
     writeStorage(STORAGE_KEYS.preferences, { ...prefs, ...patch });
 
-  /** Toggle a single channel on a notification type on/off. */
-  const toggleChannel = (typeId: string, channel: NotificationChannel) => {
-    const current = prefs.notifications[typeId] ?? [];
-    const next = current.includes(channel)
-      ? current.filter((c) => c !== channel)
-      : [...current, channel];
-    update({ notifications: { ...prefs.notifications, [typeId]: next } });
-  };
+  /** Replace the channels a notification type is delivered on. */
+  const setChannels = (typeId: string, channels: NotificationChannel[]) =>
+    update({ notifications: { ...prefs.notifications, [typeId]: channels } });
 
-  return { prefs, update, toggleChannel };
+  return { prefs, update, setChannels };
 }
