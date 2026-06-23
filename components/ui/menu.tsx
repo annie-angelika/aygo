@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
+import { LuCheck } from "react-icons/lu";
 
 import { cn } from "@/lib/utils";
 
@@ -49,8 +50,41 @@ function MenuItem({ className, ...props }: MenuPrimitive.Item.Props) {
   );
 }
 
+/** A toggleable menu row with a leading check; keeps the menu open on click. */
+function MenuCheckboxItem({
+  className,
+  children,
+  ...props
+}: MenuPrimitive.CheckboxItem.Props) {
+  return (
+    <MenuPrimitive.CheckboxItem
+      data-slot="menu-checkbox-item"
+      closeOnClick={false}
+      className={cn(
+        "flex w-full cursor-default items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium outline-none transition-colors select-none data-highlighted:bg-muted",
+        className,
+      )}
+      {...props}
+    >
+      <span className="grid size-4 shrink-0 place-items-center text-foreground">
+        <MenuPrimitive.CheckboxItemIndicator>
+          <LuCheck className="size-4" />
+        </MenuPrimitive.CheckboxItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.CheckboxItem>
+  );
+}
+
 function MenuSeparator({ className }: { className?: string }) {
   return <div className={cn("my-1 h-px bg-border", className)} />;
 }
 
-export { Menu, MenuTrigger, MenuContent, MenuItem, MenuSeparator };
+export {
+  Menu,
+  MenuTrigger,
+  MenuContent,
+  MenuItem,
+  MenuCheckboxItem,
+  MenuSeparator,
+};

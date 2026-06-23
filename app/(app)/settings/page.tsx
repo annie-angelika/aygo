@@ -1,7 +1,5 @@
-import { SettingsScreen } from "@/components/screens/settings-screen";
-
-export const metadata = { title: "aygo — Settings" };
+import { redirect } from "next/navigation";
 
 export default function SettingsPage() {
-  return <SettingsScreen />;
+  redirect("/settings/account");
 }
