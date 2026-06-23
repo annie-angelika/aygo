@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { applyConfigFor, currentApplicant } from "@/lib/apply";
 import { cn } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
@@ -220,13 +221,12 @@ function MessageField({
           (optional)
         </span>
       </label>
-      <textarea
+      <Textarea
         id="register-message"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
         placeholder="Tell the host a bit about you…"
-        className="w-full resize-none rounded-xl bg-background p-3 text-[13px] text-foreground placeholder:text-muted-foreground/70 ring-1 ring-border transition-shadow outline-none focus:ring-2 focus:ring-ring"
       />
     </div>
   );
