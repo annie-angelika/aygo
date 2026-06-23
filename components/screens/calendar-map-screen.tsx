@@ -17,7 +17,7 @@ export function CalendarMapScreen({ id }: { id: string }) {
         <img
           src={calendar.logo}
           alt=""
-          className="size-9 shrink-0 rounded-xl object-cover ring-1 ring-border"
+          className="size-9 shrink-0 rounded-lg object-cover ring-1 ring-border"
         />
       }
     />

@@ -14,7 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "aygo — Events near you",
+  // Luma-style tab titles: the page/event name first, then the brand, joined by
+  // a middle dot — e.g. "Create · aygo". Each page sets just its own name and
+  // this template appends "· aygo"; `default` covers any page that sets none.
+  title: {
+    default: "aygo — Events near you",
+    template: "%s · aygo",
+  },
   description:
     "Discover events in your city, apply in one tap, and get approved by the host. Collect every experience in your collection.",
   // The mark is a single-colour transparent glyph, so it needs a matching

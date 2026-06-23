@@ -1,9 +1,8 @@
 "use client";
 
-import { LuMapPin } from "react-icons/lu";
-
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useEventFilter } from "@/hooks/use-event-filter";
+import { Logo } from "@/components/layout/logo";
 import { BackButton } from "@/components/ui/back-button";
 import { EventTimeline } from "@/components/event/event-timeline";
 import { EventsMap } from "@/components/discover/events-map";
@@ -40,22 +39,22 @@ export function MapScreen({
         <header className="flex items-center gap-3">
           <BackButton className="ring-1 ring-border" />
           {logo}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-[20px] font-semibold tracking-tight text-foreground">
               {title}
             </h1>
-            <p className="flex items-center gap-1 text-[12.5px] text-muted-foreground">
-              <LuMapPin className="size-3.5 shrink-0" aria-hidden />
-              Events on the map
-            </p>
           </div>
+          {/* Brand mark anchored top-right, Luma-style. */}
+          <Logo className="shrink-0" />
         </header>
 
+        {/* Map runs edge-to-edge: break out of the header's px-4 and drop the
+            side rounding/ring so it reaches both lateral borders. */}
         <EventsMap
           events={filtered}
           city={city}
           country={country ?? ""}
-          className="h-[240px]"
+          className="-mx-4 h-[240px] rounded-none ring-0"
         />
 
         <EventsFilters

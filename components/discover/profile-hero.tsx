@@ -79,6 +79,7 @@ export function ProfileHero({
               size="icon"
               variant="outline"
               aria-label="View on map"
+              nativeButton={false}
               render={<Link href={mapHref} />}
               className="shrink-0 rounded-full"
             >

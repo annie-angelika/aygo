@@ -1,6 +1,6 @@
 import { HomeScreen, type Period } from "@/components/screens/home-screen";
 
-export const metadata = { title: "aygo — Your events" };
+export const metadata = { title: "Your events" };
 
 export default async function HomePage({
   searchParams,

@@ -1,6 +1,6 @@
 import { DiscoverScreen } from "@/components/screens/discover-screen";
 
-export const metadata = { title: "aygo — Discover" };
+export const metadata = { title: "Discover" };
 
 export default function DiscoverPage() {
   return <DiscoverScreen />;

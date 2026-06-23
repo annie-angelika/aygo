@@ -5,7 +5,7 @@ import { LuSearch, LuHouse } from "react-icons/lu";
 import { TopBar } from "@/components/layout/top-bar";
 
 export const metadata: Metadata = {
-  title: "404 — Page Not Found · aygo",
+  title: "Page not found",
 };
 
 /**

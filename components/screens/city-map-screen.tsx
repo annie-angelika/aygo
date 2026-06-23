@@ -28,7 +28,7 @@ export function CityMapScreen({
       logo={
         <span
           className={cn(
-            "grid size-9 shrink-0 place-items-center rounded-xl text-white",
+            "grid size-9 shrink-0 place-items-center rounded-lg text-white",
             city.tint,
           )}
           aria-hidden

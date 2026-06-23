@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type Step = "intro" | "price";
 
@@ -57,7 +58,12 @@ export function PaymentsDialog({
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-sm">
-        <span className="grid size-12 place-items-center rounded-full bg-muted text-foreground">
+        <span
+          className={cn(
+            "grid size-12 place-items-center rounded-full bg-muted text-foreground",
+            step === "price" && "mx-auto",
+          )}
+        >
           <LuTicket className="size-5" aria-hidden />
         </span>
 
