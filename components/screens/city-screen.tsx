@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { BackButton } from "@/components/ui/back-button";
 import { EventsBoard } from "@/components/discover/events-board";
 import { CityHero } from "@/components/city/city-hero";
 import { CATEGORIES } from "@/lib/events-data";
@@ -27,7 +26,6 @@ export function CityScreen({
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-3">
-      <BackButton className="self-start ring-1 ring-border" />
       <CityHero
         city={city}
         subscribed={subscribed}

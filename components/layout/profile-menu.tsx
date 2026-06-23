@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LuUser, LuSettings, LuLogOut } from "react-icons/lu";
+import { LuUser, LuStamp, LuSettings, LuLogOut } from "react-icons/lu";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -68,6 +68,14 @@ export function ProfileMenu({ active }: { active: boolean }) {
 
         <MenuItem render={<Link href={href} />}>
           <LuUser /> View Profile
+        </MenuItem>
+        <MenuItem render={<Link href={`${href}/collection`} />}>
+          <LuStamp /> Collection
+          {hydrated && count > 0 && (
+            <span className="ml-auto rounded-full bg-muted px-1.5 text-[10.5px] font-semibold text-foreground">
+              {count}
+            </span>
+          )}
         </MenuItem>
         <MenuItem render={<Link href="/settings" />}>
           <LuSettings /> Settings

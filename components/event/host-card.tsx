@@ -1,4 +1,5 @@
-import { LuBadgeCheck, LuClock, LuCalendarCheck } from "react-icons/lu";
+import Link from "next/link";
+import { LuBadgeCheck, LuCalendarCheck } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { hostsFor } from "@/lib/hosts";
@@ -16,7 +17,7 @@ const initials = (name: string) =>
  * in-app now (no WhatsApp handoff), so this is identity + reputation only.
  */
 export function HostCard({ event }: { event: AygoEvent }) {
-  const { hosts, responds, eventsHosted } = hostsFor(event);
+  const { hosts, eventsHosted } = hostsFor(event);
   const many = hosts.length > 1;
 
   return (
@@ -31,35 +32,35 @@ export function HostCard({ event }: { event: AygoEvent }) {
         </span>
       </div>
 
-      <ul className="flex flex-col gap-2.5">
+      <ul className="-mx-2 flex flex-col">
         {hosts.map((h) => (
-          <li key={`${h.role}-${h.name}`} className="flex items-center gap-3">
-            <Avatar size={many ? "default" : "lg"}>
-              <AvatarImage src={h.avatar} alt={h.name} />
-              <AvatarFallback>{initials(h.name)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1 truncate text-[14px] font-semibold text-foreground">
-                {h.name}
-                {h.verified && (
-                  <LuBadgeCheck
-                    className="size-4 shrink-0 text-amber-500"
-                    aria-label="Verified host"
-                  />
-                )}
-              </p>
-              <p className="truncate text-[11.5px] text-muted-foreground">
-                {h.role}
-              </p>
-            </div>
+          <li key={h.username}>
+            <Link
+              href={`/user/${h.username}`}
+              className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/50"
+            >
+              <Avatar size={many ? "default" : "lg"}>
+                <AvatarImage src={h.avatar} alt={h.name} />
+                <AvatarFallback>{initials(h.name)}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1 truncate text-[14px] font-semibold text-foreground">
+                  {h.name}
+                  {h.verified && (
+                    <LuBadgeCheck
+                      className="size-4 shrink-0 text-amber-500"
+                      aria-label="Verified host"
+                    />
+                  )}
+                </p>
+                <p className="truncate text-[11.5px] text-muted-foreground">
+                  {h.role}
+                </p>
+              </div>
+            </Link>
           </li>
         ))}
       </ul>
-
-      <p className="flex items-center gap-1.5 border-t border-border pt-2.5 text-[11.5px] text-muted-foreground">
-        <LuClock className="size-3.5 shrink-0" aria-hidden />
-        {responds}
-      </p>
     </div>
   );
 }

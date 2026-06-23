@@ -1,14 +1,16 @@
 import { LuShare2 } from "react-icons/lu";
 
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { CategoryChip } from "@/components/event/category-chip";
-import { EventMeta } from "@/components/event/event-meta";
-import { GroupBar } from "@/components/event/group-bar";
+import { EventDetailMeta } from "@/components/event/event-detail-meta";
+import { EventLocation } from "@/components/event/event-location";
 import { HostCard } from "@/components/event/host-card";
+import { GoingSection } from "@/components/event/going-section";
+import { EventHelp } from "@/components/event/event-help";
 import { EventActions } from "@/components/event/event-actions";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { attendeesFor } from "@/lib/users-data";
 import type { AygoEvent } from "@/types";
 
@@ -49,19 +51,41 @@ export function EventDetail({ event }: { event: AygoEvent }) {
           <h1 className="mt-2 text-[24px] font-semibold leading-tight tracking-tight text-foreground">
             {event.title}
           </h1>
-          <EventMeta event={event} className="mt-1.5 text-[13px]" />
         </div>
 
-        <GroupBar event={event} people={going} />
+        <EventDetailMeta event={event} />
 
-        <p className="text-[14px] leading-relaxed text-foreground/80">
-          {event.blurb}
-        </p>
+        <div className="flex flex-col divide-y divide-border">
+          <section className="flex flex-col gap-2 pb-5">
+            <h2 className="text-[10.5px] font-semibold uppercase tracking-wider text-amber-600">
+              About
+            </h2>
+            {event.blurb.split("\n\n").map((para, i) => (
+              <p
+                key={i}
+                className="text-[14px] leading-relaxed text-foreground/80"
+              >
+                {para}
+              </p>
+            ))}
+          </section>
 
-        <Card className="p-4 [--card-spacing:0px]">
-          <HostCard event={event} />
-        </Card>
+          <div className="py-5">
+            <EventLocation event={event} />
+          </div>
+
+          <div className="pt-5">
+            <HostCard event={event} />
+          </div>
+
+          <div className="flex flex-col gap-5 py-5">
+            <GoingSection event={event} people={going} />
+            <EventHelp event={event} />
+          </div>
+        </div>
       </div>
+
+      <SiteFooter />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 px-5 pb-6 pt-3 backdrop-blur">
         <div className="mx-auto w-full max-w-md">
