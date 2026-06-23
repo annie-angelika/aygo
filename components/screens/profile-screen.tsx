@@ -36,14 +36,17 @@ export function ProfileScreen({ username }: { username?: string }) {
         visited={user.visits.length}
         action={
           <>
-            {!isSelf && <FollowButton />}
-            <ShareButton
-              title={`${user.name} on aygo`}
-              text={`Follow @${user.username} on aygo.`}
-              className="grid size-8 place-items-center rounded-full bg-card text-foreground ring-1 ring-border"
-            >
-              <LuShare2 className="size-4" aria-hidden />
-            </ShareButton>
+            {isSelf ? (
+              <ShareButton
+                title={`${user.name} on aygo`}
+                text={`Follow @${user.username} on aygo.`}
+                className="grid size-8 place-items-center rounded-full bg-card text-foreground ring-1 ring-border"
+              >
+                <LuShare2 className="size-4" aria-hidden />
+              </ShareButton>
+            ) : (
+              <FollowButton />
+            )}
           </>
         }
       />
