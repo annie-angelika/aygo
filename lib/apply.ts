@@ -6,7 +6,18 @@
 
 import { CURRENT_USER } from "@/lib/events-data";
 import { USERS, CURRENT_USERNAME } from "@/lib/users-data";
-import type { AygoEvent } from "@/types";
+import type { AygoEvent, Category } from "@/types";
+
+// One concrete "bring this / know this" line per interest, so the list says
+// something specific about the event instead of a single generic reassurance.
+const CATEGORY_NOTE: Record<Category, string> = {
+  Party: "Bring a photo ID. 18+ only.",
+  Music: "Bring a photo ID. 18+ only.",
+  Outdoors: "Wear sturdy shoes and bring water.",
+  Sports: "Come ready to move, with water and a layer.",
+  Food: "Come hungry, and bring a bit of cash for extras.",
+  Culture: "Materials are provided. Just bring yourself.",
+};
 
 /** The signed-in traveler, the way the host will see them on a request. */
 export type Applicant = {
@@ -45,12 +56,18 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
   const requiresApproval = charSum(event.id) % 2 === 1;
 
   const requirements: string[] = [];
-  if (event.price != null) {
-    requirements.push(`Cover Bs ${event.price} — pay the host at the door.`);
+
+  // What it costs, up front.
+  if (event.price != null && event.price > 0) {
+    requirements.push(`Cover is Bs ${event.price}, paid to ${event.host.name} at the door.`);
+  } else {
+    requirements.push("Free to join, no cover.");
   }
-  if (event.category === "Party" || event.category === "Music") {
-    requirements.push("18+ — bring a photo ID.");
-  }
+
+  // A practical, interest-specific heads-up (what to bring / who can come).
+  requirements.push(CATEGORY_NOTE[event.category]);
+
+  // How your spot is secured.
   requirements.push(
     requiresApproval
       ? "Show up on time so the host can save your spot."
