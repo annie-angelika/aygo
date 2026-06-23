@@ -43,7 +43,7 @@ export async function generateMetadata({
     findCalendar(slug)?.name ??
     findCategory(slug) ??
     (await fetchEventByCode(slug))?.title;
-  return { title: name ? `aygo — ${name}` : "aygo" };
+  return name ? { title: name } : { title: { absolute: "aygo" } };
 }
 
 export default async function SlugPage({

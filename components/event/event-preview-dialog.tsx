@@ -70,6 +70,7 @@ export function EventPreviewDialog({
                 type="button"
                 variant="outline"
                 size="sm"
+                nativeButton={false}
                 render={<Link href={href} />}
                 className="rounded-full"
               >

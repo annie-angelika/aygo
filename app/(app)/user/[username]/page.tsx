@@ -1,4 +1,5 @@
 import { ProfileScreen } from "@/components/screens/profile-screen";
+import { findUser } from "@/lib/users-data";
 
 export async function generateMetadata({
   params,
@@ -6,7 +7,7 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  return { title: `aygo — @${username}` };
+  return { title: findUser(username)?.name ?? `@${username}` };
 }
 
 export default async function UserPage({

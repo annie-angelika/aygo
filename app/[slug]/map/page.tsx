@@ -24,7 +24,7 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const name = findCity(slug)?.name ?? findCalendar(slug)?.name;
-  return { title: name ? `aygo — ${name} map` : "aygo" };
+  return name ? { title: `${name} map` } : { title: { absolute: "aygo" } };
 }
 
 export default async function MapPage({
