@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { LuStamp, LuMoon, LuShare2, LuQrCode } from "react-icons/lu";
+import { LuStamp, LuMoon, LuShare2, LuPlus } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { CollectionBanner } from "@/components/passport/collection-banner";
+import { CollectSheet } from "@/components/passport/collect-sheet";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select,
@@ -34,6 +34,7 @@ export function PassportScreen({ username }: { username?: string }) {
     dateLabel: string;
   } | null>(null);
   const [year, setYear] = useState<string>("");
+  const [collectOpen, setCollectOpen] = useState(false);
 
   const hasReal = displayStamps.length > 0;
 
@@ -128,18 +129,22 @@ export function PassportScreen({ username }: { username?: string }) {
         onClose={() => setSelected(null)}
       />
 
-      {/* Collect a new aygo — the gentle, web2 way to say "mint": you earn one
-          by showing up. Pinned to the bottom-right of the phone frame, yours only. */}
+      {/* Collect a new aygo — the gentle, web2 way to say "mint". Pinned to the
+          bottom-right of the phone frame, yours only. */}
       {isSelf && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 mx-auto flex w-full max-w-md justify-end px-4">
-          <Link
-            href="/discover"
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-[14px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] transition-colors hover:bg-slate-800"
-          >
-            <LuQrCode className="size-4" aria-hidden />
-            Collect
-          </Link>
-        </div>
+        <>
+          <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 mx-auto flex w-full max-w-md justify-end px-4">
+            <button
+              type="button"
+              onClick={() => setCollectOpen(true)}
+              className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-[14px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] transition-colors hover:bg-slate-800 active:translate-y-px"
+            >
+              <LuPlus className="size-4" aria-hidden />
+              Collect
+            </button>
+          </div>
+          <CollectSheet open={collectOpen} onOpenChange={setCollectOpen} />
+        </>
       )}
     </div>
   );
@@ -186,11 +191,11 @@ function CollectionHero({
 
         {/* The count of aygos, and the share action at the opposite end of the line. */}
         <div className="mt-3.5 flex items-center justify-between border-b border-border pb-3.5">
-          <div className="flex items-center gap-2">
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm">
-              <LuStamp className="size-3.5" aria-hidden />
+          <div className="flex items-baseline gap-2">
+            <span className="grid size-9 shrink-0 -translate-y-0.5 place-items-center self-center rounded-full bg-amber-500 text-white shadow-sm ring-1 ring-amber-300/60">
+              <LuStamp className="size-4" aria-hidden />
             </span>
-            <span className="text-[22px] font-bold leading-none tabular-nums text-foreground">
+            <span className="text-[30px] font-extrabold leading-none tracking-tight tabular-nums text-foreground">
               {count.toLocaleString()}
             </span>
             <span className="text-[13px] font-semibold text-muted-foreground">
@@ -202,7 +207,7 @@ function CollectionHero({
             title={`${name} on aygo`}
             text={`Check out @${username}'s aygo collection`}
             copiedLabel="Copied!"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full bg-background px-3.5 py-2 text-[13px] font-semibold text-foreground shadow-sm ring-1 ring-border transition-colors hover:bg-muted active:translate-y-px"
           >
             <LuShare2 className="size-3.5" aria-hidden />
             Share

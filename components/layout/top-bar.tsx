@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LuTicket, LuCompass } from "react-icons/lu";
+import { LuTicket, LuCompass, LuPlus } from "react-icons/lu";
 
 import { ProfileMenu } from "@/components/layout/profile-menu";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ export function TopBar() {
   const onHome = pathname.startsWith("/home");
   const onDiscover = pathname.startsWith("/discover");
   const onProfile = pathname.startsWith("/user") || pathname.startsWith("/settings");
+  const onCreate = pathname.startsWith("/create");
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
@@ -32,6 +33,21 @@ export function TopBar() {
         </Link>
 
         <nav className="flex items-center gap-2">
+          <Link
+            href="/create"
+            aria-label="Create event"
+            aria-current={onCreate ? "page" : undefined}
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold ring-1 transition-colors",
+              onCreate
+                ? "bg-foreground text-background ring-transparent"
+                : "bg-card text-foreground ring-border hover:bg-muted",
+            )}
+          >
+            <LuPlus className="size-[18px]" aria-hidden />
+            <span>Create</span>
+          </Link>
+
           <NavIcon href="/discover" label="Discover" active={onDiscover}>
             <LuCompass className="size-[18px]" />
           </NavIcon>
