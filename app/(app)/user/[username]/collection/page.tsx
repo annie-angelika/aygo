@@ -6,7 +6,7 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  return { title: `aygo — @${username}'s passport` };
+  return { title: `aygo — @${username}'s collection` };
 }
 
 export default async function UserPassportPage({

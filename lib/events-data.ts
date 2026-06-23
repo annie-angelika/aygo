@@ -147,7 +147,7 @@ export const events: AygoEvent[] = [
     attendeeAvatars: [face("c1"), face("c2"), face("c3"), face("c4")],
     price: 40,
     blurb:
-      "Charango, panpipes, and dancing till late. We've booked a long table, so join us. Cover includes a drink.",
+      "Calle Jaén turns into a peña for one night — charango, panpipes, and a guitar that gets passed around until someone finally starts singing. We've reserved the long table at the back, so there's room for whoever you decide to bring.\n\nDoors open at nine, but the music really only starts once the room fills up and the first round lands. Your cover includes a drink — a singani or a mate de coca, your call — and the kitchen keeps the salteñas and api coming until late.\n\nNo set list, no rush. Just old folk songs, a couple of new ones, and the kind of crowd that stays until the candles burn down. Come as you are; you'll leave with a few new friends and a song stuck in your head.",
   },
   {
     id: "cumbre-bici",

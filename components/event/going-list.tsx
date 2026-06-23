@@ -11,16 +11,28 @@ const initials = (name: string) =>
     .slice(0, 2)
     .join("");
 
-/** Travelers going to this event — tap a profile to follow their routes. */
-export function GoingList({ people }: { people: TravelerProfile[] }) {
+/**
+ * Travelers going to this event — tap a profile to follow their routes. The
+ * follow buttons only show once `canFollow` is true (after you've joined).
+ */
+export function GoingList({
+  people,
+  canFollow = true,
+}: {
+  people: TravelerProfile[];
+  canFollow?: boolean;
+}) {
   if (!people.length) return null;
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col">
       {people.map((p) => (
-        <div key={p.username} className="flex items-center gap-3">
+        <div
+          key={p.username}
+          className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/50"
+        >
           <Link
             href={`/user/${p.username}`}
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-1 transition-colors hover:opacity-80"
+            className="flex min-w-0 flex-1 items-center gap-3 transition-opacity hover:opacity-80"
           >
             <Avatar className="size-9">
               <AvatarImage src={p.avatar} alt={p.name} />
@@ -35,7 +47,7 @@ export function GoingList({ people }: { people: TravelerProfile[] }) {
               </p>
             </div>
           </Link>
-          <FollowButton />
+          {canFollow && <FollowButton />}
         </div>
       ))}
     </div>

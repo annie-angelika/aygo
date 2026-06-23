@@ -9,9 +9,17 @@ import { ProfileHeader } from "@/components/profile/profile-header";
 import { FollowButton } from "@/components/profile/follow-button";
 import { RouteList } from "@/components/profile/route-list";
 import { PassportCard } from "@/components/passport/passport-card";
+import { DEMO_AYGO_COUNT } from "@/lib/aygos";
 
 export function ProfileScreen({ username }: { username?: string }) {
   const { user, isSelf, displayStamps } = useTraveler(username);
+
+  // Mirror the collection page: when you have none yet, show the demo preview
+  // count so the card and the wall agree.
+  const aygoCount =
+    isSelf && displayStamps.length === 0
+      ? DEMO_AYGO_COUNT
+      : displayStamps.length;
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-4">
@@ -41,8 +49,8 @@ export function ProfileScreen({ username }: { username?: string }) {
       />
 
       <PassportCard
-        count={displayStamps.length}
-        href={`/user/${user.username}/passport`}
+        count={aygoCount}
+        href={`/user/${user.username}/collection`}
       />
 
       <section className="flex flex-col gap-3">

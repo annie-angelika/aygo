@@ -3,6 +3,7 @@ import { FaInstagram, FaXTwitter, FaYoutube, FaLinkedin } from "react-icons/fa6"
 import type { IconType } from "react-icons";
 
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 
 const SOCIALS: { Icon: IconType; label: string }[] = [
   { Icon: FaInstagram, label: "Instagram" },
@@ -13,10 +14,12 @@ const SOCIALS: { Icon: IconType; label: string }[] = [
 ];
 
 /**
- * Generic Luma-style header: a cover banner, an overlapping logo tile, identity
- * (badge · title · meta · blurb), a follow action, and social links. Callers
- * supply the `logo` node (an icon tile or an image) and `meta` row so the same
- * shell serves both city and community-calendar pages.
+ * Generic Luma-style header: a full-bleed cover banner with an overlaid back
+ * button, an overlapping logo tile, identity (badge · title · meta · blurb), a
+ * follow action, and social links. The banner runs edge-to-edge (no card chrome)
+ * and the content below sits directly on the page. Callers supply the `logo`
+ * node (an icon tile or an image) and `meta` row so the same shell serves both
+ * city and community-calendar pages.
  */
 export function ProfileHero({
   cover,
@@ -38,18 +41,31 @@ export function ProfileHero({
   onToggleFollow: () => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-3xl bg-card ring-1 ring-border">
+    // Break out of the page's px-4 / pt-3 so the banner runs full-bleed.
+    <div className="-mx-4 -mt-3">
       <div className="relative h-36">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={cover} alt="" className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#f6f4ef] from-30% to-transparent" />
+        <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
       </div>
 
-      <div className="px-4 pb-4">
-        {/* Logo overlaps the banner; actions sit on the same baseline. */}
-        <div className="-mt-11 flex items-end justify-between gap-3">
-          {logo}
-          <div className="flex items-center gap-2 pb-1">
+      <div className="px-4 pb-1">
+        {/* Only the logo overlaps the banner; actions stay clear of the image. */}
+        <div className="-mt-9">{logo}</div>
+
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            {badge && <div className="mb-2">{badge}</div>}
+            <h1 className="text-[27px] font-semibold leading-tight tracking-tight text-foreground">
+              {name}
+            </h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
+              {meta}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               onClick={onToggleFollow}
               variant={following ? "outline" : "default"}
@@ -66,15 +82,6 @@ export function ProfileHero({
               <LuMap className="size-4" />
             </Button>
           </div>
-        </div>
-
-        {badge && <div className="mt-3.5">{badge}</div>}
-
-        <h1 className="mt-2 text-[27px] font-semibold leading-tight tracking-tight text-foreground">
-          {name}
-        </h1>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
-          {meta}
         </div>
 
         <p className="mt-3 text-[13px] leading-relaxed text-foreground/80">

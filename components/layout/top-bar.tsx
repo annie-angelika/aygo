@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
  */
 export function TopBar() {
   const pathname = usePathname();
+  // Full-screen detail views (e.g. the collection) own their own back button.
+  if (pathname.endsWith("/collection")) return null;
   const onHome = pathname.startsWith("/home");
   const onDiscover = pathname.startsWith("/discover");
   const onProfile = pathname.startsWith("/user") || pathname.startsWith("/settings");

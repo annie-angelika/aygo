@@ -34,7 +34,7 @@ export function HomeScreen({ period }: { period: Period }) {
   const list = period === "past" ? past : upcoming;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-4">
+    <div className="flex min-h-[calc(100svh-7.5rem)] flex-col gap-4 px-4 pt-4">
       <ScreenHeader
         title="Events"
         trailing={
@@ -70,14 +70,14 @@ export function HomeScreen({ period }: { period: Period }) {
             icon={LuTicket}
             title="You're not going to anything yet"
             subtitle="Find something you like and tap “I'm going”."
-            action={<Button render={<Link href="/discover" />}>Discover events</Button>}
+            action={<Button nativeButton={false} render={<Link href="/discover" />}>Discover events</Button>}
           />
         )
       ) : (
         <EventTimeline events={list} isGoing={isGoing} />
       )}
 
-      <div className="-mx-4">
+      <div className="-mx-4 mt-auto">
         <SiteFooter />
       </div>
     </div>

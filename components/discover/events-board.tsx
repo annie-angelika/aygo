@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { LuCalendarX, LuPlus } from "react-icons/lu";
+import { LuCalendarX } from "react-icons/lu";
 
 import { useEvents } from "@/hooks/use-events";
 import { useRegistrations } from "@/hooks/use-registrations";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -60,20 +59,10 @@ export function EventsBoard({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="pt-1">
         <h2 className="text-[17px] font-semibold tracking-tight text-foreground">
           {upcomingOnly ? "Upcoming events" : "Events"}
         </h2>
-        {!upcomingOnly && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full text-muted-foreground"
-          >
-            <LuPlus className="size-3.5" />
-            Submit event
-          </Button>
-        )}
       </div>
 
       {!upcomingOnly && (

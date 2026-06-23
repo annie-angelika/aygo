@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { BackButton } from "@/components/ui/back-button";
 import { CalendarHero } from "@/components/discover/calendar-hero";
 import { EventsBoard } from "@/components/discover/events-board";
 import { findCalendar } from "@/lib/discover-data";
@@ -16,7 +15,6 @@ export function CalendarScreen({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-3">
-      <BackButton className="self-start ring-1 ring-border" />
       <CalendarHero
         calendar={calendar}
         following={following}
