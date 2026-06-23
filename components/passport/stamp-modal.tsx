@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { AygoArt } from "@/components/passport/aygo-art";
 import { CategoryChip } from "@/components/event/category-chip";
 import { CATEGORY_META } from "@/lib/events-data";
@@ -82,12 +83,12 @@ export function StampModal({
 
             <DialogClose
               render={
-                <button
-                  type="button"
-                  className="relative mt-5 inline-flex h-10 w-full items-center justify-center rounded-full bg-primary text-[14px] font-semibold text-primary-foreground shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] transition-colors hover:bg-primary/90 active:translate-y-px"
+                <Button
+                  size="lg"
+                  className="relative mt-5 h-10 w-full rounded-full text-[14px]"
                 >
                   Done
-                </button>
+                </Button>
               }
             />
           </div>

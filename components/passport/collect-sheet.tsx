@@ -18,9 +18,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { QrScanner } from "@/components/passport/qr-scanner";
-import { cn } from "@/lib/utils";
 
 /**
  * The screen behind each "collect" method. The way you pick a method is the
@@ -90,7 +90,9 @@ function CollectFlow({
         <DialogDescription className="max-w-[30ch]">
           Nice — it&apos;s in your collection now. Keep showing up to earn more.
         </DialogDescription>
-        <PrimaryButton onClick={onClose}>Done</PrimaryButton>
+        <Button size="lg" onClick={onClose} className="h-10 w-full rounded-full text-[14px]">
+          Done
+        </Button>
       </div>
     );
   }
@@ -111,9 +113,14 @@ function CollectFlow({
           placeholder="Your secret word"
           className="h-10 text-center text-[14px]"
         />
-        <PrimaryButton disabled={!secret.trim()} onClick={onFinish}>
+        <Button
+          size="lg"
+          disabled={!secret.trim()}
+          onClick={onFinish}
+          className="h-10 w-full rounded-full text-[14px]"
+        >
           Continue
-        </PrimaryButton>
+        </Button>
       </StepShell>
     );
   }
@@ -126,9 +133,14 @@ function CollectFlow({
         desc="Type the last six characters of your collect link."
       >
         <CodeBoxes value={code} onChange={setCode} />
-        <PrimaryButton disabled={code.some((c) => !c)} onClick={onFinish}>
+        <Button
+          size="lg"
+          disabled={code.some((c) => !c)}
+          onClick={onFinish}
+          className="h-10 w-full rounded-full text-[14px]"
+        >
           Continue
-        </PrimaryButton>
+        </Button>
       </StepShell>
     );
   }
@@ -198,33 +210,6 @@ function StepShell({
         {children}
       </div>
     </div>
-  );
-}
-
-/** Near-black pill, the app's primary action — full width to anchor a step. */
-function PrimaryButton({
-  children,
-  disabled,
-  onClick,
-}: {
-  children: React.ReactNode;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-10 w-full items-center justify-center rounded-full px-5 text-[14px] font-semibold transition-colors",
-        disabled
-          ? "pointer-events-none bg-muted text-muted-foreground"
-          : "bg-primary text-primary-foreground shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] hover:bg-primary/90 active:translate-y-px",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
