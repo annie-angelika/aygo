@@ -133,14 +133,17 @@ export function findUser(username: string): TravelerProfile | undefined {
 }
 
 /**
- * Maps a route stop (visit) to the past event it came from, so a tapped route
- * opens that event's detail. Stops with no matching event are left non-linked.
+ * Maps a route stop (visit) to the past event it came from. The profile renders
+ * each visit as that event's row, so every stop resolves to a real event here.
  */
 export const VISIT_EVENT: Record<string, string> = {
   "v-killi": "sunset-killi",
   "v-jazz": "jazz-sopocachi",
+  "v-salar": "salar-uyuni",
+  "v-mercado": "mercado-rodriguez",
   "m-muela": "trail-muela",
   "m-cumbre": "cumbre-bici",
+  "m-chacaltaya": "chacaltaya",
   "d-pena": "pena-marka",
   "d-prado": "after-prado",
   "s-feria": "feria-miraflores",
