@@ -83,17 +83,10 @@ export function ProfileHeader({
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h1 className="truncate text-[22px] font-semibold leading-tight tracking-tight text-foreground">
-                {name}
-              </h1>
-              <p className="text-[13px] text-muted-foreground">@{handle}</p>
-            </div>
-            {action && (
-              <div className="flex shrink-0 items-center gap-2">{action}</div>
-            )}
-          </div>
+          <h1 className="truncate text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+            {name}
+          </h1>
+          <p className="text-[13px] text-muted-foreground">@{handle}</p>
           {socials && <SocialRow socials={socials} className="mt-2.5" />}
         </div>
       </div>
@@ -118,6 +111,8 @@ export function ProfileHeader({
         <Stat inline value={following} label="Following" />
         <Stat inline value={visited} label="Visited" />
       </div>
+
+      {action && <div className="mt-4">{action}</div>}
 
       <Separator className="mt-4" />
     </div>

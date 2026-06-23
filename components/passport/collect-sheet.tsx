@@ -19,6 +19,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { QrScanner } from "@/components/passport/qr-scanner";
 import { cn } from "@/lib/utils";
 
 /**
@@ -69,9 +70,10 @@ function CollectFlow({
   const [secret, setSecret] = useState("");
   const [code, setCode] = useState<string[]>(EMPTY_CODE);
 
-  // The hands-off methods feel real: they "look" for a beat, then land on success.
+  // The hands-off methods feel real: they "look" for a beat, then land on
+  // success. QR is excluded — it lands on a real camera scan, not a timer.
   useEffect(() => {
-    if (method !== "nearby" && method !== "nfc" && method !== "qr") return;
+    if (method !== "nearby" && method !== "nfc") return;
     const t = setTimeout(() => setDone(true), 2200);
     return () => clearTimeout(t);
   }, [method]);
@@ -166,7 +168,7 @@ function CollectFlow({
       title="Scan the QR code"
       desc="Point your camera at the event's QR code."
     >
-      <QrViewport />
+      <QrScanner onScan={onFinish} />
     </StepShell>
   );
 }
@@ -235,32 +237,6 @@ function Searching({ label }: { label: string }) {
         aria-hidden
       />
       {label}
-    </div>
-  );
-}
-
-/** A camera viewport mock with corner brackets and a sweeping scan line. */
-function QrViewport() {
-  return (
-    <div className="relative grid size-40 place-items-center overflow-hidden rounded-2xl bg-slate-900/90">
-      <LuQrCode className="size-20 text-white/15" aria-hidden />
-      {/* Corner brackets. */}
-      {[
-        "left-3 top-3 border-l-2 border-t-2",
-        "right-3 top-3 border-r-2 border-t-2",
-        "left-3 bottom-3 border-l-2 border-b-2",
-        "right-3 bottom-3 border-r-2 border-b-2",
-      ].map((pos) => (
-        <span
-          key={pos}
-          aria-hidden
-          className={cn("absolute size-6 rounded-[3px] border-amber-400", pos)}
-        />
-      ))}
-      <span
-        aria-hidden
-        className="absolute inset-x-5 h-0.5 rounded bg-amber-400 shadow-[0_0_12px_2px_rgba(251,191,36,0.6)] animate-[aygo-scan_1.8s_ease-in-out_infinite] motion-reduce:hidden"
-      />
     </div>
   );
 }

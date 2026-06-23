@@ -1,28 +1,20 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
-import {
-  LuChevronsUpDown,
-  LuShuffle,
-  LuChevronUp,
-  LuChevronDown,
-  LuChevronLeft,
-  LuSun,
-  LuMoon,
-  LuCheck,
-} from "react-icons/lu";
+import { LuChevronsUpDown, LuShuffle, LuSun, LuMoon, LuCheck } from "react-icons/lu";
 
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from "@/components/ui/popover";
+import { ThemeSwatch } from "@/components/create/theme-swatch";
 import { THEMES, STYLES, getTheme, getStyle } from "@/lib/create-themes";
 import { FONTS, getFont } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
-type View = "main" | "font" | "style";
-
 /**
- * Theme control: a pill that opens a bottom sheet with the cover themes plus
- * Color (cycles theme), Style and Font (open their own lists), and Display (a
- * light/dark toggle). Every change updates the cover — and the page — live.
+ * Theme control: a pill that opens a bottom sheet of cover themes. Color, Style
+ * and Font each open an inline popover anchored to their tile (no view swap —
+ * the picker shows in-place over the same sheet); Display is a light/dark toggle.
  */
 export function ThemeSheet({
   themeId,
@@ -44,7 +36,6 @@ export function ThemeSheet({
   onToggleDisplay: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<View>("main");
   const current = getTheme(themeId);
 
   const cycleTheme = (delta: number) => {
@@ -54,20 +45,14 @@ export function ThemeSheet({
 
   return (
     <div className="flex items-center gap-2">
-      <Sheet
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          if (!o) setView("main");
-        }}
-      >
+      <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
           render={
             <button
               type="button"
               className="flex flex-1 items-center gap-3 rounded-2xl bg-muted px-3 py-2.5 text-left ring-1 ring-border transition-colors hover:bg-muted/70"
             >
-              <span className={cn("size-9 shrink-0 rounded-lg ring-1 ring-border", current.swatch)} />
+              <ThemeSwatch theme={current} detailed={false} className="size-9 shrink-0 rounded-lg ring-1 ring-border" />
               <span className="min-w-0 flex-1">
                 <span className="block text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
                   Theme
@@ -81,59 +66,39 @@ export function ThemeSheet({
           }
         />
 
-        <SheetContent side="bottom" className="gap-4 px-5 pb-6 pt-2" showClose={view === "main"}>
-          {view === "main" && (
-            <MainView
-              themeId={themeId}
-              onThemeChange={onThemeChange}
-              fontId={fontId}
-              styleId={styleId}
-              display={display}
-              onToggleDisplay={onToggleDisplay}
-              cycleTheme={cycleTheme}
-              openFont={() => setView("font")}
-              openStyle={() => setView("style")}
-            />
-          )}
-          {view === "font" && (
-            <PickerView title="Font" onBack={() => setView("main")}>
-              <div className="grid grid-cols-3 gap-2.5">
-                {FONTS.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => onFontChange(f.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-2xl py-3 ring-2 transition-colors",
-                      f.id === fontId ? "ring-foreground bg-muted" : "ring-border hover:bg-muted",
-                    )}
-                  >
-                    <span className="text-[24px] leading-none text-foreground" style={{ fontFamily: f.family }}>
-                      Ag
-                    </span>
-                    <span className="text-[11px] font-medium text-muted-foreground">{f.name}</span>
-                  </button>
-                ))}
-              </div>
-            </PickerView>
-          )}
-          {view === "style" && (
-            <PickerView title="Style" onBack={() => setView("main")}>
-              <div className="flex flex-col gap-1">
-                {STYLES.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => onStyleChange(s.id)}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted"
-                  >
-                    <span className={cn("flex-1 text-[14px] text-foreground", s.className)}>{s.name}</span>
-                    {s.id === styleId && <LuCheck className="size-4 text-foreground" aria-hidden />}
-                  </button>
-                ))}
-              </div>
-            </PickerView>
-          )}
+        <SheetContent side="bottom" className="gap-5 px-5 pb-7 pt-2" showClose={false}>
+          <SheetTitle className="sr-only">Theme</SheetTitle>
+
+          <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 pt-1 no-scrollbar">
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => onThemeChange(t.id)}
+                className="flex shrink-0 flex-col items-center gap-2"
+              >
+                {/* The selection ring wraps only the swatch — the name sits below it. */}
+                <span
+                  className={cn(
+                    "rounded-2xl p-1 ring-2 transition-colors",
+                    t.id === themeId ? "ring-foreground" : "ring-transparent",
+                  )}
+                >
+                  <ThemeSwatch theme={t} className="size-[72px] rounded-xl" />
+                </span>
+                <span className="w-[80px] truncate text-center text-[11.5px] font-medium text-foreground">
+                  {t.name}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <ColorTile themeId={themeId} onThemeChange={onThemeChange} />
+            <StyleTile styleId={styleId} onStyleChange={onStyleChange} />
+            <FontTile fontId={fontId} onFontChange={onFontChange} />
+            <DisplayTile display={display} onToggle={onToggleDisplay} />
+          </div>
         </SheetContent>
       </Sheet>
 
@@ -149,154 +114,186 @@ export function ThemeSheet({
   );
 }
 
-function MainView({
-  themeId,
-  onThemeChange,
-  fontId,
-  styleId,
-  display,
-  onToggleDisplay,
-  cycleTheme,
-  openFont,
-  openStyle,
-}: {
-  themeId: string;
-  onThemeChange: (id: string) => void;
-  fontId: string;
-  styleId: string;
-  display: "light" | "dark";
-  onToggleDisplay: () => void;
-  cycleTheme: (d: number) => void;
-  openFont: () => void;
-  openStyle: () => void;
-}) {
-  const current = getTheme(themeId);
+/* ---- Tiles ---- */
+
+/**
+ * The shared tile surface (icon/preview + label + value + a "opens picker" cue).
+ * forwardRef + prop spread so Base UI's PopoverTrigger can wire its click/state
+ * handlers onto the real <button>.
+ */
+const TileButton = React.forwardRef<
+  HTMLButtonElement,
+  { label: string; value: string; leading?: React.ReactNode } & React.ComponentProps<"button">
+>(function TileButton({ label, value, leading, className, ...props }, ref) {
   return (
-    <>
-      <SheetTitle className="mt-2">Theme</SheetTitle>
-
-      <div className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 no-scrollbar">
-        {THEMES.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onThemeChange(t.id)}
-            className={cn(
-              "shrink-0 rounded-2xl p-1.5 ring-2 transition-colors",
-              t.id === themeId ? "ring-foreground" : "ring-border hover:ring-muted-foreground/40",
-            )}
-          >
-            <span className={cn("block size-[72px] rounded-xl ring-1 ring-black/5", t.swatch)} />
-            <span className="mt-1.5 block w-[72px] truncate text-center text-[11.5px] font-medium text-foreground">
-              {t.name}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <Tile label="Color" value={current.name} onCycle={cycleTheme} />
-        <Tile label="Style" value={getStyle(styleId).name} onClick={openStyle} />
-        <Tile label="Font" value={getFont(fontId).name} onClick={openFont} preview="Ag" previewFont={getFont(fontId).family} />
-        <Tile
-          label="Display"
-          value={display === "dark" ? "Dark" : "Light"}
-          onClick={onToggleDisplay}
-          icon={display === "dark" ? <LuMoon className="size-4 text-indigo-300" /> : <LuSun className="size-4 text-amber-500" />}
-        />
-      </div>
-    </>
-  );
-}
-
-function PickerView({
-  title,
-  onBack,
-  children,
-}: {
-  title: string;
-  onBack: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <>
-      <div className="mt-2 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back"
-          className="grid size-8 place-items-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <LuChevronLeft className="size-4" aria-hidden />
-        </button>
-        <SheetTitle>{title}</SheetTitle>
-      </div>
-      <div className="max-h-[60svh] overflow-y-auto no-scrollbar">{children}</div>
-    </>
-  );
-}
-
-/** A "Color / Style / Font / Display" tile — cycles with arrows or opens a list. */
-function Tile({
-  label,
-  value,
-  onCycle,
-  onClick,
-  icon,
-  preview,
-  previewFont,
-}: {
-  label: string;
-  value: string;
-  onCycle?: (delta: number) => void;
-  onClick?: () => void;
-  icon?: React.ReactNode;
-  preview?: string;
-  previewFont?: string;
-}) {
-  const body = (
-    <>
-      {(icon || preview) && (
-        <span className="grid size-7 shrink-0 place-items-center">
-          {icon ?? (
-            <span className="text-[18px] leading-none text-foreground" style={{ fontFamily: previewFont }}>
-              {preview}
-            </span>
-          )}
-        </span>
+    <button
+      ref={ref}
+      type="button"
+      className={cn(
+        "flex w-full items-center gap-2 rounded-xl bg-muted px-3 py-2.5 text-left transition-colors hover:bg-muted/70 data-popup-open:bg-muted/70",
+        className,
       )}
-      <span className="min-w-0 flex-1 text-left">
+      {...props}
+    >
+      {leading && <span className="grid size-7 shrink-0 place-items-center">{leading}</span>}
+      <span className="min-w-0 flex-1">
         <span className="block text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </span>
         <span className="block truncate text-[13px] font-semibold text-foreground">{value}</span>
       </span>
-    </>
+      <LuChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    </button>
   );
+});
 
-  if (onCycle) {
-    return (
-      <div className="flex items-center justify-between gap-1 rounded-xl bg-muted px-3 py-2 ring-1 ring-border">
-        <span className="flex min-w-0 items-center gap-2">{body}</span>
-        <span className="flex flex-col">
-          <button type="button" onClick={() => onCycle(-1)} aria-label={`Previous ${label}`} className="text-muted-foreground transition-colors hover:text-foreground">
-            <LuChevronUp className="size-4" aria-hidden />
-          </button>
-          <button type="button" onClick={() => onCycle(1)} aria-label={`Next ${label}`} className="text-muted-foreground transition-colors hover:text-foreground">
-            <LuChevronDown className="size-4" aria-hidden />
-          </button>
-        </span>
-      </div>
-    );
-  }
+function ColorTile({
+  themeId,
+  onThemeChange,
+}: {
+  themeId: string;
+  onThemeChange: (id: string) => void;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={<TileButton label="Color" value={getTheme(themeId).name} leading={<span className={cn("size-5 rounded-full ring-1 ring-black/10", getTheme(themeId).swatch)} />} />}
+      />
+      <PopoverContent side="top" align="start" sideOffset={10} initialFocus={false} className="w-[248px] p-2.5">
+        <div className="flex flex-wrap gap-2.5">
+          {THEMES.map((t) => (
+            <PopoverClose
+              key={t.id}
+              render={
+                <button
+                  type="button"
+                  onClick={() => onThemeChange(t.id)}
+                  aria-label={t.name}
+                  className={cn(
+                    "size-8 rounded-full ring-2 ring-offset-2 ring-offset-card transition-transform active:scale-95",
+                    t.swatch,
+                    t.id === themeId ? "ring-foreground" : "ring-transparent",
+                  )}
+                />
+              }
+            />
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
+function StyleTile({
+  styleId,
+  onStyleChange,
+}: {
+  styleId: string;
+  onStyleChange: (id: string) => void;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger render={<TileButton label="Style" value={getStyle(styleId).name} />} />
+      <PopoverContent side="top" align="start" sideOffset={10} initialFocus={false} className="w-[200px] p-1.5">
+        {STYLES.map((s) => (
+          <PopoverClose
+            key={s.id}
+            render={
+              <button
+                type="button"
+                onClick={() => onStyleChange(s.id)}
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted"
+              >
+                <span className={cn("flex-1 text-[13.5px] text-foreground", s.className)}>{s.name}</span>
+                {s.id === styleId && <LuCheck className="size-4 shrink-0 text-foreground" aria-hidden />}
+              </button>
+            }
+          />
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function FontTile({
+  fontId,
+  onFontChange,
+}: {
+  fontId: string;
+  onFontChange: (id: string) => void;
+}) {
+  const font = getFont(fontId);
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <TileButton
+            label="Font"
+            value={font.name}
+            leading={
+              <span className="text-[18px] leading-none text-foreground" style={{ fontFamily: font.family }}>
+                Ag
+              </span>
+            }
+          />
+        }
+      />
+      <PopoverContent side="top" align="start" sideOffset={10} initialFocus={false} className="w-[288px] p-2.5">
+        <div className="grid grid-cols-3 gap-2.5">
+          {FONTS.map((f) => (
+            <PopoverClose
+              key={f.id}
+              render={
+                <button
+                  type="button"
+                  onClick={() => onFontChange(f.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-xl py-3 ring-2 transition-colors",
+                    f.id === fontId ? "bg-muted ring-foreground" : "bg-muted/50 ring-transparent hover:bg-muted",
+                  )}
+                >
+                  <span className="text-[22px] leading-none text-foreground" style={{ fontFamily: f.family }}>
+                    Ag
+                  </span>
+                  <span className="text-[10.5px] font-medium text-muted-foreground">{f.name}</span>
+                </button>
+              }
+            />
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function DisplayTile({
+  display,
+  onToggle,
+}: {
+  display: "light" | "dark";
+  onToggle: () => void;
+}) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-left ring-1 ring-border transition-colors hover:bg-muted/70"
+      onClick={onToggle}
+      className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2.5 text-left transition-colors hover:bg-muted/70"
     >
-      {body}
+      <span className="grid size-7 shrink-0 place-items-center">
+        {display === "dark" ? (
+          <LuMoon className="size-4 text-indigo-300" aria-hidden />
+        ) : (
+          <LuSun className="size-4 text-amber-500" aria-hidden />
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
+          Display
+        </span>
+        <span className="block truncate text-[13px] font-semibold text-foreground">
+          {display === "dark" ? "Dark" : "Light"}
+        </span>
+      </span>
     </button>
   );
 }

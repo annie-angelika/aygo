@@ -27,11 +27,11 @@ function SheetContent({
 }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+      <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50 duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
       <DialogPrimitive.Popup
         data-slot="sheet-content"
         className={cn(
-          "fixed inset-x-0 z-50 mx-auto flex w-full max-w-md flex-col bg-card text-foreground ring-1 ring-border duration-300 [&>*]:min-w-0",
+          "fixed inset-x-0 z-50 mx-auto flex w-full max-w-md flex-col bg-card text-foreground duration-300 [&>*]:min-w-0",
           "data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
           side === "bottom"
             ? "bottom-0 max-h-[88svh] rounded-t-3xl pb-[max(env(safe-area-inset-bottom),1rem)] shadow-[0_-24px_60px_-24px_rgba(0,0,0,0.6)]"

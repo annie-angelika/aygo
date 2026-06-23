@@ -52,16 +52,24 @@ export function EventTimeline({
   events,
   isGoing,
   groupBy = "day",
+  stickyOffset = "top-0",
 }: {
   events: AygoEvent[];
   isGoing?: (id: string) => boolean;
   groupBy?: "day" | "month";
+  /** Sticky top inset for the date headers (Tailwind `top-*`). */
+  stickyOffset?: string;
 }) {
   const groups = groupBy === "month" ? groupByMonth(events) : groupByDay(events);
   return (
     <div className="flex flex-col gap-6 pt-1">
       {groups.map((g) => (
-        <DateGroup key={g.key} label={g.label} weekday={g.weekday}>
+        <DateGroup
+          key={g.key}
+          label={g.label}
+          weekday={g.weekday}
+          offset={stickyOffset}
+        >
           {g.events.map((e) => (
             <EventRow key={e.id} event={e} going={isGoing?.(e.id)} />
           ))}

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { LuMail } from "react-icons/lu";
 import { FaInstagram, FaXTwitter } from "react-icons/fa6";
 
+import { Logo } from "@/components/layout/logo";
+
 const LINKS = [
   { href: "/discover", label: "Discover" },
   { href: "/home", label: "Your events" },
@@ -31,9 +33,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
       }
     >
       <div className="flex items-center justify-between">
-        <span className="text-[19px] font-bold tracking-tight text-foreground">
-          aygo<span className="text-amber-500">.</span>
-        </span>
+        <Logo />
 
         <div className="flex items-center gap-1">
           {SOCIALS.map(({ href, label, icon: Icon }) => (

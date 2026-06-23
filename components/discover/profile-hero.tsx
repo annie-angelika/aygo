@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { LuMap, LuGlobe } from "react-icons/lu";
+import { LuMap, LuGlobe, LuPlus, LuCheck } from "react-icons/lu";
 import { FaInstagram, FaXTwitter, FaYoutube, FaLinkedin } from "react-icons/fa6";
 import type { IconType } from "react-icons";
 
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
+import { cn } from "@/lib/utils";
 
 const SOCIALS: { Icon: IconType; label: string }[] = [
   { Icon: FaInstagram, label: "Instagram" },
@@ -52,42 +53,51 @@ export function ProfileHero({
         <img src={cover} alt="" className="size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/10" />
         <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
-        {/* The logo sits on the banner, anchored to its bottom-left edge. */}
-        <div className="absolute bottom-3 left-4">{logo}</div>
+        {/* The logo straddles the banner's bottom edge, dropping into the
+            content below so it reads as the page's identity tile. */}
+        <div className="absolute -bottom-8 left-4 z-10">{logo}</div>
       </div>
 
       <div className="px-4 pb-1 pt-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            {badge && <div className="mb-2">{badge}</div>}
-            <h1 className="truncate text-[27px] font-semibold leading-tight tracking-tight text-foreground">
-              {name}
-            </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
-              {meta}
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              onClick={onToggleFollow}
-              variant={following ? "outline" : "default"}
-              className="shrink-0 rounded-full px-5"
-            >
-              {following ? "Following" : "Follow"}
-            </Button>
-            {mapHref && (
-              <Button
-                size="icon"
-                variant="outline"
-                aria-label="View on map"
-                render={<Link href={mapHref} />}
-                className="shrink-0 rounded-full"
-              >
-                <LuMap className="size-4" />
-              </Button>
+        {/* Actions sit on their own row up top so the title gets the full
+            width below and never gets squeezed/truncated by the buttons. */}
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            onClick={onToggleFollow}
+            variant={following ? "outline" : "default"}
+            className="shrink-0 rounded-full px-5"
+          >
+            {following ? (
+              <LuCheck aria-hidden />
+            ) : (
+              <LuPlus aria-hidden />
             )}
-          </div>
+            {following ? "Following" : "Follow"}
+          </Button>
+          {mapHref && (
+            <Button
+              size="icon"
+              variant="outline"
+              aria-label="View on map"
+              render={<Link href={mapHref} />}
+              className="shrink-0 rounded-full"
+            >
+              <LuMap className="size-4" />
+            </Button>
+          )}
+        </div>
+
+        {badge && <div className="mb-2 mt-3">{badge}</div>}
+        <h1
+          className={cn(
+            "truncate text-[27px] font-semibold leading-tight tracking-tight text-foreground",
+            !badge && "mt-3",
+          )}
+        >
+          {name}
+        </h1>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
+          {meta}
         </div>
 
         <p className="mt-3 text-[13px] leading-relaxed text-foreground/80">

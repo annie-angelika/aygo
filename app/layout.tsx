@@ -17,6 +17,16 @@ export const metadata: Metadata = {
   title: "aygo — Events near you",
   description:
     "Discover events in your city, apply in one tap, and get approved by the host. Collect every experience in your collection.",
+  // The mark is a single-colour transparent glyph, so it needs a matching
+  // variant per browser-chrome theme: the navy mark on light tabs, the cream
+  // mark on dark tabs. Same two files the on-screen Logo uses.
+  icons: {
+    icon: [
+      { url: "/aygo-light.png", media: "(prefers-color-scheme: light)" },
+      { url: "/aygo-dark.png", media: "(prefers-color-scheme: dark)" },
+    ],
+    apple: "/aygo-light.png",
+  },
 };
 
 export default function RootLayout({

@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 // dark canvas without the light top bar, mirroring Luma's create page.
 export default function CreatePage() {
   return (
-    // The screen paints its own themed background and flips the document's
-    // light/dark token mode to match the selected cover theme.
-    <main className="mx-auto min-h-svh w-full max-w-md">
+    // Full-bleed: the screen paints its own themed background edge-to-edge and
+    // centers its own content; the light/dark token mode follows the cover theme.
+    <main className="min-h-svh w-full">
       <CreateEventScreen />
     </main>
   );

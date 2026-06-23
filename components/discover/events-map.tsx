@@ -29,10 +29,13 @@ export function EventsMap({
   events,
   city,
   country,
+  className,
 }: {
   events: AygoEvent[];
   city: string;
   country: string;
+  /** Override the map frame (e.g. its height) for tighter layouts. */
+  className?: string;
 }) {
   const [selected, setSelected] = useState<AygoEvent | null>(null);
   const place = encodeURIComponent(`${city}, ${country}`);
@@ -49,7 +52,12 @@ export function EventsMap({
 
   return (
     <>
-      <div className="relative h-[300px] overflow-hidden rounded-2xl ring-1 ring-border">
+      <div
+        className={cn(
+          "relative h-[300px] overflow-hidden rounded-2xl ring-1 ring-border",
+          className,
+        )}
+      >
         {/* Static map backdrop — pointer-events-none so pins stay clickable and
             the map doesn't hijack the page scroll. */}
         <iframe

@@ -143,45 +143,6 @@ body {
   }
 }
 
-/* Lightweight, looping motion for the collection banner — a calm "alive"
-   element (drifting decorations + a slow gradient sheen) that stands in for a
-   gif without the weight. Used via arbitrary `animate-[…]` utilities. */
-@keyframes aygo-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-9px);
-  }
-}
-@keyframes aygo-drift {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(12px);
-  }
-}
-@keyframes aygo-sheen {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-/* Speed-lines scrolling across the rainbow trail, so the cat reads as flying. */
-@keyframes aygo-stream {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: -22px 0;
-  }
-}
 /* The line that sweeps a QR viewport while it "scans". */
 @keyframes aygo-scan {
   0% {

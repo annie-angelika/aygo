@@ -13,17 +13,17 @@ export function FollowButton({ initial = false }: { initial?: boolean }) {
       onClick={() => setFollowing((f) => !f)}
       variant={following ? "outline" : "default"}
       aria-label={following ? "Following" : "Follow"}
-      className="rounded-full px-0 size-8 sm:size-auto sm:px-4"
+      className="h-9 w-full rounded-full"
     >
       {following ? (
         <>
-          <LuCheck className="size-3.5" />
-          <span className="hidden sm:inline">Following</span>
+          <LuCheck className="size-4" />
+          Following
         </>
       ) : (
         <>
-          <LuPlus className="size-3.5" />
-          <span className="hidden sm:inline">Follow</span>
+          <LuPlus className="size-4" />
+          Follow
         </>
       )}
     </Button>

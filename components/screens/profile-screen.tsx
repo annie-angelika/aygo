@@ -35,26 +35,30 @@ export function ProfileScreen({ username }: { username?: string }) {
         following={user.following}
         visited={user.visits.length}
         action={
-          <>
-            {isSelf ? (
-              <ShareButton
-                title={`${user.name} on aygo`}
-                text={`Follow @${user.username} on aygo.`}
-                className="grid size-8 place-items-center rounded-full bg-card text-foreground ring-1 ring-border"
-              >
-                <LuShare2 className="size-4" aria-hidden />
-              </ShareButton>
-            ) : (
-              <FollowButton />
-            )}
-          </>
+          isSelf ? (
+            <ShareButton
+              title={`${user.name} on aygo`}
+              text={`Follow @${user.username} on aygo.`}
+              className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-card text-[13px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted"
+            >
+              <LuShare2 className="size-4" aria-hidden />
+              Share profile
+            </ShareButton>
+          ) : (
+            <FollowButton />
+          )
         }
       />
 
-      <PassportCard
-        count={aygoCount}
-        href={`/user/${user.username}/collection`}
-      />
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+          Achievements
+        </h2>
+        <PassportCard
+          count={aygoCount}
+          href={`/user/${user.username}/collection`}
+        />
+      </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-[15px] font-semibold tracking-tight text-foreground">

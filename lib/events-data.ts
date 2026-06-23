@@ -110,6 +110,166 @@ export const events: AygoEvent[] = [
       "The best view of the city as the lights come on. Bring something to share. No rush, good vibes.",
   },
   {
+    id: "morning-run-miraflores",
+    title: "Sunday Morning Run",
+    category: "Sports",
+    cover: pic("morning-run"),
+    startsAt: "2026-06-21T07:00:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "07:00",
+    isPast: false,
+    place: "Parque Urbano Central",
+    city: "La Paz",
+    host: { name: "Diego", avatar: face("host-diego"), phone: "+59170000021" },
+    attendees: 12,
+    attendeeAvatars: [face("r1"), face("r2"), face("r3")],
+    price: null,
+    blurb:
+      "Easy 5k loop around the park to start the day. Every pace welcome — we regroup at the fountain after.",
+  },
+  {
+    id: "yoga-sopocachi",
+    title: "Rooftop Yoga & Coffee",
+    category: "Outdoors",
+    cover: pic("rooftop-yoga"),
+    startsAt: "2026-06-21T09:00:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "09:00",
+    isPast: false,
+    place: "Terraza Sopocachi",
+    city: "La Paz",
+    host: { name: "Valeria", avatar: face("host-valeria"), phone: "+59170000022" },
+    attendees: 16,
+    attendeeAvatars: [face("y1"), face("y2"), face("y3"), face("y4")],
+    price: 30,
+    blurb:
+      "Gentle flow with the mountains in view, then specialty coffee on the terrace. Mats provided, bring a layer.",
+  },
+  {
+    id: "market-tour-rodriguez",
+    title: "Mercado Rodríguez Food Tour",
+    category: "Food",
+    cover: pic("market-tour"),
+    startsAt: "2026-06-21T11:00:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "11:00",
+    isPast: false,
+    place: "Mercado Rodríguez",
+    city: "La Paz",
+    host: { name: "Carla", avatar: face("host-carla"), phone: "+59170000023" },
+    attendees: 9,
+    attendeeAvatars: [face("f1"), face("f2"), face("f3")],
+    price: 50,
+    blurb:
+      "Taste your way through the city's busiest market — fruit you've never tried, fresh juice, and street snacks.",
+  },
+  {
+    id: "design-fair-miraflores",
+    title: "Independent Design Fair",
+    category: "Culture",
+    cover: pic("design-fair"),
+    startsAt: "2026-06-21T13:00:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "13:00",
+    isPast: false,
+    place: "Casa de la Cultura",
+    city: "La Paz",
+    host: { name: "Mateo", avatar: face("host-mateo"), phone: "+59170000024" },
+    attendees: 24,
+    attendeeAvatars: [face("d1"), face("d2"), face("d3"), face("d4")],
+    price: null,
+    blurb:
+      "Local makers, prints, and ceramics under one roof. Meet the artists and find something one of a kind.",
+  },
+  {
+    id: "pickup-futbol",
+    title: "Pickup Fútbol at Tembladerani",
+    category: "Sports",
+    cover: pic("pickup-futbol"),
+    startsAt: "2026-06-21T15:00:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "15:00",
+    isPast: false,
+    place: "Cancha Tembladerani",
+    city: "La Paz",
+    host: { name: "Luis", avatar: face("host-luis"), phone: "+59170000025" },
+    attendees: 14,
+    attendeeAvatars: [face("p1"), face("p2"), face("p3")],
+    price: 20,
+    blurb:
+      "Friendly 7-a-side, mixed levels. We split teams on the spot — just show up in something you can run in.",
+  },
+  {
+    id: "vinyl-session",
+    title: "Vinyl Listening Session",
+    category: "Music",
+    cover: pic("vinyl-session"),
+    startsAt: "2026-06-21T16:30:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "16:30",
+    isPast: false,
+    place: "Café Magick",
+    city: "La Paz",
+    host: { name: "Sofía", avatar: face("host-sofia-v"), phone: "+59170000026" },
+    attendees: 11,
+    attendeeAvatars: [face("v1"), face("v2"), face("v3")],
+    price: null,
+    blurb:
+      "Bring a record or just your ears. We spin a curated set of Bolivian and Latin grooves over coffee.",
+  },
+  {
+    id: "empanada-crawl",
+    title: "Tucumana & Empanada Crawl",
+    category: "Food",
+    cover: pic("empanada-crawl"),
+    startsAt: "2026-06-21T18:30:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "18:30",
+    isPast: false,
+    place: "Plaza Avaroa",
+    city: "La Paz",
+    host: { name: "Andrés", avatar: face("host-andres"), phone: "+59170000027" },
+    attendees: 8,
+    attendeeAvatars: [face("e1"), face("e2"), face("e3")],
+    price: 35,
+    blurb:
+      "Three stops, the city's best fried snacks, one short walk between each. Come hungry and meet the crew.",
+  },
+  {
+    id: "cumbia-rooftop",
+    title: "Cumbia Rooftop Night",
+    category: "Party",
+    cover: pic("cumbia-rooftop"),
+    startsAt: "2026-06-21T21:00:00",
+    dayKey: "2026-06-21",
+    dayLabel: "Today",
+    weekday: "Sunday",
+    timeLabel: "21:00",
+    isPast: false,
+    place: "Terraza Montículo",
+    city: "La Paz",
+    host: { name: "Nicole", avatar: face("host-nicole"), phone: "+59170000028" },
+    attendees: 31,
+    attendeeAvatars: [face("c1"), face("c2"), face("c3"), face("c4")],
+    price: 40,
+    blurb:
+      "Close out Sunday dancing under the stars — cumbia, house, and the best skyline in the city.",
+  },
+  {
     id: "after-prado",
     title: "El Prado Afterparty",
     category: "Party",
@@ -333,4 +493,23 @@ export const events: AygoEvent[] = [
 
 export function findEvent(id: string): AygoEvent | undefined {
   return events.find((e) => e.id === id);
+}
+
+/**
+ * Short, shareable code for an event's URL — /<code>, Luma-style (e.g. /q0gdufts).
+ * Derived deterministically from the id (base36 hash) so links stay short and
+ * stable without storing a separate column.
+ */
+export function eventCode(id: string): string {
+  const SPACE = 36 ** 8; // eight base36 chars
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 131 + id.charCodeAt(i)) % SPACE;
+  }
+  return h.toString(36).padStart(8, "0");
+}
+
+/** Resolve an event from its short share code. */
+export function findEventByCode(code: string): AygoEvent | undefined {
+  return events.find((e) => eventCode(e.id) === code);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { LuUpload, LuSearch } from "react-icons/lu";
 
 import {
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 const CHIPS = ["Featured", "Cup", "Sports", "Spring", "July 4th", "Climate", "Music"];
 
-/** Full-screen "Choose Image" sheet — upload tile, search, chips, and a grid. */
+/** Full-screen "Choose Image" sheet — upload your own, or pick a stock photo. */
 export function ImagePickerDialog({
   open,
   onOpenChange,
@@ -25,10 +25,19 @@ export function ImagePickerDialog({
   onSelect: (src: string) => void;
 }) {
   const [active, setActive] = useState("Featured");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function pick(src: string) {
     onSelect(src);
     onOpenChange(false);
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => pick(reader.result as string);
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -37,19 +46,26 @@ export function ImagePickerDialog({
         <div className="shrink-0 px-5 pt-7 text-center">
           <SheetTitle>Choose Image</SheetTitle>
           <SheetDescription className="mt-1">
-            Tap to upload. The ideal aspect ratio is 1:1.
+            Upload your own, or pick a photo below.
           </SheetDescription>
         </div>
 
         <div className="shrink-0 space-y-3 px-5 pt-4">
           <button
             type="button"
-            onClick={() => pick(STOCK_COVERS[0])}
+            onClick={() => fileRef.current?.click()}
             className="flex w-full flex-col items-center gap-1.5 rounded-2xl border border-dashed border-border bg-background py-7 text-muted-foreground transition-colors hover:bg-muted"
           >
             <LuUpload className="size-5" aria-hidden />
             <span className="text-[12.5px] font-medium">Tap here to upload</span>
           </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            onChange={onFile}
+            className="hidden"
+          />
 
           <div className="flex items-center gap-2 rounded-xl bg-background px-3 ring-1 ring-border">
             <LuSearch className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -78,18 +94,21 @@ export function ImagePickerDialog({
           </div>
         </div>
 
-        <div className="grid flex-1 grid-cols-3 gap-2 overflow-y-auto px-5 pb-6 pt-3">
-          {STOCK_COVERS.map((src) => (
-            <button
-              key={src}
-              type="button"
-              onClick={() => pick(src)}
-              className="aspect-square overflow-hidden rounded-xl ring-1 ring-border transition-transform active:scale-95"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="size-full object-cover" />
-            </button>
-          ))}
+        {/* Masonry columns so each photo shows whole, not square-cropped. */}
+        <div className="flex-1 overflow-y-auto px-5 pb-6 pt-3">
+          <div className="columns-2 gap-2 [&>button]:mb-2">
+            {STOCK_COVERS.map((src) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => pick(src)}
+                className="block w-full break-inside-avoid overflow-hidden rounded-xl ring-1 ring-border transition-transform active:scale-95"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt="" className="w-full" />
+              </button>
+            ))}
+          </div>
         </div>
       </SheetContent>
     </Sheet>
