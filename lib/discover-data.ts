@@ -9,7 +9,7 @@ const pic = (seed: string, w = 480, h = 360) =>
 
 /**
  * "Browse by interest" tiles. The card renders the logo + count; the dedicated
- * category page (/discover/category/<slug>) also uses `subscribers` and `blurb`.
+ * category page (/<slug>) also uses `subscribers` and `blurb`.
  * `image` is kept for the backend's category_browse table.
  */
 export type CategoryBrowse = {

@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 // dark canvas without the light top bar, mirroring Luma's create page.
 export default function CreatePage() {
   return (
-    // `dark` here paints the in-tree screen dark from first render; the screen
-    // also adds `dark` to <html> on mount so portalled menus/dialogs match.
-    <main className="dark mx-auto min-h-svh w-full max-w-md bg-background">
+    // The screen paints its own themed background and flips the document's
+    // light/dark token mode to match the selected cover theme.
+    <main className="mx-auto min-h-svh w-full max-w-md">
       <CreateEventScreen />
     </main>
   );

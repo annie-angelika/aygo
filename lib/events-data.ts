@@ -52,7 +52,7 @@ export const CATEGORIES: Category[] = [
   "Sports",
 ];
 
-/** URL slug for a category page (/discover/category/<slug>). */
+/** URL slug for a category page (/<slug>). */
 export const categorySlug = (c: Category) => c.toLowerCase();
 
 /** Resolve a category from a URL slug (case-insensitive). */

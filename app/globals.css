@@ -173,6 +173,15 @@ body {
     background-position: 100% 50%;
   }
 }
+/* Speed-lines scrolling across the rainbow trail, so the cat reads as flying. */
+@keyframes aygo-stream {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -22px 0;
+  }
+}
 /* The line that sweeps a QR viewport while it "scans". */
 @keyframes aygo-scan {
   0% {

@@ -9,13 +9,16 @@ export function CityHero({
   city,
   subscribed,
   onToggleSubscribe,
+  mapHref,
 }: {
   city: City;
   subscribed: boolean;
   onToggleSubscribe: () => void;
+  mapHref?: string;
 }) {
   return (
     <ProfileHero
+      mapHref={mapHref}
       cover={`https://picsum.photos/seed/city-${city.slug}/800/400`}
       logo={
         <span

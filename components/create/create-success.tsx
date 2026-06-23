@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export function CreateSuccess({ title }: { title: string }) {
   const router = useRouter();
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center px-8 text-center">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-background px-8 text-center">
       <span className="grid size-16 place-items-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
         <LuCheck className="size-8" aria-hidden />
       </span>

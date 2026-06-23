@@ -7,8 +7,6 @@ import {
   LuKeyRound,
   LuQrCode,
   LuHash,
-  LuChevronRight,
-  LuChevronLeft,
   LuCheck,
   LuLoaderCircle,
 } from "react-icons/lu";
@@ -24,208 +22,162 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /**
- * The "Collect" flow: a single dialog that steps from a menu of ways to claim an
- * aygo (find nearby, NFC, secret word, QR, code) into the matching little screen,
- * then a shared success state. Self-contained — it celebrates the claim without
- * touching real collection state, since there's no real event behind a typed code.
+ * The screen behind each "collect" method. The way you pick a method is the
+ * speed-dial in CollectFab; this just opens to the matching little step (secret
+ * word, code, scanning…) and lands on a shared success state. Self-contained —
+ * it celebrates the claim without touching real collection state, since there's
+ * no real event behind a typed code.
  */
-type Method = "nearby" | "nfc" | "secret" | "qr" | "code";
-type Step = "menu" | Method | "success";
+export type Method = "nearby" | "nfc" | "secret" | "qr" | "code";
 
-const METHODS: { id: Method; Icon: IconType; label: string; hint: string }[] = [
-  { id: "nearby", Icon: LuMapPin, label: "Find nearby", hint: "Scan around you for aygos" },
-  { id: "nfc", Icon: LuWifi, label: "Tap an NFC tag", hint: "Hold your phone to the tag" },
-  { id: "secret", Icon: LuKeyRound, label: "Secret word", hint: "Got a word from the host?" },
-  { id: "qr", Icon: LuQrCode, label: "Scan a QR code", hint: "Point your camera at it" },
-  { id: "code", Icon: LuHash, label: "Enter a code", hint: "Type the code from your link" },
+export const METHODS: { id: Method; Icon: IconType; label: string }[] = [
+  { id: "nearby", Icon: LuMapPin, label: "Find nearby" },
+  { id: "nfc", Icon: LuWifi, label: "Tap an NFC tag" },
+  { id: "secret", Icon: LuKeyRound, label: "Secret word" },
+  { id: "qr", Icon: LuQrCode, label: "Scan a QR code" },
+  { id: "code", Icon: LuHash, label: "Enter a code" },
 ];
 
 const EMPTY_CODE = ["", "", "", "", "", ""];
 
 export function CollectSheet({
-  open,
-  onOpenChange,
+  method,
+  onClose,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  method: Method | null;
+  onClose: () => void;
 }) {
-  const [step, setStep] = useState<Step>("menu");
-  const [secret, setSecret] = useState("");
-  const [code, setCode] = useState<string[]>(EMPTY_CODE);
-
-  const reset = () => {
-    setStep("menu");
-    setSecret("");
-    setCode(EMPTY_CODE);
-  };
-
-  const back = () => {
-    setSecret("");
-    setCode(EMPTY_CODE);
-    setStep("menu");
-  };
-
-  // The hands-off methods feel real: they "look" for a beat, then land on success.
-  useEffect(() => {
-    if (step !== "nearby" && step !== "nfc" && step !== "qr") return;
-    const t = setTimeout(() => setStep("success"), 2200);
-    return () => clearTimeout(t);
-  }, [step]);
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        onOpenChange(o);
-        if (!o) reset();
-      }}
-    >
+    <Dialog open={method !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="gap-0 p-5">
-        {step === "menu" && (
-          <div className="flex flex-col">
-            <DialogTitle className="text-[17px]">Collect an aygo</DialogTitle>
-            <DialogDescription className="mt-1">
-              Pick how you got your hands on it.
-            </DialogDescription>
-
-            <div className="-mx-1.5 mt-3 flex flex-col">
-              {METHODS.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setStep(m.id)}
-                  className="flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-100">
-                    <m.Icon className="size-[18px]" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] font-semibold text-foreground">
-                      {m.label}
-                    </span>
-                    <span className="block truncate text-[11.5px] text-muted-foreground">
-                      {m.hint}
-                    </span>
-                  </span>
-                  <LuChevronRight
-                    className="size-4 shrink-0 text-muted-foreground/70"
-                    aria-hidden
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === "secret" && (
-          <StepShell
-            onBack={back}
-            icon={<LuKeyRound className="size-6" aria-hidden />}
-            title="Secret word"
-            desc="Enter the secret word the host shared at the event."
-          >
-            <Input
-              autoFocus
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder="Your secret word"
-              className="h-10 text-center text-[14px]"
-            />
-            <PrimaryButton
-              disabled={!secret.trim()}
-              onClick={() => setStep("success")}
-            >
-              Continue
-            </PrimaryButton>
-          </StepShell>
-        )}
-
-        {step === "code" && (
-          <StepShell
-            onBack={back}
-            icon={<LuHash className="size-6" aria-hidden />}
-            title="Enter a code"
-            desc="Type the last six characters of your collect link."
-          >
-            <CodeBoxes value={code} onChange={setCode} />
-            <PrimaryButton
-              disabled={code.some((c) => !c)}
-              onClick={() => setStep("success")}
-            >
-              Continue
-            </PrimaryButton>
-          </StepShell>
-        )}
-
-        {step === "nearby" && (
-          <StepShell
-            onBack={back}
-            icon={<LuMapPin className="size-6" aria-hidden />}
-            title="Looking around you"
-            desc="Hang tight — we're scanning the area for aygos nearby."
-          >
-            <Searching label="Scanning nearby…" />
-          </StepShell>
-        )}
-
-        {step === "nfc" && (
-          <StepShell
-            onBack={back}
-            icon={
-              <LuWifi
-                className="size-6 animate-pulse motion-reduce:animate-none"
-                aria-hidden
-              />
-            }
-            title="Hold near the tag"
-            desc="Keep the top of your phone against the NFC tag."
-          >
-            <Searching label="Waiting for a tag…" />
-          </StepShell>
-        )}
-
-        {step === "qr" && (
-          <StepShell
-            onBack={back}
-            icon={<LuQrCode className="size-6" aria-hidden />}
-            title="Scan the QR code"
-            desc="Point your camera at the event's QR code."
-          >
-            <QrViewport />
-          </StepShell>
-        )}
-
-        {step === "success" && (
-          <div className="flex flex-col items-center gap-3 py-2 text-center">
-            <span className="grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200">
-              <LuCheck className="size-8" aria-hidden />
-            </span>
-            <DialogTitle className="text-[18px]">
-              You collected a new aygo!
-            </DialogTitle>
-            <DialogDescription className="max-w-[30ch]">
-              Nice — it&apos;s in your collection now. Keep showing up to earn
-              more.
-            </DialogDescription>
-            <PrimaryButton onClick={() => onOpenChange(false)}>
-              Done
-            </PrimaryButton>
-          </div>
-        )}
+        {/* Keyed by method so each open mounts a fresh flow (inputs reset). */}
+        {method && <CollectFlow key={method} method={method} onClose={onClose} />}
       </DialogContent>
     </Dialog>
   );
 }
 
-/** Shared layout for a single collect step: back arrow, icon, title, copy, body. */
+/** One open of the collect flow: a method's step, then the shared success. */
+function CollectFlow({
+  method,
+  onClose,
+}: {
+  method: Method;
+  onClose: () => void;
+}) {
+  const [done, setDone] = useState(false);
+  const [secret, setSecret] = useState("");
+  const [code, setCode] = useState<string[]>(EMPTY_CODE);
+
+  // The hands-off methods feel real: they "look" for a beat, then land on success.
+  useEffect(() => {
+    if (method !== "nearby" && method !== "nfc" && method !== "qr") return;
+    const t = setTimeout(() => setDone(true), 2200);
+    return () => clearTimeout(t);
+  }, [method]);
+
+  if (done) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-2 text-center">
+        <span className="grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200">
+          <LuCheck className="size-8" aria-hidden />
+        </span>
+        <DialogTitle className="text-[18px]">
+          You collected a new aygo!
+        </DialogTitle>
+        <DialogDescription className="max-w-[30ch]">
+          Nice — it&apos;s in your collection now. Keep showing up to earn more.
+        </DialogDescription>
+        <PrimaryButton onClick={onClose}>Done</PrimaryButton>
+      </div>
+    );
+  }
+
+  const onFinish = () => setDone(true);
+
+  if (method === "secret") {
+    return (
+      <StepShell
+        icon={<LuKeyRound className="size-6" aria-hidden />}
+        title="Secret word"
+        desc="Enter the secret word the host shared at the event."
+      >
+        <Input
+          autoFocus
+          value={secret}
+          onChange={(e) => setSecret(e.target.value)}
+          placeholder="Your secret word"
+          className="h-10 text-center text-[14px]"
+        />
+        <PrimaryButton disabled={!secret.trim()} onClick={onFinish}>
+          Continue
+        </PrimaryButton>
+      </StepShell>
+    );
+  }
+
+  if (method === "code") {
+    return (
+      <StepShell
+        icon={<LuHash className="size-6" aria-hidden />}
+        title="Enter a code"
+        desc="Type the last six characters of your collect link."
+      >
+        <CodeBoxes value={code} onChange={setCode} />
+        <PrimaryButton disabled={code.some((c) => !c)} onClick={onFinish}>
+          Continue
+        </PrimaryButton>
+      </StepShell>
+    );
+  }
+
+  if (method === "nearby") {
+    return (
+      <StepShell
+        icon={<LuMapPin className="size-6" aria-hidden />}
+        title="Looking around you"
+        desc="Hang tight — we're scanning the area for aygos nearby."
+      >
+        <Searching label="Scanning nearby…" />
+      </StepShell>
+    );
+  }
+
+  if (method === "nfc") {
+    return (
+      <StepShell
+        icon={
+          <LuWifi
+            className="size-6 animate-pulse motion-reduce:animate-none"
+            aria-hidden
+          />
+        }
+        title="Hold near the tag"
+        desc="Keep the top of your phone against the NFC tag."
+      >
+        <Searching label="Waiting for a tag…" />
+      </StepShell>
+    );
+  }
+
+  return (
+    <StepShell
+      icon={<LuQrCode className="size-6" aria-hidden />}
+      title="Scan the QR code"
+      desc="Point your camera at the event's QR code."
+    >
+      <QrViewport />
+    </StepShell>
+  );
+}
+
+/** Shared layout for a single collect step: icon, title, copy, body. */
 function StepShell({
-  onBack,
   icon,
   title,
   desc,
   children,
 }: {
-  onBack: () => void;
   icon: React.ReactNode;
   title: string;
   desc: string;
@@ -233,14 +185,6 @@ function StepShell({
 }) {
   return (
     <div className="flex flex-col items-center gap-2.5 pt-1 text-center">
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label="Back"
-        className="absolute left-3.5 top-3.5 grid size-8 place-items-center rounded-full bg-muted/60 text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
-      >
-        <LuChevronLeft className="size-4" aria-hidden />
-      </button>
       <span className="grid size-12 place-items-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-100">
         {icon}
       </span>
@@ -321,7 +265,10 @@ function QrViewport() {
   );
 }
 
-/** Six single-character boxes that advance focus as you type. */
+/**
+ * Six single-character boxes that advance focus as you type. They flex to fit
+ * the dialog width (grid, not fixed sizes) so they never overflow on narrow phones.
+ */
 function CodeBoxes({
   value,
   onChange,
@@ -338,7 +285,7 @@ function CodeBoxes({
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="grid w-full grid-cols-6 gap-1.5">
       {value.map((ch, i) => (
         <input
           key={i}
@@ -359,7 +306,7 @@ function CodeBoxes({
             if (e.key === "Backspace" && !value[i] && i > 0)
               refs.current[i - 1]?.focus();
           }}
-          className="size-11 rounded-xl bg-background text-center text-[18px] font-bold uppercase text-foreground ring-1 ring-border outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring"
+          className="aspect-square w-full min-w-0 rounded-xl bg-background text-center text-[18px] font-bold uppercase text-foreground ring-1 ring-border outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring"
         />
       ))}
     </div>

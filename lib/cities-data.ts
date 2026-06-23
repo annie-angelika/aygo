@@ -1,5 +1,5 @@
 // Mock data for the Luma-style city explorer on /discover. Cities are grouped
-// by region; each links to /discover/<slug> ("what's happening" in that city).
+// by region; each links to /<slug> ("what's happening" in that city).
 // We list big cities where events actually happen — Bolivia's metros lead,
 // then the rest of LATAM and a few abroad. Class strings are literal so
 // Tailwind keeps them.

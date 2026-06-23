@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LuMap, LuGlobe } from "react-icons/lu";
 import { FaInstagram, FaXTwitter, FaYoutube, FaLinkedin } from "react-icons/fa6";
 import type { IconType } from "react-icons";
@@ -30,6 +31,7 @@ export function ProfileHero({
   badge,
   following,
   onToggleFollow,
+  mapHref,
 }: {
   cover: string;
   logo: React.ReactNode;
@@ -39,6 +41,8 @@ export function ProfileHero({
   badge?: React.ReactNode;
   following: boolean;
   onToggleFollow: () => void;
+  /** When set, the map button links to this dedicated map screen. */
+  mapHref?: string;
 }) {
   return (
     // Break out of the page's px-4 / pt-3 so the banner runs full-bleed.
@@ -56,7 +60,7 @@ export function ProfileHero({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {badge && <div className="mb-2">{badge}</div>}
-            <h1 className="text-[27px] font-semibold leading-tight tracking-tight text-foreground">
+            <h1 className="truncate text-[27px] font-semibold leading-tight tracking-tight text-foreground">
               {name}
             </h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
@@ -72,14 +76,17 @@ export function ProfileHero({
             >
               {following ? "Following" : "Follow"}
             </Button>
-            <Button
-              size="icon"
-              variant="outline"
-              aria-label="View on map"
-              className="shrink-0 rounded-full"
-            >
-              <LuMap className="size-4" />
-            </Button>
+            {mapHref && (
+              <Button
+                size="icon"
+                variant="outline"
+                aria-label="View on map"
+                render={<Link href={mapHref} />}
+                className="shrink-0 rounded-full"
+              >
+                <LuMap className="size-4" />
+              </Button>
+            )}
           </div>
         </div>
 

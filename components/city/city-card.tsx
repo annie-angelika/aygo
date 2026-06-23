@@ -7,7 +7,7 @@ import type { City } from "@/lib/cities-data";
 export function CityCard({ city }: { city: City }) {
   return (
     <Link
-      href={`/discover/${city.slug}`}
+      href={`/${city.slug}`}
       className="flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-accent/40"
     >
       <span

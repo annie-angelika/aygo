@@ -15,7 +15,7 @@ export function CategoryCard({
   const { Icon, accent } = CATEGORY_META[category];
   return (
     <Link
-      href={`/discover/category/${categorySlug(category)}`}
+      href={`/${categorySlug(category)}`}
       className="flex shrink-0 items-center gap-2.5 rounded-xl bg-card px-3.5 py-2.5 ring-1 ring-border transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_24px_-14px_rgba(15,23,42,0.4)] hover:ring-foreground/15"
     >
       <Icon className={cn("size-5 shrink-0", accent)} aria-hidden />
