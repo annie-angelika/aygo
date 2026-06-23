@@ -15,8 +15,8 @@ const SOCIALS: { Icon: IconType; label: string }[] = [
 
 /**
  * Generic Luma-style header: a full-bleed cover banner with an overlaid back
- * button, an overlapping logo tile, identity (badge · title · meta · blurb), a
- * follow action, and social links. The banner runs edge-to-edge (no card chrome)
+ * button and logo tile sitting on it, then identity (badge · title · meta ·
+ * blurb), a follow action, and social links below. The banner runs edge-to-edge
  * and the content below sits directly on the page. Callers supply the `logo`
  * node (an icon tile or an image) and `meta` row so the same shell serves both
  * city and community-calendar pages.
@@ -48,13 +48,12 @@ export function ProfileHero({
         <img src={cover} alt="" className="size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/10" />
         <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
+        {/* The logo sits on the banner, anchored to its bottom-left edge. */}
+        <div className="absolute bottom-3 left-4">{logo}</div>
       </div>
 
-      <div className="px-4 pb-1">
-        {/* The logo sits mostly on the banner, overlapping its bottom edge. */}
-        <div className="-mt-14">{logo}</div>
-
-        <div className="mt-3 flex items-start justify-between gap-3">
+      <div className="px-4 pb-1 pt-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {badge && <div className="mb-2">{badge}</div>}
             <h1 className="text-[27px] font-semibold leading-tight tracking-tight text-foreground">
