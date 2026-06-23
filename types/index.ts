@@ -84,6 +84,10 @@ export type Stamp = {
   eventId: string;
   title: string;
   category: Category;
+  /** Artwork for the aygo (from the backend). Falls back to the category mark. */
+  image?: string;
+  /** Tiny base64 preview for a blur-up while the image loads, if the backend has one. */
+  blurDataURL?: string;
 };
 
 /** A gamification tier, reached at `min` stamps. */

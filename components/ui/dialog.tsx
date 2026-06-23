@@ -39,7 +39,7 @@ function DialogContent({
               type="button"
               variant="secondary"
               size="icon"
-              className="absolute right-3.5 top-3.5 rounded-full bg-muted/60 text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
+              className="absolute right-3.5 top-3.5 rounded-full bg-card/90 text-muted-foreground ring-1 ring-border backdrop-blur transition-colors hover:bg-muted hover:text-foreground"
             >
               <LuX className="size-4" />
             </Button>

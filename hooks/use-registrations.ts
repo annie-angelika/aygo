@@ -48,6 +48,7 @@ export function useRegistrations() {
       eventId: event.id,
       title: event.title,
       category: event.category,
+      image: event.cover,
     };
     writeStorage(STORAGE_KEYS.stamps, [...stamps, stamp]);
     // Once attended, it leaves the "going" and "applied" lists.

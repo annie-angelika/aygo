@@ -48,6 +48,10 @@ const GRADIENTS = [
 export const aygoGradient = (eventId: string) =>
   GRADIENTS[hash(eventId) % GRADIENTS.length];
 
+/** Stable demo artwork for an aygo (stands in for the backend image). */
+export const aygoImage = (eventId: string) =>
+  `https://picsum.photos/seed/${eventId}/200/200`;
+
 /** Stable earn-date for a real aygo, spread across the past ~18 months. */
 function aygoDate(eventId: string): Date {
   const daysAgo = 8 + (hash(eventId) % 540);
@@ -70,6 +74,32 @@ export function groupAygosByMonth(stamps: Stamp[]): AygoMonth[] {
       label: monthLabel(key),
       stamps: items.sort((a, b) => b.t - a.t).map((x) => x.s),
     }));
+}
+
+/**
+ * Expands a year into its full run of months, newest first, so the timeline
+ * reads as a complete year: months you collected in carry their aygos, the rest
+ * come back empty (rendered as "a quiet month"). The current year stops at the
+ * present month (no empty future months); past years run December → January.
+ * Months are matched by label, so it works whether the source months were
+ * grouped from real aygos or the demo set.
+ */
+export function monthsForYear(year: string, dataMonths: AygoMonth[]): AygoMonth[] {
+  const ref = new Date(REF_MS);
+  const top =
+    year === String(ref.getUTCFullYear()) ? ref.getUTCMonth() : MONTHS.length - 1;
+  const byLabel = new Map(dataMonths.map((m) => [m.label, m]));
+
+  const out: AygoMonth[] = [];
+  for (let m = top; m >= 0; m--) {
+    const label = `${MONTHS[m]} ${year}`;
+    // Normalize the key per slot — source months carry differing key schemes
+    // (real vs demo), which would otherwise collide once mixed into one year.
+    const key = `${year}-${String(m).padStart(2, "0")}`;
+    const data = byLabel.get(label);
+    out.push(data ? { ...data, key } : { key, label, stamps: [] });
+  }
+  return out;
 }
 
 // ---- Demo collection ------------------------------------------------------
@@ -148,6 +178,7 @@ export function demoCollectionByMonth(): AygoMonth[] {
         eventId: a.eventId,
         title: a.title,
         category: a.category,
+        image: aygoImage(a.eventId),
       })),
     };
   });

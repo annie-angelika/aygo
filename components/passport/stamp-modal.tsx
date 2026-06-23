@@ -1,17 +1,21 @@
 "use client";
 
+import { LuCalendar } from "react-icons/lu";
+
 import {
   Dialog,
   DialogContent,
+  DialogClose,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { AygoArt } from "@/components/passport/aygo-art";
 import { CategoryChip } from "@/components/event/category-chip";
 import { CATEGORY_META } from "@/lib/events-data";
 import { cn } from "@/lib/utils";
 import type { Stamp } from "@/types";
 
-/** Detail of a single aygo — its mark, name, category and when you earned it. */
+/** Detail of a single aygo — its artwork, name, category and when you earned it. */
 export function StampModal({
   stamp,
   dateLabel,
@@ -26,31 +30,67 @@ export function StampModal({
   return (
     <Dialog open={!!stamp} onOpenChange={(open) => !open && onClose()}>
       {stamp && meta && (
-        <DialogContent className="justify-items-center gap-3 text-center">
-          <div
-            className={cn(
-              "grid size-24 place-items-center rounded-full bg-card shadow-sm ring-1 ring-border",
-              meta.accent,
+        <DialogContent className="gap-0 overflow-hidden p-0">
+          <div className="relative flex flex-col items-center px-6 pb-6 pt-9 text-center">
+            {/* A soft, category-tinted aura behind the artwork for depth. */}
+            <div
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute left-1/2 top-4 size-44 -translate-x-1/2 rounded-full opacity-70 blur-3xl",
+                meta.chip,
+              )}
+            />
+
+            {/* The aygo artwork, floating on its ring. */}
+            <div className="relative size-28 overflow-hidden rounded-full bg-card shadow-[0_16px_36px_-16px_rgba(15,23,42,0.45)] ring-4 ring-background">
+              <AygoArt
+                image={stamp.image}
+                blurDataURL={stamp.blurDataURL}
+                alt={stamp.title}
+                sizes="112px"
+                spinnerClassName="size-6"
+                fallback={
+                  <span
+                    className={cn(
+                      "grid size-full place-items-center",
+                      meta.soft,
+                      meta.accent,
+                    )}
+                  >
+                    <meta.Icon className="size-12" aria-hidden />
+                  </span>
+                }
+              />
+            </div>
+
+            <DialogTitle className="relative mt-4 text-[20px]">
+              {stamp.title}
+            </DialogTitle>
+            <CategoryChip category={stamp.category} className="relative mt-2" />
+
+            {dateLabel && (
+              <p className="relative mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                <LuCalendar className="size-3.5" aria-hidden />
+                Collected in {dateLabel}
+              </p>
             )}
-          >
-            <meta.Icon className="size-11" aria-hidden />
+
+            <DialogDescription className="relative mt-2.5 max-w-[32ch] text-[12.5px] leading-snug">
+              An aygo you earned for showing up. Collect more by attending events
+              around you.
+            </DialogDescription>
+
+            <DialogClose
+              render={
+                <button
+                  type="button"
+                  className="relative mt-5 inline-flex h-10 w-full items-center justify-center rounded-full bg-primary text-[14px] font-semibold text-primary-foreground shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] transition-colors hover:bg-primary/90 active:translate-y-px"
+                >
+                  Done
+                </button>
+              }
+            />
           </div>
-
-          <div className="flex flex-col items-center gap-2">
-            <DialogTitle className="text-[18px]">{stamp.title}</DialogTitle>
-            <CategoryChip category={stamp.category} />
-          </div>
-
-          {dateLabel && (
-            <p className="text-[12.5px] font-medium text-muted-foreground">
-              Collected in {dateLabel}
-            </p>
-          )}
-
-          <DialogDescription className="max-w-[30ch] text-[12.5px] leading-snug">
-            An aygo you earned for showing up. Collect more by attending events
-            around you.
-          </DialogDescription>
         </DialogContent>
       )}
     </Dialog>

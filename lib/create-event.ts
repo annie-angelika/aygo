@@ -46,12 +46,16 @@ export type EventDraft = {
   createdAt: string;
 };
 
-/** Stock cover images shown in the image picker (Picsum, like the rest of the app). */
+/**
+ * Stock cover images for the picker (Picsum). Heights vary so the picker can lay
+ * them out masonry-style and show each photo whole, rather than square-cropped.
+ */
+const COVER_HEIGHTS = [820, 600, 540, 760, 640, 900, 700];
 export const STOCK_COVERS = [
   "world-cup", "previous-events", "sports", "spring", "july-4th", "climate",
   "music-fest", "art-night", "food-market", "mountains", "beach", "city-lights",
   "festival", "garden", "studio", "neon-room", "desert", "forest",
-].map((seed) => `https://picsum.photos/seed/aygo-${seed}/600/600`);
+].map((seed, i) => `https://picsum.photos/seed/aygo-${seed}/600/${COVER_HEIGHTS[i % COVER_HEIGHTS.length]}`);
 
 /** Append a created event to local storage so the flow has a real effect. */
 export function saveDraft(draft: EventDraft): void {

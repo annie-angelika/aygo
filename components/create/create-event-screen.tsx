@@ -88,17 +88,11 @@ export function CreateEventScreen() {
   if (created) return <CreateSuccess title={title.trim() || "Untitled Event"} />;
 
   return (
-    <div className={cn("min-h-svh overflow-x-hidden pb-28 text-foreground transition-colors", theme.page)}>
+    <div className={cn("min-h-svh overflow-x-hidden pb-28 text-foreground", theme.page)}>
       <TopBar />
 
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-3">
-        <CoverCard
-          themeId={themeId}
-          fontId={fontId}
-          styleId={styleId}
-          cover={cover}
-          onPickImage={() => setPickerOpen(true)}
-        />
+        <CoverCard themeId={themeId} cover={cover} onPickImage={() => setPickerOpen(true)} />
 
         <ThemeSheet
           themeId={themeId}
@@ -140,6 +134,8 @@ export function CreateEventScreen() {
           onLocation={setLocation}
           description={description}
           onDescription={setDescription}
+          fontId={fontId}
+          styleId={styleId}
         />
 
         <EventOptions

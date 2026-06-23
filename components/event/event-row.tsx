@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { AvatarStack } from "@/components/ui/avatar-stack";
-import { CATEGORY_META } from "@/lib/events-data";
+import { CATEGORY_META, eventCode } from "@/lib/events-data";
 import { cn } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
 
@@ -21,7 +21,7 @@ export function EventRow({
   const { Icon, accent } = CATEGORY_META[event.category];
 
   return (
-    <Link href={`/event/${event.id}`} className="block">
+    <Link href={`/${eventCode(event.id)}`} className="block">
       <Card className="p-3 transition-colors hover:bg-accent/40 [--card-spacing:0px]">
         <div className="flex items-stretch gap-3">
           <div className="min-w-0 flex-1">

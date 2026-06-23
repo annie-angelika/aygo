@@ -8,6 +8,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { CollectionBanner } from "@/components/passport/collection-banner";
 import { CollectFab } from "@/components/passport/collect-fab";
+import { AygoArt } from "@/components/passport/aygo-art";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select,
@@ -21,6 +22,7 @@ import { CATEGORY_META } from "@/lib/events-data";
 import {
   groupAygosByMonth,
   demoCollectionByMonth,
+  monthsForYear,
   DEMO_AYGO_COUNT,
 } from "@/lib/aygos";
 import { useTraveler } from "@/hooks/use-traveler";
@@ -52,7 +54,8 @@ export function PassportScreen({ username }: { username?: string }) {
 
   const years = [...new Set(months.map((m) => m.key.slice(0, 4)))];
   const activeYear = year || years[0] || "";
-  const shown = months.filter((m) => m.key.startsWith(activeYear));
+  // Show the whole selected year, newest month first, quiet months included.
+  const shown = monthsForYear(activeYear, months);
   const hasAny = months.some((m) => m.stamps.length > 0);
 
   return (
@@ -154,7 +157,7 @@ function CollectionHero({
 }) {
   return (
     <div className="relative">
-      <CollectionBanner />
+      <CollectionBanner count={count} />
       <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
 
       <div className="px-4">
@@ -254,9 +257,9 @@ function QuietMonth() {
 }
 
 /**
- * One collectible in the wall — tap to open its detail. The white disc is a
- * placeholder for the photo the host will set; until then it shows the
- * category mark.
+ * One collectible in the wall — tap to open its detail. Shows the aygo's image
+ * (optimized + lazy-loaded so a long wall stays fast), falling back to the
+ * category mark when there's no artwork yet.
  */
 function AygoBadge({
   stamp,
@@ -265,7 +268,7 @@ function AygoBadge({
   stamp: Stamp;
   onSelect: (stamp: Stamp) => void;
 }) {
-  const { Icon, accent } = CATEGORY_META[stamp.category];
+  const { Icon, accent, soft } = CATEGORY_META[stamp.category];
   return (
     <button
       type="button"
@@ -273,13 +276,23 @@ function AygoBadge({
       aria-label={stamp.title}
       className="flex flex-col items-center gap-1.5"
     >
-      <span
-        className={cn(
-          "grid aspect-square w-full place-items-center rounded-full bg-card shadow-sm ring-1 ring-border transition-transform duration-200 hover:scale-105",
-          accent,
-        )}
-      >
-        <Icon className="size-6" aria-hidden />
+      <span className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-full bg-card shadow-sm ring-1 ring-border transition-transform duration-200 hover:scale-105">
+        <AygoArt
+          image={stamp.image}
+          blurDataURL={stamp.blurDataURL}
+          alt=""
+          // The wall is 4 columns inside the phone shell — each disc is small,
+          // so request a small image (tiny srcset → minimal bytes).
+          sizes="(max-width: 480px) 23vw, 96px"
+          quality={45}
+          fallback={
+            <span
+              className={cn("grid size-full place-items-center", soft, accent)}
+            >
+              <Icon className="size-6" aria-hidden />
+            </span>
+          }
+        />
       </span>
       <span className="line-clamp-1 w-full text-center text-[9.5px] font-medium text-muted-foreground">
         {stamp.title}

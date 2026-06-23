@@ -23,13 +23,10 @@ export function PassportCard({
             <LuStamp className="size-6" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Collection
-            </p>
-            <p className="mt-0.5 text-[18px] font-semibold leading-tight tracking-tight text-foreground">
+            <p className="text-[19px] font-semibold leading-tight tracking-tight text-foreground">
               {count} {count === 1 ? "aygo" : "aygos"}
             </p>
-            <p className="text-[11.5px] text-muted-foreground">
+            <p className="mt-0.5 text-[11.5px] text-muted-foreground">
               Earned at events you attended
             </p>
           </div>

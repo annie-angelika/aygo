@@ -18,7 +18,13 @@ import { CURRENT_USER } from "@/lib/events-data";
 import { cn } from "@/lib/utils";
 
 /** Top-bar avatar that opens the account menu: profile, settings, sign out. */
-export function ProfileMenu({ active }: { active: boolean }) {
+export function ProfileMenu({
+  active,
+  dark = false,
+}: {
+  active: boolean;
+  dark?: boolean;
+}) {
   const router = useRouter();
   const { edits } = useProfileEdits();
   const { stamps, hydrated } = useRegistrations();
@@ -37,13 +43,18 @@ export function ProfileMenu({ active }: { active: boolean }) {
         <Avatar
           className={cn(
             "size-9 ring-2",
-            active ? "ring-amber-400" : "ring-background",
+            active ? "ring-amber-400" : dark ? "ring-white/15" : "ring-background",
           )}
         >
           <AvatarImage src={avatar} alt="Your profile" />
         </Avatar>
         {hydrated && count > 0 && (
-          <span className="absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background">
+          <span
+            className={cn(
+              "absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2",
+              dark ? "ring-[#0c0b11]" : "ring-background",
+            )}
+          >
             {count}
           </span>
         )}

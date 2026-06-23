@@ -22,6 +22,7 @@ export function useTraveler(username?: string) {
         eventId: v.id,
         title: v.place,
         category: v.category,
+        image: v.cover,
       }));
 
   return { user, isSelf, displayStamps };

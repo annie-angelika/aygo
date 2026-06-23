@@ -17,6 +17,10 @@ import {
  * right-aligned above the button, over a see-through dimmed page. The pill flips
  * to an ✕ to fold them away. Picking one opens its step screen (CollectSheet).
  */
+// Hidden for now (the flows still exist; just not offered yet).
+const HIDDEN: Method[] = ["nearby", "nfc"];
+const VISIBLE_METHODS = METHODS.filter((m) => !HIDDEN.includes(m.id));
+
 export function CollectFab() {
   const [open, setOpen] = useState(false);
   const [method, setMethod] = useState<Method | null>(null);
@@ -43,7 +47,7 @@ export function CollectFab() {
               className="z-50"
             >
               <Menu.Popup className="flex origin-(--transform-origin) flex-col items-end gap-2.5 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
-                {METHODS.map((m) => (
+                {VISIBLE_METHODS.map((m) => (
                   <Menu.Item
                     key={m.id}
                     onClick={() => setMethod(m.id)}

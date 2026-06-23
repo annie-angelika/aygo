@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { EventDetailBody } from "@/components/event/event-detail-body";
 import { EventActions } from "@/components/event/event-actions";
+import { eventCode } from "@/lib/events-data";
 import type { AygoEvent } from "@/types";
 
 /**
@@ -29,7 +30,7 @@ export function EventPreviewDialog({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const href = event ? `/event/${event.id}` : "";
+  const href = event ? `/${eventCode(event.id)}` : "";
 
   const copyLink = async () => {
     if (!event || typeof window === "undefined") return;

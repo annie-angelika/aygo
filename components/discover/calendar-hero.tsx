@@ -56,6 +56,7 @@ export function CalendarHero({
       blurb={calendar.description}
       following={following}
       onToggleFollow={onToggleFollow}
+      mapHref={`/${calendar.id}/map`}
     />
   );
 }
