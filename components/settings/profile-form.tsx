@@ -99,14 +99,6 @@ export function ProfileForm() {
         </div>
       </Field>
 
-      <Field label="Location">
-        <Input
-          value={draft.location}
-          onChange={(e) => set({ location: e.target.value })}
-          placeholder="City, Country"
-        />
-      </Field>
-
       <Field label="Bio">
         <Textarea
           value={draft.bio}

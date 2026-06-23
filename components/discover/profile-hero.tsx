@@ -46,13 +46,13 @@ export function ProfileHero({
       <div className="relative h-36">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={cover} alt="" className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#f6f4ef] from-30% to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/10" />
         <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
       </div>
 
       <div className="px-4 pb-1">
-        {/* Only the logo overlaps the banner; actions stay clear of the image. */}
-        <div className="-mt-9">{logo}</div>
+        {/* The logo sits mostly on the banner, overlapping its bottom edge. */}
+        <div className="-mt-14">{logo}</div>
 
         <div className="mt-3 flex items-start justify-between gap-3">
           <div className="min-w-0">

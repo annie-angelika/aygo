@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LuStamp, LuMoon } from "react-icons/lu";
 
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { BackButton } from "@/components/ui/back-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -55,8 +56,9 @@ export function PassportScreen({ username }: { username?: string }) {
     <div className="flex flex-col pb-10">
       <CollectionHero
         count={count}
-        followers={user.followers}
-        following={user.following}
+        name={user.name}
+        username={user.username}
+        avatar={user.avatar}
         joined={user.joined}
       />
 
@@ -125,58 +127,64 @@ export function PassportScreen({ username }: { username?: string }) {
   );
 }
 
-/** Full-bleed warm banner: the big collected count and social stats. */
+/** Full-bleed warm banner: the traveler on the left, the big collected count on the right. */
 function CollectionHero({
   count,
-  followers,
-  following,
+  name,
+  username,
+  avatar,
   joined,
 }: {
   count: number;
-  followers: number;
-  following: number;
+  name: string;
+  username: string;
+  avatar: string;
   joined: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-b-[2rem] bg-card px-5 pb-7 pt-12 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.25)] ring-1 ring-border">
+    <div className="relative overflow-hidden rounded-b-[2rem] bg-card px-5 pb-8 pt-12 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.25)] ring-1 ring-border">
       <LuStamp
         className="pointer-events-none absolute -right-3 -top-1 size-36 rotate-12 text-foreground/[0.035]"
         aria-hidden
       />
 
-      <div className="relative flex items-center gap-3">
-        <BackButton className="ring-1 ring-border" />
+      {/* Centered title, back button pinned left. */}
+      <div className="relative flex items-center justify-center">
+        <BackButton className="absolute left-0 ring-1 ring-border" />
         <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
           Collection
         </h1>
       </div>
 
-      <p className="relative mt-6 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        You collected
-      </p>
-      <div className="relative mt-1 flex items-baseline gap-2">
-        <span className="text-[56px] font-bold leading-none tracking-tight tabular-nums text-foreground">
-          {count.toLocaleString()}
-        </span>
-        <span className="text-[16px] font-semibold lowercase tracking-wide text-foreground/55">
-          aygos
-        </span>
-      </div>
+      {/* Traveler on the left, the big count on the right. */}
+      <div className="relative mt-8 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 shrink flex-col items-center gap-2 text-center">
+          <Avatar className="size-20 shadow-sm ring-2 ring-background">
+            <AvatarImage src={avatar} alt={name} />
+            <AvatarFallback>{name.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+          <span className="max-w-24 truncate text-[12px] font-medium text-muted-foreground">
+            @{username}
+          </span>
+        </div>
 
-      <div className="relative mt-4 flex items-center gap-2.5 text-[12px] text-muted-foreground">
-        <span>
-          <strong className="font-semibold text-foreground">{followers}</strong>{" "}
-          Followers
-        </span>
-        <span className="size-1 rounded-full bg-muted-foreground/40" aria-hidden />
-        <span>
-          <strong className="font-semibold text-foreground">{following}</strong>{" "}
-          Following
-        </span>
+        <div className="shrink-0 text-right">
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            You collected
+          </p>
+          <div className="mt-1 flex items-baseline justify-end gap-2">
+            <span className="text-[56px] font-bold leading-none tracking-tight tabular-nums text-foreground">
+              {count.toLocaleString()}
+            </span>
+            <span className="text-[16px] font-semibold lowercase tracking-wide text-foreground/55">
+              aygos
+            </span>
+          </div>
+          <p className="mt-2.5 text-[11px] text-muted-foreground/80">
+            since {joined}
+          </p>
+        </div>
       </div>
-      <p className="relative mt-1.5 text-[11px] text-muted-foreground/80">
-        since {joined}
-      </p>
     </div>
   );
 }
