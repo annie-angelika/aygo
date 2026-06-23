@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { LuStamp, LuMoon } from "react-icons/lu";
+import Link from "next/link";
+import { LuStamp, LuMoon, LuShare2, LuQrCode } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { BackButton } from "@/components/ui/back-button";
+import { ShareButton } from "@/components/ui/share-button";
+import { CollectionBanner } from "@/components/passport/collection-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select,
@@ -60,6 +63,7 @@ export function PassportScreen({ username }: { username?: string }) {
         username={user.username}
         avatar={user.avatar}
         joined={user.joined}
+        location={user.location}
       />
 
       <div className="flex flex-col gap-5 px-4 pt-5">
@@ -123,66 +127,86 @@ export function PassportScreen({ username }: { username?: string }) {
         dateLabel={selected?.dateLabel}
         onClose={() => setSelected(null)}
       />
+
+      {/* Collect a new aygo — the gentle, web2 way to say "mint": you earn one
+          by showing up. Pinned to the bottom-right of the phone frame, yours only. */}
+      {isSelf && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-5 z-30 mx-auto flex w-full max-w-md justify-end px-4">
+          <Link
+            href="/discover"
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-[14px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] transition-colors hover:bg-slate-800"
+          >
+            <LuQrCode className="size-4" aria-hidden />
+            Collect
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
 
-/** Full-bleed warm banner: the traveler on the left, the big collected count on the right. */
+/**
+ * The header of a collection, POAP-style: a living, place-aware banner up top,
+ * the traveler's photo overlapping it, then their name, the count of aygos they
+ * hold, and — across a hairline — the share action at the far end.
+ */
 function CollectionHero({
   count,
   name,
   username,
   avatar,
   joined,
+  location,
 }: {
   count: number;
   name: string;
   username: string;
   avatar: string;
   joined: string;
+  location: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-b-[2rem] bg-card px-5 pb-8 pt-12 shadow-[0_10px_30px_-16px_rgba(15,23,42,0.25)] ring-1 ring-border">
-      <LuStamp
-        className="pointer-events-none absolute -right-3 -top-1 size-36 rotate-12 text-foreground/[0.035]"
-        aria-hidden
-      />
+    <div className="relative">
+      <CollectionBanner location={location} />
+      <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
 
-      {/* Centered title, back button pinned left. */}
-      <div className="relative flex items-center justify-center">
-        <BackButton className="absolute left-0 ring-1 ring-border" />
-        <h1 className="text-[20px] font-semibold tracking-tight text-foreground">
-          Collection
+      <div className="px-4">
+        {/* Your photo, lifted onto the banner's lower edge. */}
+        <Avatar className="-mt-10 size-20 shadow-md ring-4 ring-background">
+          <AvatarImage src={avatar} alt={name} />
+          <AvatarFallback>{name.slice(0, 1)}</AvatarFallback>
+        </Avatar>
+
+        <h1 className="mt-2.5 truncate text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+          {name}
         </h1>
-      </div>
+        <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+          @{username} · since {joined}
+        </p>
 
-      {/* Traveler on the left, the big count on the right. */}
-      <div className="relative mt-8 flex items-center justify-between gap-4">
-        <div className="flex min-w-0 shrink flex-col items-center gap-2 text-center">
-          <Avatar className="size-20 shadow-sm ring-2 ring-background">
-            <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback>{name.slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <span className="max-w-24 truncate text-[12px] font-medium text-muted-foreground">
-            @{username}
-          </span>
-        </div>
-
-        <div className="shrink-0 text-right">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            You collected
-          </p>
-          <div className="mt-1 flex items-baseline justify-end gap-2">
-            <span className="text-[56px] font-bold leading-none tracking-tight tabular-nums text-foreground">
+        {/* The count of aygos, and the share action at the opposite end of the line. */}
+        <div className="mt-3.5 flex items-center justify-between border-b border-border pb-3.5">
+          <div className="flex items-center gap-2">
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm">
+              <LuStamp className="size-3.5" aria-hidden />
+            </span>
+            <span className="text-[22px] font-bold leading-none tabular-nums text-foreground">
               {count.toLocaleString()}
             </span>
-            <span className="text-[16px] font-semibold lowercase tracking-wide text-foreground/55">
+            <span className="text-[13px] font-semibold text-muted-foreground">
               aygos
             </span>
           </div>
-          <p className="mt-2.5 text-[11px] text-muted-foreground/80">
-            since {joined}
-          </p>
+
+          <ShareButton
+            title={`${name} on aygo`}
+            text={`Check out @${username}'s aygo collection`}
+            copiedLabel="Copied!"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <LuShare2 className="size-3.5" aria-hidden />
+            Share
+          </ShareButton>
         </div>
       </div>
     </div>

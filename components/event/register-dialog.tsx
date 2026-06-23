@@ -7,7 +7,6 @@ import {
   LuCheck,
   LuClock,
   LuShieldCheck,
-  LuPencil,
 } from "react-icons/lu";
 
 import { useRegistrations } from "@/hooks/use-registrations";
@@ -73,18 +72,18 @@ export function RegisterDialog({
           <SubmittedView event={event} cfg={cfg} onDone={() => setOpen(false)} />
         ) : (
           <div className="flex max-h-[80vh] flex-col">
-            <div className="px-5 pt-5">
+            <div className="px-5 pt-7">
               <DialogTitle>
                 {cfg.requiresApproval ? "Request to join" : "Get your spot"}
               </DialogTitle>
-              <DialogDescription className="mt-1">
+              <DialogDescription className="mt-1.5">
                 {cfg.requiresApproval
                   ? `${event.host.name} reviews each request before confirming.`
-                  : "One tap and you're on the list — no approval needed."}
+                  : "One tap and you're on the list. No approval needed."}
               </DialogDescription>
             </div>
 
-            <div className="mt-4 flex-1 space-y-4 overflow-y-auto px-5">
+            <div className="mt-5 flex-1 space-y-5 overflow-y-auto px-5 pb-1">
               <EventRecap event={event} />
               <ApplicantCard me={me} />
               <Requirements items={cfg.requirements} />
@@ -97,7 +96,7 @@ export function RegisterDialog({
               )}
             </div>
 
-            <div className="border-t border-border px-5 pb-6 pt-3">
+            <div className="px-5 pb-6 pt-5">
               {cfg.requiresApproval && (
                 <p className="mb-2.5 flex items-center justify-center gap-1.5 text-[11.5px] text-muted-foreground">
                   <LuShieldCheck className="size-3.5" aria-hidden />
@@ -122,12 +121,12 @@ export function RegisterDialog({
 /** A short recap so you know what you're committing to without scrolling back. */
 function EventRecap({ event }: { event: AygoEvent }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3 ring-1 ring-border">
+    <div className="flex items-center gap-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={event.cover}
         alt=""
-        className="size-14 shrink-0 rounded-xl object-cover"
+        className="size-16 shrink-0 rounded-2xl object-cover"
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13.5px] font-semibold text-foreground">
@@ -156,19 +155,10 @@ function ApplicantCard({
 }) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <p className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Registering as
-        </p>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-amber-600 transition-colors hover:text-amber-700"
-        >
-          <LuPencil className="size-3" aria-hidden />
-          Edit
-        </button>
-      </div>
-      <div className="flex items-center gap-3 rounded-2xl bg-card p-3 ring-1 ring-border">
+      <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Registering as
+      </p>
+      <div className="flex items-center gap-3">
         <Avatar size="lg">
           <AvatarImage src={me.avatar} alt={me.name} />
         </Avatar>
