@@ -1,0 +1,83 @@
+"use client";
+
+import Link from "next/link";
+import { LuLock, LuCompass } from "react-icons/lu";
+import type { IconType } from "react-icons";
+
+import { EmptyState } from "@/components/ui/empty-state";
+import { SignInButton } from "@/components/auth/sign-in-button";
+import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+
+/**
+ * Route-level guard: renders `children` when signed in, otherwise a friendly
+ * "sign in to continue" prompt. Browsing stays open elsewhere — this only wraps
+ * the screens that need an identity (your tickets, creating an event).
+ *
+ * `tone="dark"` matches the full-bleed create canvas; the default sits on the
+ * warm app backdrop inside the shell.
+ */
+export function AuthGate({
+  icon: Icon = LuLock,
+  title,
+  description,
+  tone = "light",
+  children,
+}: {
+  icon?: IconType;
+  title: string;
+  description: string;
+  tone?: "light" | "dark";
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <>{children}</>;
+
+  if (tone === "dark") {
+    return (
+      <div className="grid min-h-svh place-items-center bg-[radial-gradient(120%_60%_at_50%_-10%,#241b3a_0%,#0c0b11_60%)] px-6">
+        <div className="flex w-full max-w-sm flex-col items-center gap-1 rounded-2xl bg-white/[0.04] px-6 py-10 text-center ring-1 ring-white/10 backdrop-blur-xl">
+          <div className="mb-1 grid size-12 place-items-center rounded-full bg-white/10 text-violet-200">
+            <Icon className="size-6" aria-hidden />
+          </div>
+          <p className="text-[14px] font-semibold text-white">{title}</p>
+          <p className="max-w-[26ch] text-[12.5px] leading-snug text-violet-200/70">
+            {description}
+          </p>
+          <div className="mt-4 flex w-full flex-col gap-2">
+            <SignInButton className="h-11 w-full rounded-full text-[14px]" />
+            <Link
+              href="/discover"
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold text-violet-200/80 transition-colors hover:text-white"
+            >
+              <LuCompass className="size-4" aria-hidden />
+              Browse events instead
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("px-4 pt-10")}>
+      <EmptyState
+        icon={Icon}
+        title={title}
+        subtitle={description}
+        action={
+          <div className="flex flex-col items-center gap-2">
+            <SignInButton className="h-11 rounded-full px-8 text-[14px]" />
+            <Link
+              href="/discover"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <LuCompass className="size-4" aria-hidden />
+              Browse events instead
+            </Link>
+          </div>
+        }
+      />
+    </div>
+  );
+}

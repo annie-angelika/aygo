@@ -10,6 +10,7 @@ import {
 } from "react-icons/lu";
 
 import { useRegistrations } from "@/hooks/use-registrations";
+import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { applyConfigFor, currentApplicant } from "@/lib/apply";
+import { applyConfigFor, currentApplicant, type Applicant } from "@/lib/apply";
 import { cn } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
 
@@ -38,12 +39,22 @@ export function RegisterDialog({
   children: React.ReactNode;
 }) {
   const { apply, join } = useRegistrations();
+  const auth = useAuth();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState("");
 
   const cfg = applyConfigFor(event);
-  const me = currentApplicant();
+  // Your details come pre-loaded from the social login — the host sees who's
+  // applying without you re-typing anything. Falls back to the mock profile
+  // when a field isn't provided by the auth provider.
+  const base = currentApplicant();
+  const me: Applicant = {
+    name: auth.name ?? base.name,
+    avatar: auth.avatar ?? base.avatar,
+    handle: auth.email ?? base.handle,
+    location: base.location,
+  };
 
   function handleOpenChange(next: boolean) {
     // Commit on close (Done, X, or backdrop) — deferring the write keeps the

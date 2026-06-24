@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { CreateEventScreen } from "@/components/create/create-event-screen";
+import { AuthGate } from "@/components/auth/auth-gate";
 
 export const metadata: Metadata = {
   title: "Create",
@@ -13,7 +14,13 @@ export default function CreatePage() {
     // Full-bleed: the screen paints its own themed background edge-to-edge and
     // centers its own content; the light/dark token mode follows the cover theme.
     <main className="min-h-svh w-full">
-      <CreateEventScreen />
+      <AuthGate
+        tone="dark"
+        title="Sign in to create an event"
+        description="Hosting an event needs an account so guests know who they're joining."
+      >
+        <CreateEventScreen />
+      </AuthGate>
     </main>
   );
 }
