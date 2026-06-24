@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/menu";
 import { useProfileEdits } from "@/hooks/use-profile";
 import { useRegistrations } from "@/hooks/use-registrations";
+import { useAuth } from "@/hooks/use-auth";
 import { CURRENT_USER } from "@/lib/events-data";
 import { cn } from "@/lib/utils";
 
@@ -28,11 +29,20 @@ export function ProfileMenu({
   const router = useRouter();
   const { edits } = useProfileEdits();
   const { stamps, hydrated } = useRegistrations();
+  const auth = useAuth();
   const count = stamps.length;
 
-  const name = edits.name ?? CURRENT_USER.name;
-  const avatar = edits.avatar ?? CURRENT_USER.avatar;
+  // Signed-in identity comes from the social provider; fall back to local
+  // profile edits, then the mock "you" so the menu is never blank.
+  const name = auth.name ?? edits.name ?? CURRENT_USER.name;
+  const avatar = auth.avatar ?? edits.avatar ?? CURRENT_USER.avatar;
+  const subtitle = auth.email ?? `@${CURRENT_USER.username}`;
   const href = `/user/${CURRENT_USER.username}`;
+
+  function handleSignOut() {
+    auth.logout();
+    router.push("/discover");
+  }
 
   return (
     <Menu>
@@ -70,7 +80,7 @@ export function ProfileMenu({
               {name}
             </p>
             <p className="truncate text-[11.5px] text-muted-foreground">
-              @{CURRENT_USER.username}
+              {subtitle}
             </p>
           </div>
         </div>
@@ -95,7 +105,7 @@ export function ProfileMenu({
         <MenuSeparator />
 
         <MenuItem
-          onClick={() => router.push("/home")}
+          onClick={handleSignOut}
           className="text-destructive data-highlighted:bg-destructive/10 [&_svg]:text-destructive"
         >
           <LuLogOut /> Sign Out

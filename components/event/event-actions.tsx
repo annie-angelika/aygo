@@ -3,6 +3,7 @@
 import { LuCheck, LuClock } from "react-icons/lu";
 
 import { useRegistrations } from "@/hooks/use-registrations";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { RegisterDialog } from "@/components/event/register-dialog";
 import { applyConfigFor } from "@/lib/apply";
@@ -17,9 +18,25 @@ import type { AygoEvent } from "@/types";
 export function EventActions({ event }: { event: AygoEvent }) {
   const { isGoing, isApplied, toggleGoing, withdraw, addStamp, hydrated } =
     useRegistrations();
+  const { isAuthenticated, openLoginModal } = useAuth();
   const going = hydrated && isGoing(event.id);
   const pending = hydrated && isApplied(event.id);
   const cfg = applyConfigFor(event);
+
+  // Registering needs an identity. Signed-out, the CTA opens the login modal;
+  // the registration sheet (which prefills your profile) only appears once
+  // you're in, so the host always sees who's applying.
+  if (!isAuthenticated) {
+    return (
+      <Button
+        size="lg"
+        onClick={openLoginModal}
+        className="h-12 w-full rounded-full text-[14px]"
+      >
+        {cfg.requiresApproval ? "Request to join" : "Get your spot"}
+      </Button>
+    );
+  }
 
   if (going) {
     return (
