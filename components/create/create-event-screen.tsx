@@ -12,8 +12,10 @@ import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { ThemeSheet } from "@/components/create/theme-sheet";
 import { WhenCard } from "@/components/create/when-card";
 import { WhereWhat } from "@/components/create/where-what";
-import { CALENDARS, TIMEZONES, saveDraft, type Visibility } from "@/lib/create-event";
+import { CALENDARS, TIMEZONES, type Visibility } from "@/lib/create-event";
 import { DEFAULT_THEME_ID, getTheme, type ThemeTone } from "@/lib/create-themes";
+import { createEvent } from "@/lib/api";
+import { useMutation } from "@/hooks/use-mutation";
 import { todayValue } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
@@ -64,8 +66,13 @@ export function CreateEventScreen() {
     setDisplayOverride(null);
   }
 
-  function create() {
-    saveDraft({
+  // Local-first: `createEvent` persists the draft instantly, then syncs to the
+  // backend. `useMutation` tracks pending/error so the button can disable while
+  // the sync is in flight.
+  const { mutate: submit, pending } = useMutation(createEvent);
+
+  async function create() {
+    await submit({
       id: crypto.randomUUID(),
       title: title.trim() || "Untitled Event",
       theme: themeId,
@@ -152,9 +159,10 @@ export function CreateEventScreen() {
         <Button
           size="lg"
           onClick={create}
+          disabled={pending}
           className="h-12 w-full rounded-full bg-foreground text-[15px] font-semibold text-background shadow-[0_12px_24px_-12px_rgba(0,0,0,0.5)] hover:bg-foreground/90"
         >
-          Create Event
+          {pending ? "Creating…" : "Create Event"}
         </Button>
       </div>
 

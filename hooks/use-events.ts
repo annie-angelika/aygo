@@ -1,30 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchEvents } from "@/lib/api/events";
+import { useAsyncData } from "@/hooks/use-async-data";
+import { fetchEvents } from "@/lib/api";
 import type { AygoEvent } from "@/types";
 
+const NO_EVENTS: AygoEvent[] = [];
+
+/**
+ * The event catalog. Backed by `@/lib/api` (mock today, backend when configured)
+ * and cached stale-while-revalidate so navigating back to a list is instant.
+ */
 export function useEvents() {
-  const [data, setData] = useState<AygoEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchEvents()
-      .then((d) => {
-        if (!cancelled) setData(d);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e : new Error(String(e)));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { data, loading, error };
+  const { data, loading, error, refetch } = useAsyncData(
+    (signal) => fetchEvents(signal),
+    [],
+    { cacheKey: "events" },
+  );
+  return { data: data ?? NO_EVENTS, loading, error, refetch };
 }

@@ -60,7 +60,7 @@ export function RegisterDialog({
     // Commit on close (Done, X, or backdrop) — deferring the write keeps the
     // confirmation on screen, since writing flips the parent out of this sheet.
     if (!next && submitted) {
-      if (cfg.requiresApproval) apply(event.id);
+      if (cfg.requiresApproval) apply(event.id, message.trim() || undefined);
       else join(event.id);
     }
     setOpen(next);
