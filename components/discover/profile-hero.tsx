@@ -1,19 +1,9 @@
 import Link from "next/link";
-import { LuMap, LuGlobe, LuPlus, LuCheck } from "react-icons/lu";
-import { FaInstagram, FaXTwitter, FaYoutube, FaLinkedin } from "react-icons/fa6";
-import type { IconType } from "react-icons";
+import { LuMap, LuPlus, LuCheck } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
 import { cn } from "@/lib/utils";
-
-const SOCIALS: { Icon: IconType; label: string }[] = [
-  { Icon: FaInstagram, label: "Instagram" },
-  { Icon: FaXTwitter, label: "X" },
-  { Icon: FaYoutube, label: "YouTube" },
-  { Icon: FaLinkedin, label: "LinkedIn" },
-  { Icon: LuGlobe, label: "Website" },
-];
 
 /**
  * Generic Luma-style header: a full-bleed cover banner with an overlaid back
@@ -104,19 +94,6 @@ export function ProfileHero({
         <p className="mt-3 text-[13px] leading-relaxed text-foreground/80">
           {blurb}
         </p>
-
-        <div className="mt-3.5 flex items-center gap-1.5">
-          {SOCIALS.map(({ Icon, label }) => (
-            <button
-              key={label}
-              type="button"
-              aria-label={label}
-              className="grid size-8 place-items-center rounded-lg text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Icon className="size-[15px]" aria-hidden />
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );

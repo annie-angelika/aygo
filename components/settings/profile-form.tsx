@@ -10,27 +10,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { SocialLinks } from "@/components/settings/social-links";
 import { useProfileEdits } from "@/hooks/use-profile";
+import { useAuth } from "@/hooks/use-auth";
+import { fileToAvatar } from "@/lib/image";
 import { USERS, CURRENT_USERNAME } from "@/lib/users-data";
 import type { ProfileEdits } from "@/types";
 
 const BIO_MAX = 160;
-const randomAvatar = () =>
-  `https://picsum.photos/seed/${Math.random().toString(36).slice(2, 8)}/240/240`;
 
-/** "Your Profile" settings form — photo, name, bio, location, social links. */
+/**
+ * "Your Profile" settings form — photo, name, bio, location, social links.
+ * Prefill precedence matches the rest of the app: your explicit edits win,
+ * then the signed-in social identity (Pollar), then the neutral base.
+ */
 export function ProfileForm() {
   const base = USERS[CURRENT_USERNAME];
   const { edits, save } = useProfileEdits();
+  const auth = useAuth();
 
   const merged = useMemo<ProfileEdits>(
     () => ({
-      name: edits.name ?? base.name,
+      name: edits.name ?? auth.name ?? base.name,
       bio: edits.bio ?? base.bio,
       location: edits.location ?? base.location,
-      avatar: edits.avatar ?? base.avatar,
+      avatar: edits.avatar ?? auth.avatar ?? base.avatar,
       socials: edits.socials ?? base.socials ?? {},
     }),
-    [edits, base],
+    [edits, auth.name, auth.avatar, base],
   );
 
   const [draft, setDraft] = useState(merged);
@@ -65,7 +70,11 @@ export function ProfileForm() {
 
       <AvatarUpload
         src={draft.avatar}
-        onChange={() => set({ avatar: randomAvatar() })}
+        onSelect={(file) =>
+          void fileToAvatar(file)
+            .then((avatar) => set({ avatar }))
+            .catch(() => {})
+        }
       />
 
       <div className="flex gap-3">

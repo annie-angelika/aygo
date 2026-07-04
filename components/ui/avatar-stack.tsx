@@ -20,7 +20,8 @@ export function AvatarStack({
   size?: "sm" | "default" | "lg";
   className?: string;
 }) {
-  const shown = srcs.slice(0, max);
+  // Skip members without a photo — they still count toward the "+N" bubble.
+  const shown = srcs.filter(Boolean).slice(0, max);
   const extra = (total ?? srcs.length) - shown.length;
   // The count bubble matches the avatar size; AvatarGroupCount reads the group.
   const countSize =

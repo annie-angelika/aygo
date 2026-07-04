@@ -1,8 +1,9 @@
 // Travelers (public profiles) + an event's attendees — the social-graph reads.
-// Mock mode resolves from `users-data`; with a backend, see the routes below.
+// No fake graph anywhere: attendees are real RSVPs from the backend, and in
+// mock mode (no backend) both lists are honestly empty.
 
-import { findUser, attendeesFor } from "@/lib/users-data";
-import type { TravelerProfile } from "@/types";
+import { findUser } from "@/lib/users-data";
+import type { TravelerProfile, Attendee } from "@/types";
 import { api, USE_MOCK } from "@/lib/api/client";
 
 /** A public traveler profile by username. → `GET /users/:username` */
@@ -14,15 +15,11 @@ export async function fetchTraveler(
   return api.get<TravelerProfile>(`/users/${username}`, undefined, signal);
 }
 
-/** Travelers attending an event (the discovery surface). → `GET /events/:id/attendees` */
+/** Who's really going (RSVPs). → `GET /events/:id/attendees` */
 export async function fetchAttendees(
   eventId: string,
   signal?: AbortSignal,
-): Promise<TravelerProfile[]> {
-  if (USE_MOCK) return attendeesFor(eventId);
-  return api.get<TravelerProfile[]>(
-    `/events/${eventId}/attendees`,
-    undefined,
-    signal,
-  );
+): Promise<Attendee[]> {
+  if (USE_MOCK) return [];
+  return api.get<Attendee[]>(`/events/${eventId}/attendees`, undefined, signal);
 }

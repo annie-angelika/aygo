@@ -9,10 +9,10 @@ import {
 } from "react-icons/lu";
 import { FaTiktok } from "react-icons/fa6";
 
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Stat } from "@/components/ui/stat";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 import type { Socials } from "@/types";
 
 const SOCIAL_LINKS = [
@@ -79,7 +79,10 @@ export function ProfileHeader({
     <div>
       <div className="flex items-start gap-4">
         <Avatar className="size-20 shrink-0 ring-1 ring-border">
-          <AvatarImage src={avatar} alt={name} />
+          {avatar && <AvatarImage src={avatar} alt={name} />}
+          <AvatarFallback className="text-[24px] font-semibold">
+            {initials(name)}
+          </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1">

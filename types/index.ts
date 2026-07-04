@@ -34,6 +34,9 @@ export type AygoEvent = {
   // where
   place: string; // "Plaza Murillo"
   city: string; // "La Paz"
+  /** Real coordinates for the map + directions. Missing → not mappable yet. */
+  lat?: number;
+  lng?: number;
   // who
   host: Host;
   attendees: number;
@@ -41,6 +44,8 @@ export type AygoEvent = {
   // what
   price: number | null; // null/0 → free (BOB otherwise)
   blurb: string;
+  /** Host reviews each join request before granting a spot. Absent → instant. */
+  requiresApproval?: boolean;
 };
 
 /** The identity fields you can change from "Edit profile" (stored locally). */
@@ -88,7 +93,56 @@ export type Stamp = {
   image?: string;
   /** Tiny base64 preview for a blur-up while the image loads, if the backend has one. */
   blurDataURL?: string;
+  /** ISO timestamp of when it was collected (from the backend). */
+  earnedAt?: string;
 };
+
+// --- Discover (serializable halves — icons/Tailwind classes stay client-side) ---
+
+export type Region = "South America" | "North America" | "Europe";
+
+/** A city on the explorer / its page. `eventCount` is computed by the backend. */
+export type CityInfo = {
+  slug: string;
+  name: string;
+  country: string;
+  region: Region;
+  eventCount: number;
+  subscribed?: boolean;
+  tagline?: string;
+};
+
+/** A featured community calendar. `category` scopes its events board. */
+export type CalendarInfo = {
+  id: string;
+  name: string;
+  logo: string;
+  cover: string;
+  description: string;
+  location?: string;
+  subscribers?: string;
+  featured?: string;
+  category?: Category;
+};
+
+/** Per-interest stats + copy for browse tiles and the category page. */
+export type CategoryStat = {
+  category: Category;
+  /** Real event count, computed by the backend. */
+  count: number;
+  subscribers?: string;
+  blurb?: string;
+  image: string;
+};
+
+/** Someone actually going to an event — a real RSVP, maybe anonymous. */
+export type Attendee = {
+  name: string;
+  avatar?: string;
+};
+
+/** What a user can send about an event: a question to the host, or a report. */
+export type FeedbackKind = "question" | "report";
 
 /** A gamification tier, reached at `min` stamps. */
 export type Level = {

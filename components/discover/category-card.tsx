@@ -10,7 +10,7 @@ export function CategoryCard({
   count,
 }: {
   category: Category;
-  count: string;
+  count: number;
 }) {
   const { Icon, accent } = CATEGORY_META[category];
   return (

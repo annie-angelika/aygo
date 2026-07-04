@@ -23,14 +23,17 @@ export function EventsBoard({
   category,
   defaultInterest,
   upcomingOnly,
+  city,
 }: {
   category?: Category;
   defaultInterest?: Category;
   upcomingOnly?: boolean;
+  /** Scope the board to one city's events (city pages). */
+  city?: string;
 }) {
   const { isGoing } = useRegistrations();
   const { loading, when, setWhen, interest, setInterest, past, active, filtered } =
-    useEventFilter({ category, defaultInterest, upcomingOnly });
+    useEventFilter({ category, defaultInterest, upcomingOnly, city });
 
   return (
     <div className="flex flex-col gap-4">

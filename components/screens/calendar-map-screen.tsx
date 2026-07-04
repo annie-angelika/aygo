@@ -2,7 +2,7 @@ import { MapScreen } from "@/components/discover/map-screen";
 import { findCalendar } from "@/lib/discover-data";
 
 /** Dedicated map view for a community calendar, at /<calendar>/map. Centers on
- *  the calendar's location (all calendars are Bolivian in the mock data). */
+ *  the calendar's location and scopes to the calendar's interest. */
 export function CalendarMapScreen({ id }: { id: string }) {
   const calendar = findCalendar(id);
   if (!calendar) return null;
@@ -10,8 +10,8 @@ export function CalendarMapScreen({ id }: { id: string }) {
   return (
     <MapScreen
       title={calendar.name}
-      city={calendar.location ?? "Bolivia"}
-      country="Bolivia"
+      city={calendar.location ?? "La Paz"}
+      category={calendar.category}
       logo={
         // eslint-disable-next-line @next/next/no-img-element
         <img

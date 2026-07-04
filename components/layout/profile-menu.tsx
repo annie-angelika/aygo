@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LuUser, LuStamp, LuSettings, LuLogOut } from "react-icons/lu";
 
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Menu,
   MenuTrigger,
@@ -16,7 +16,7 @@ import { useProfileEdits } from "@/hooks/use-profile";
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useAuth } from "@/hooks/use-auth";
 import { CURRENT_USER } from "@/lib/events-data";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 
 /** Top-bar avatar that opens the account menu: profile, settings, sign out. */
 export function ProfileMenu({
@@ -32,10 +32,11 @@ export function ProfileMenu({
   const auth = useAuth();
   const count = stamps.length;
 
-  // Signed-in identity comes from the social provider; fall back to local
-  // profile edits, then the mock "you" so the menu is never blank.
-  const name = auth.name ?? edits.name ?? CURRENT_USER.name;
-  const avatar = auth.avatar ?? edits.avatar ?? CURRENT_USER.avatar;
+  // Same precedence as the profile page (use-traveler): your explicit edits
+  // win, then the signed-in social identity, then the neutral placeholder —
+  // so the top-bar photo always matches your profile.
+  const name = edits.name ?? auth.name ?? CURRENT_USER.name;
+  const avatar = edits.avatar ?? auth.avatar ?? CURRENT_USER.avatar;
   const subtitle = auth.email ?? `@${CURRENT_USER.username}`;
   const href = `/user/${CURRENT_USER.username}`;
 
@@ -56,7 +57,10 @@ export function ProfileMenu({
             active ? "ring-amber-400" : dark ? "ring-white/15" : "ring-background",
           )}
         >
-          <AvatarImage src={avatar} alt="Your profile" />
+          {avatar && <AvatarImage src={avatar} alt="Your profile" />}
+          <AvatarFallback className="text-[12px] font-semibold">
+            {initials(name)}
+          </AvatarFallback>
         </Avatar>
         {hydrated && count > 0 && (
           <span
@@ -73,7 +77,10 @@ export function ProfileMenu({
       <MenuContent>
         <div className="flex items-center gap-2.5 px-2.5 py-2">
           <Avatar className="size-9">
-            <AvatarImage src={avatar} alt="" />
+            {avatar && <AvatarImage src={avatar} alt="" />}
+            <AvatarFallback className="text-[12px] font-semibold">
+              {initials(name)}
+            </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="truncate text-[13px] font-semibold text-foreground">

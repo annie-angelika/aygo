@@ -1,6 +1,8 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 
 import { CITIES, findCity } from "@/lib/cities-data";
+import { getStore } from "@/lib/server/store";
 import { FEATURED_CALENDARS, findCalendar } from "@/lib/discover-data";
 import {
   CATEGORIES,
@@ -8,8 +10,8 @@ import {
   categorySlug,
   events,
   eventCode,
+  findEventByCode,
 } from "@/lib/events-data";
-import { fetchEventByCode } from "@/lib/api/events";
 import { AppShell } from "@/components/layout/app-shell";
 import { CityScreen } from "@/components/screens/city-screen";
 import { CalendarScreen } from "@/components/screens/calendar-screen";
@@ -23,6 +25,15 @@ import { EventDetail } from "@/components/screens/event-detail";
  * Cities/calendars/categories get the app chrome; an event renders full-bleed
  * immersive (its own back button + sticky RSVP), like /create.
  */
+/**
+ * Guest-created events aren't in the static catalog — when every static lookup
+ * misses, ask the store (deduped across metadata + page render). Only unknown
+ * slugs reach this, so the static pages stay database-free.
+ */
+const findCreatedByCode = cache((code: string) =>
+  getStore().getEventByCode(code),
+);
+
 export function generateStaticParams() {
   return [
     ...CITIES.map((c) => ({ slug: c.slug })),
@@ -42,7 +53,8 @@ export async function generateMetadata({
     findCity(slug)?.name ??
     findCalendar(slug)?.name ??
     findCategory(slug) ??
-    (await fetchEventByCode(slug))?.title;
+    findEventByCode(slug)?.title ??
+    (await findCreatedByCode(slug))?.title;
   return name ? { title: name } : { title: { absolute: "aygo" } };
 }
 
@@ -81,7 +93,7 @@ export default async function SlugPage({
     );
   }
 
-  const event = await fetchEventByCode(slug);
+  const event = findEventByCode(slug) ?? (await findCreatedByCode(slug));
   if (event) {
     return (
       <main className="mx-auto min-h-svh w-full max-w-md bg-[#f6f4ef]">

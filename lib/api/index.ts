@@ -13,3 +13,6 @@ export * from "@/lib/api/users";
 export * from "@/lib/api/registrations";
 export * from "@/lib/api/profile";
 export * from "@/lib/api/preferences";
+export * from "@/lib/api/discover";
+// The admin surface is intentionally NOT re-exported — import from
+// `@/lib/api/admin` in admin components only, so it never rides in app bundles.

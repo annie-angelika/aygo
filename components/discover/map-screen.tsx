@@ -20,18 +20,23 @@ export function MapScreen({
   logo,
   title,
   city,
-  country,
   defaultInterest,
+  filterCity,
+  category,
 }: {
   logo: React.ReactNode;
   title: string;
+  /** Fallback map center when no event is geocoded yet. */
   city: string;
-  country?: string;
   defaultInterest?: Category;
+  /** Scope the list/map to one city's events (city map pages). */
+  filterCity?: string;
+  /** Lock the list/map to one interest (calendar map pages). */
+  category?: Category;
 }) {
   const { isGoing } = useRegistrations();
   const { loading, when, setWhen, interest, setInterest, filtered } =
-    useEventFilter({ defaultInterest });
+    useEventFilter({ defaultInterest, city: filterCity, category });
 
   return (
     <main className="mx-auto flex h-svh w-full max-w-md flex-col bg-background">
@@ -53,7 +58,6 @@ export function MapScreen({
         <EventsMap
           events={filtered}
           city={city}
-          country={country ?? ""}
           className="-mx-4 h-[240px] rounded-none ring-0"
         />
 

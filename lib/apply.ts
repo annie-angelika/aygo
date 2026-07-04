@@ -1,8 +1,7 @@
-// Presentation config for the in-app "apply to join" flow (Luma-style). This is
-// the visual layer only — there is no real host or approval backend yet, so the
-// shape of each event's registration (approval vs. instant, what the host wants
-// you to know) is derived deterministically from the event itself. Swap this for
-// real host settings when the backend lands; the components don't need to change.
+// Presentation config for the in-app "apply to join" flow (Luma-style).
+// Approval-vs-instant comes from the event's REAL `requiresApproval` setting
+// (the host picks it when creating/managing the event); the requirement lines
+// are copy derived from real event fields (price, interest).
 
 import { CURRENT_USER } from "@/lib/events-data";
 import { USERS, CURRENT_USERNAME } from "@/lib/users-data";
@@ -36,10 +35,6 @@ export type ApplyConfig = {
   asksMessage: boolean;
 };
 
-// Stable per-id pick so a given event always behaves the same across renders.
-const charSum = (id: string) =>
-  id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-
 /** What the host will see — pulled from the already-loaded profile. */
 export function currentApplicant(): Applicant {
   const me = USERS[CURRENT_USERNAME];
@@ -52,8 +47,8 @@ export function currentApplicant(): Applicant {
 }
 
 export function applyConfigFor(event: AygoEvent): ApplyConfig {
-  // Curated events ask for approval; the rest let you in instantly.
-  const requiresApproval = charSum(event.id) % 2 === 1;
+  // The host's real setting — never derived or invented.
+  const requiresApproval = event.requiresApproval ?? false;
 
   const requirements: string[] = [];
 

@@ -5,7 +5,7 @@ import { EventLocation } from "@/components/event/event-location";
 import { HostCard } from "@/components/event/host-card";
 import { GoingSection } from "@/components/event/going-section";
 import { EventHelp } from "@/components/event/event-help";
-import { attendeesFor } from "@/lib/users-data";
+import { ManageBanner } from "@/components/manage/manage-banner";
 import type { AygoEvent } from "@/types";
 
 /**
@@ -16,7 +16,6 @@ import type { AygoEvent } from "@/types";
  */
 export function EventDetailBody({ event }: { event: AygoEvent }) {
   const free = event.price == null;
-  const going = attendeesFor(event.id);
   return (
     <>
       <div className="relative h-[300px]">
@@ -26,6 +25,7 @@ export function EventDetailBody({ event }: { event: AygoEvent }) {
       </div>
 
       <div className="relative -mt-10 flex flex-col gap-4 px-5">
+        <ManageBanner eventId={event.id} />
         <div>
           <div className="flex items-center gap-2">
             <CategoryChip category={event.category} />
@@ -64,7 +64,7 @@ export function EventDetailBody({ event }: { event: AygoEvent }) {
           </div>
 
           <div className="flex flex-col gap-5 py-5">
-            <GoingSection event={event} people={going} />
+            <GoingSection event={event} />
             <EventHelp event={event} />
           </div>
         </div>

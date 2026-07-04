@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FONT_VARIABLES } from "@/lib/fonts";
 import { PollarAuthProvider } from "@/components/auth/pollar-provider";
+import { ServerSync } from "@/components/layout/server-sync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,7 +48,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${FONT_VARIABLES} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <PollarAuthProvider>{children}</PollarAuthProvider>
+        <PollarAuthProvider>
+          <ServerSync />
+          {children}
+        </PollarAuthProvider>
       </body>
     </html>
   );

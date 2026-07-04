@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LuStamp, LuMoon, LuShare2 } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { CollectionBanner } from "@/components/passport/collection-banner";
@@ -19,38 +20,39 @@ import {
 } from "@/components/ui/select";
 import { StampModal } from "@/components/passport/stamp-modal";
 import { CATEGORY_META } from "@/lib/events-data";
-import {
-  groupAygosByMonth,
-  demoCollectionByMonth,
-  monthsForYear,
-  DEMO_AYGO_COUNT,
-} from "@/lib/aygos";
+import { groupAygosByMonth, monthsForYear } from "@/lib/aygos";
 import { useTraveler } from "@/hooks/use-traveler";
 import { cn } from "@/lib/utils";
 import type { Stamp } from "@/types";
 
 export function PassportScreen({ username }: { username?: string }) {
-  const { user, isSelf, displayStamps } = useTraveler(username);
+  const { user, isSelf, displayStamps, loading } = useTraveler(username);
   const [selected, setSelected] = useState<{
     stamp: Stamp;
     dateLabel: string;
   } | null>(null);
   const [year, setYear] = useState<string>("");
 
-  const hasReal = displayStamps.length > 0;
+  if (!user) {
+    return (
+      <div className="px-4 pt-4">
+        {loading ? (
+          <Skeleton className="h-48 rounded-2xl" />
+        ) : (
+          <EmptyState
+            icon={LuStamp}
+            title="Traveler not found"
+            subtitle="This collection doesn't exist (or hasn't joined aygo yet)."
+          />
+        )}
+      </div>
+    );
+  }
 
-  // Real collected aygos when you have them; otherwise a fuller demo wall so
-  // the collection reads alive (only on your own page).
-  const months = hasReal
-    ? groupAygosByMonth(displayStamps)
-    : isSelf
-      ? demoCollectionByMonth()
-      : [];
-  const count = hasReal
-    ? displayStamps.length
-    : isSelf
-      ? DEMO_AYGO_COUNT
-      : 0;
+  // Only real collected aygos — an empty collection shows the empty state,
+  // never demo filler.
+  const months = groupAygosByMonth(displayStamps);
+  const count = displayStamps.length;
 
   const years = [...new Set(months.map((m) => m.key.slice(0, 4)))];
   const activeYear = year || years[0] || "";

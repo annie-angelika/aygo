@@ -5,13 +5,20 @@ import { LuMapPinned } from "react-icons/lu";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CityCard } from "@/components/city/city-card";
-import { REGIONS, CITIES, type Region } from "@/lib/cities-data";
+import { REGIONS, withCityMeta, type Region } from "@/lib/cities-data";
+import { useCities } from "@/hooks/use-discover";
 
-/** Region tabs + city grid for the Discover "Explore Local Events" section. */
+/**
+ * Region tabs + city grid for the Discover "Explore Local Events" section.
+ * Cities (and their real event counts) come from the backend; the landmark
+ * icon + tint are client presentation joined in via `withCityMeta`.
+ */
 export function CityExplorer() {
   const [region, setRegion] = useState<Region>("South America");
-  const cities = CITIES.filter((c) => c.region === region);
+  const { cities: all, loading } = useCities();
+  const cities = all.filter((c) => c.region === region).map(withCityMeta);
 
   return (
     <div className="flex flex-col gap-3">
@@ -25,7 +32,13 @@ export function CityExplorer() {
         </TabsList>
       </Tabs>
 
-      {cities.length > 0 ? (
+      {loading && all.length === 0 ? (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 rounded-xl" />
+          ))}
+        </div>
+      ) : cities.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
           {cities.map((c) => (
             <CityCard key={c.slug} city={c} />

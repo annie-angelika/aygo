@@ -43,7 +43,7 @@ export function CreateEventScreen() {
   const [price, setPrice] = useState<number | null>(null);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [capacity, setCapacity] = useState<number | null>(null);
-  const [created, setCreated] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   const theme = getTheme(themeId);
   const tone: ThemeTone = displayOverride ?? theme.tone;
@@ -72,8 +72,9 @@ export function CreateEventScreen() {
   const { mutate: submit, pending } = useMutation(createEvent);
 
   async function create() {
+    const id = crypto.randomUUID();
     await submit({
-      id: crypto.randomUUID(),
+      id,
       title: title.trim() || "Untitled Event",
       theme: themeId,
       cover,
@@ -89,10 +90,13 @@ export function CreateEventScreen() {
       capacity,
       createdAt: new Date().toISOString(),
     });
-    setCreated(true);
+    setCreatedId(id);
   }
 
-  if (created) return <CreateSuccess title={title.trim() || "Untitled Event"} />;
+  if (createdId)
+    return (
+      <CreateSuccess title={title.trim() || "Untitled Event"} id={createdId} />
+    );
 
   return (
     <div className={cn("min-h-svh overflow-x-hidden pb-28 text-foreground", theme.page)}>

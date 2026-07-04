@@ -6,7 +6,7 @@ import { LuCheck } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 
 /** Full-screen confirmation shown after an event is created. */
-export function CreateSuccess({ title }: { title: string }) {
+export function CreateSuccess({ title, id }: { title: string; id: string }) {
   const router = useRouter();
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-background px-8 text-center">
@@ -21,8 +21,16 @@ export function CreateSuccess({ title }: { title: string }) {
       </p>
       <Button
         size="lg"
-        onClick={() => router.push("/home")}
+        onClick={() => router.push(`/manage/${id}`)}
         className="mt-6 h-12 w-full max-w-xs rounded-full text-[14px]"
+      >
+        Manage event
+      </Button>
+      <Button
+        size="lg"
+        variant="ghost"
+        onClick={() => router.push("/home")}
+        className="mt-2 h-12 w-full max-w-xs rounded-full text-[14px]"
       >
         Done
       </Button>
