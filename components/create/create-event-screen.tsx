@@ -40,7 +40,6 @@ export function CreateEventScreen() {
   const [timezone, setTimezone] = useState(TIMEZONES[0]);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState<number | null>(null);
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [capacity, setCapacity] = useState<number | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
@@ -71,11 +70,20 @@ export function CreateEventScreen() {
   // the sync is in flight.
   const { mutate: submit, pending } = useMutation(createEvent);
 
+  // The minimum a real event needs before it can exist: a name and a place.
+  // The button doubles as the hint for what's still missing.
+  const missing = !title.trim()
+    ? "Name your event"
+    : !location.trim()
+      ? "Add a location"
+      : null;
+
   async function create() {
+    if (missing) return;
     const id = crypto.randomUUID();
     await submit({
       id,
-      title: title.trim() || "Untitled Event",
+      title: title.trim(),
       theme: themeId,
       cover,
       calendarId,
@@ -85,7 +93,7 @@ export function CreateEventScreen() {
       timezone,
       location: location.trim(),
       description: description.trim(),
-      price,
+      price: null, // payments aren't live yet — every event is free
       requiresApproval,
       capacity,
       createdAt: new Date().toISOString(),
@@ -93,10 +101,7 @@ export function CreateEventScreen() {
     setCreatedId(id);
   }
 
-  if (createdId)
-    return (
-      <CreateSuccess title={title.trim() || "Untitled Event"} id={createdId} />
-    );
+  if (createdId) return <CreateSuccess title={title.trim()} id={createdId} />;
 
   return (
     <div className={cn("min-h-svh overflow-x-hidden pb-28 text-foreground", theme.page)}>
@@ -145,13 +150,9 @@ export function CreateEventScreen() {
           onLocation={setLocation}
           description={description}
           onDescription={setDescription}
-          fontId={fontId}
-          styleId={styleId}
         />
 
         <EventOptions
-          price={price}
-          onPrice={setPrice}
           requiresApproval={requiresApproval}
           onApproval={setRequiresApproval}
           capacity={capacity}
@@ -163,10 +164,10 @@ export function CreateEventScreen() {
         <Button
           size="lg"
           onClick={create}
-          disabled={pending}
-          className="h-12 w-full rounded-full bg-foreground text-[15px] font-semibold text-background shadow-[0_12px_24px_-12px_rgba(0,0,0,0.5)] hover:bg-foreground/90"
+          disabled={pending || !!missing}
+          className="h-12 w-full rounded-full bg-foreground text-[15px] font-semibold text-background shadow-[0_12px_24px_-12px_rgba(0,0,0,0.5)] hover:bg-foreground/90 disabled:opacity-60"
         >
-          {pending ? "Creating…" : "Create Event"}
+          {pending ? "Creating…" : (missing ?? "Create Event")}
         </Button>
       </div>
 

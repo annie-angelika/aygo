@@ -103,6 +103,7 @@ function SettingsForm({
           value={draft.location}
           onChange={(e) => set({ location: e.target.value })}
           placeholder="Place, City"
+          required
         />
       </Field>
       <Field label="Description">
@@ -113,15 +114,8 @@ function SettingsForm({
         />
       </Field>
       <div className="grid grid-cols-2 gap-2.5">
-        <Field label="Price (BOB, empty = free)">
-          <Input
-            type="number"
-            min={0}
-            value={draft.price ?? ""}
-            onChange={(e) =>
-              set({ price: e.target.value === "" ? null : Number(e.target.value) })
-            }
-          />
+        <Field label="Price — payments soon">
+          <Input value="Free" disabled aria-label="Price (payments coming soon)" />
         </Field>
         <Field label="Capacity (empty = unlimited)">
           <Input

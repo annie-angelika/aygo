@@ -5,9 +5,6 @@ import { LuAlignLeft } from "react-icons/lu";
 
 import { LocationField } from "@/components/create/location-field";
 import { DescriptionDialog } from "@/components/create/description-dialog";
-import { getStyle } from "@/lib/create-themes";
-import { getFont } from "@/lib/fonts";
-import { cn } from "@/lib/utils";
 
 /** Location + description — the two rows below the date block. */
 export function WhereWhat({
@@ -15,15 +12,11 @@ export function WhereWhat({
   onLocation,
   description,
   onDescription,
-  fontId,
-  styleId,
 }: {
   location: string;
   onLocation: (v: string) => void;
   description: string;
   onDescription: (v: string) => void;
-  fontId: string;
-  styleId: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -38,10 +31,7 @@ export function WhereWhat({
       >
         <LuAlignLeft className="mt-0.5 size-[18px] shrink-0 text-muted-foreground" aria-hidden />
         {description ? (
-          <span
-            className={cn("line-clamp-3 min-w-0 flex-1 text-[14px] leading-snug text-foreground", getStyle(styleId).className)}
-            style={{ fontFamily: getFont(fontId).family }}
-          >
+          <span className="line-clamp-3 min-w-0 flex-1 text-[14px] leading-snug text-foreground">
             {description}
           </span>
         ) : (
@@ -54,8 +44,6 @@ export function WhereWhat({
         onOpenChange={setOpen}
         value={description}
         onChange={onDescription}
-        fontId={fontId}
-        styleId={styleId}
       />
     </div>
   );

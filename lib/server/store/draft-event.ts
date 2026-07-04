@@ -121,8 +121,11 @@ export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
     id: draft.id,
     title: draft.title.trim() || "Untitled event",
     category: DEFAULT_CATEGORY,
+    // No cover picked → a stable image derived from the chosen THEME, so the
+    // same theme always shows the same photo (not a fresh random per event).
     cover:
-      draft.cover ?? `https://picsum.photos/seed/aygo-${draft.id}/800/600`,
+      draft.cover ??
+      `https://picsum.photos/seed/aygo-theme-${draft.theme}/800/600`,
     ...eventTimeFields(draft.startsAt),
     place,
     city,
