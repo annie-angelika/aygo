@@ -14,24 +14,27 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { GoingList } from "@/components/event/going-list";
-import type { AygoEvent, TravelerProfile } from "@/types";
+import type { AygoEvent, Attendee } from "@/types";
 
 /**
  * The "who's going" roster modal + its trigger. The trigger's look is supplied
  * by the caller (`triggerClassName` + `children`). The guest list itself is
  * gated: only travelers who've joined see the names — everyone else gets a
- * teaser and a nudge to join.
+ * teaser and a nudge to join. `people` are real RSVPs, never invented.
  */
 export function AttendeesDialog({
   event,
   people,
   joined,
+  total,
   triggerClassName,
   children,
 }: {
   event: AygoEvent;
-  people: TravelerProfile[];
+  people: Attendee[];
   joined: boolean;
+  /** Display total (may include your own not-yet-synced RSVP). */
+  total: number;
   triggerClassName?: string;
   children: ReactNode;
 }) {
@@ -44,20 +47,22 @@ export function AttendeesDialog({
           <>
             <div className="flex items-center gap-3 border-b border-border p-5">
               <AvatarStack
-                srcs={people.map((p) => p.avatar)}
-                total={event.attendees}
+                srcs={people
+                  .map((p) => p.avatar)
+                  .filter((a): a is string => Boolean(a))}
+                total={total}
                 max={4}
                 size="default"
               />
               <div className="min-w-0">
                 <DialogTitle>Who&apos;s going</DialogTitle>
                 <DialogDescription>
-                  {event.attendees} going to {event.title}
+                  {total} going to {event.title}
                 </DialogDescription>
               </div>
             </div>
             <div className="max-h-[60vh] overflow-y-auto p-3">
-              <GoingList people={people} canFollow />
+              <GoingList people={people} />
             </div>
           </>
         ) : (
@@ -104,9 +109,10 @@ function GuestGate() {
   );
 }
 
-/** "Mara, Diego and 3 more" — a friendly preview of who's in. */
-export function namePreview(people: TravelerProfile[], total: number) {
+/** "Mara, Diego and 3 more" — a friendly preview of who's really in. */
+export function namePreview(people: Attendee[], total: number) {
   const names = people.slice(0, 2).map((p) => p.name.split(" ")[0]);
+  if (names.length === 0) return `${total} going`;
   const rest = total - names.length;
   if (rest <= 0) return names.join(", ");
   return `${names.join(", ")} and ${rest} more`;

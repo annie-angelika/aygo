@@ -5,7 +5,8 @@ import { useState } from "react";
 import { EventsBoard } from "@/components/discover/events-board";
 import { CityHero } from "@/components/city/city-hero";
 import { CATEGORIES } from "@/lib/events-data";
-import { findCity } from "@/lib/cities-data";
+import { findCity, withCityMeta } from "@/lib/cities-data";
+import { useCities } from "@/hooks/use-discover";
 import type { Category } from "@/types";
 
 export function CityScreen({
@@ -15,7 +16,11 @@ export function CityScreen({
   slug: string;
   initialInterest?: string;
 }) {
-  const city = findCity(slug);
+  // Identity renders instantly from the seed; the live row (with the real,
+  // backend-computed event count) replaces it as soon as it loads.
+  const { cities } = useCities();
+  const live = cities.find((c) => c.slug === slug);
+  const city = live ? withCityMeta(live) : findCity(slug);
   const [subscribed, setSubscribed] = useState(Boolean(city?.subscribed));
 
   if (!city) return null;
@@ -32,7 +37,7 @@ export function CityScreen({
         onToggleSubscribe={() => setSubscribed((s) => !s)}
         mapHref={`/${slug}/map`}
       />
-      <EventsBoard defaultInterest={defaultInterest} />
+      <EventsBoard defaultInterest={defaultInterest} city={city.name} />
     </div>
   );
 }

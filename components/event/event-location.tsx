@@ -1,46 +1,40 @@
-import { LuMapPin, LuArrowUpRight } from "react-icons/lu";
+import { LuMapPin } from "react-icons/lu";
 
+import { EventMiniMap } from "@/components/event/event-mini-map";
+import { GetDirections } from "@/components/event/get-directions";
 import type { AygoEvent } from "@/types";
 
-/** Where it happens — address row + an embedded map, flat on the page (no card). */
+/**
+ * Where it happens — address row, a real interactive mini-map (when the venue
+ * is geocoded), and one-tap directions into Google/Apple Maps or Waze.
+ */
 export function EventLocation({ event }: { event: AygoEvent }) {
-  const query = encodeURIComponent(`${event.place}, ${event.city}, Bolivia`);
+  const hasCoords = event.lat != null && event.lng != null;
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-[10.5px] font-semibold uppercase tracking-wider text-amber-600">
         Location
       </h2>
 
-      <a
-        href={`https://maps.google.com/?q=${query}`}
-        target="_blank"
-        rel="noreferrer"
-        className="group flex items-start gap-3"
-      >
+      <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
           <LuMapPin className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1 text-[14px] font-semibold text-foreground">
+          <p className="text-[14px] font-semibold text-foreground">
             {event.place}
-            <LuArrowUpRight
-              className="size-3.5 text-muted-foreground transition-colors group-hover:text-foreground"
-              aria-hidden
-            />
           </p>
           <p className="truncate text-[12.5px] text-muted-foreground">
             {event.city}, Bolivia
           </p>
         </div>
-      </a>
+      </div>
 
-      <iframe
-        title={`Map showing ${event.place}`}
-        src={`https://www.google.com/maps?q=${query}&output=embed`}
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        className="h-44 w-full rounded-2xl ring-1 ring-border"
-      />
+      {hasCoords && (
+        <EventMiniMap lat={event.lat!} lng={event.lng!} label={event.place} />
+      )}
+
+      <GetDirections event={event} />
     </section>
   );
 }

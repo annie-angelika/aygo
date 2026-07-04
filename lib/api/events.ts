@@ -4,7 +4,7 @@
 
 import { events, findEvent, findEventByCode } from "@/lib/events-data";
 import { saveDraft, type EventDraft } from "@/lib/create-event";
-import type { AygoEvent } from "@/types";
+import type { AygoEvent, FeedbackKind } from "@/types";
 import { api, USE_MOCK } from "@/lib/api/client";
 
 /** All events in the catalog. → `GET /events` */
@@ -40,4 +40,17 @@ export async function createEvent(draft: EventDraft): Promise<void> {
   saveDraft(draft); // optimistic: show it immediately
   if (USE_MOCK) return;
   await api.post("/events", draft);
+}
+
+/**
+ * Send a question to the host or report the event — lands in the admin inbox.
+ * → `POST /events/:id/feedback`
+ */
+export async function sendEventFeedback(
+  eventId: string,
+  kind: FeedbackKind,
+  message: string,
+): Promise<void> {
+  if (USE_MOCK) return;
+  await api.post(`/events/${eventId}/feedback`, { kind, message });
 }

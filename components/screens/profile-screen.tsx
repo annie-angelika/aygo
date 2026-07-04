@@ -8,18 +8,32 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { FollowButton } from "@/components/profile/follow-button";
 import { RouteList } from "@/components/profile/route-list";
+import { HostingList } from "@/components/profile/hosting-list";
 import { PassportCard } from "@/components/passport/passport-card";
-import { DEMO_AYGO_COUNT } from "@/lib/aygos";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LuUserX } from "react-icons/lu";
 
 export function ProfileScreen({ username }: { username?: string }) {
-  const { user, isSelf, displayStamps } = useTraveler(username);
+  const { user, isSelf, displayStamps, loading } = useTraveler(username);
 
-  // Mirror the collection page: when you have none yet, show the demo preview
-  // count so the card and the wall agree.
-  const aygoCount =
-    isSelf && displayStamps.length === 0
-      ? DEMO_AYGO_COUNT
-      : displayStamps.length;
+  if (!user) {
+    return (
+      <div className="px-4 pt-4">
+        {loading ? (
+          <Skeleton className="h-48 rounded-2xl" />
+        ) : (
+          <EmptyState
+            icon={LuUserX}
+            title="Traveler not found"
+            subtitle="This profile doesn't exist (or hasn't joined aygo yet)."
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Real count only — the collection page shows the same number.
+  const aygoCount = displayStamps.length;
 
   return (
     <div className="flex flex-col gap-5 px-4 pt-4">
@@ -60,24 +74,29 @@ export function ProfileScreen({ username }: { username?: string }) {
         />
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
-          Past Events
-        </h2>
-        {user.visits.length ? (
-          <RouteList visits={user.visits} />
-        ) : (
-          <EmptyState
-            icon={LuMapPinned}
-            title={isSelf ? "No events yet" : "Nothing shared yet"}
-            subtitle={
-              isSelf
-                ? "The events you attend will show up here."
-                : "When they check in somewhere, it shows up here."
-            }
-          />
-        )}
-      </section>
+      {isSelf ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+            Hosting
+          </h2>
+          <HostingList />
+        </section>
+      ) : (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+            Past Events
+          </h2>
+          {user.visits.length ? (
+            <RouteList visits={user.visits} />
+          ) : (
+            <EmptyState
+              icon={LuMapPinned}
+              title="Nothing shared yet"
+              subtitle="When they check in somewhere, it shows up here."
+            />
+          )}
+        </section>
+      )}
     </div>
   );
 }

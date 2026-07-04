@@ -23,7 +23,7 @@ export function CityMapScreen({
     <MapScreen
       title={city.name}
       city={city.name}
-      country={city.country}
+      filterCity={city.name}
       defaultInterest={defaultInterest}
       logo={
         <span

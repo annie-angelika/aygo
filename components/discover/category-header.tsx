@@ -8,17 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Stat } from "@/components/ui/stat";
 import { CATEGORY_META } from "@/lib/events-data";
-import { findCategoryBrowse } from "@/lib/discover-data";
+import { findCategoryPage } from "@/lib/discover-data";
+import { useCategoryStat } from "@/hooks/use-discover";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 
 /**
  * Banner-less interest header (Luma category style): a tinted logo, the name,
  * a stat row, a blurb, and a Subscribe action. Used by the category page.
+ * Copy renders instantly from the seed; the real event count comes from the
+ * backend (`useCategoryStat`).
  */
 export function CategoryHeader({ category }: { category: Category }) {
   const { Icon, soft, accent } = CATEGORY_META[category];
-  const info = findCategoryBrowse(category);
+  const { stat } = useCategoryStat(category);
+  const info = stat ?? findCategoryPage(category);
   const [subscribed, setSubscribed] = useState(false);
 
   return (
@@ -43,12 +47,14 @@ export function CategoryHeader({ category }: { category: Category }) {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
         <span className="inline-flex items-center gap-1.5">
           <LuCalendar className="size-4 text-muted-foreground" aria-hidden />
-          <Stat inline value={info?.count ?? "—"} label="events" />
+          <Stat inline value={stat ? String(stat.count) : "—"} label="events" />
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <LuUsers className="size-4 text-muted-foreground" aria-hidden />
-          <Stat inline value={info?.subscribers ?? "—"} label="subscribers" />
-        </span>
+        {info?.subscribers && (
+          <span className="inline-flex items-center gap-1.5">
+            <LuUsers className="size-4 text-muted-foreground" aria-hidden />
+            <Stat inline value={info.subscribers} label="subscribers" />
+          </span>
+        )}
       </div>
 
       <Separator />

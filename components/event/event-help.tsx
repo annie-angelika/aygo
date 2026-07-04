@@ -1,13 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import { LuMail, LuFlag } from "react-icons/lu";
 
 import { categorySlug } from "@/lib/events-data";
 import { ActionDialog } from "@/components/event/action-dialog";
+import { sendEventFeedback } from "@/lib/api";
 import type { AygoEvent } from "@/types";
 
 /**
  * The closing meta under the roster (Luma-style): contact + report actions and
- * the event's interest tag. Kept in our own light/amber look.
+ * the event's interest tag. Both actions land in the admin inbox for real.
  */
 export function EventHelp({ event }: { event: AygoEvent }) {
   return (
@@ -21,6 +24,7 @@ export function EventHelp({ event }: { event: AygoEvent }) {
           placeholder="What's your question for the host?"
           helper={`The host will reply to you in aygo, ${event.host.name} usually answers within a day.`}
           submitLabel="Send message"
+          onSubmit={(message) => sendEventFeedback(event.id, "question", message)}
         />
         <ActionDialog
           label="Report event"
@@ -31,6 +35,7 @@ export function EventHelp({ event }: { event: AygoEvent }) {
           placeholder="What's going on with this event?"
           submitLabel="Submit report"
           destructive
+          onSubmit={(message) => sendEventFeedback(event.id, "report", message)}
         />
       </div>
 

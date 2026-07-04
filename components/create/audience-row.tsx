@@ -2,10 +2,10 @@
 
 import { LuChevronDown, LuGlobe, LuLock, LuPlus, LuCheck, LuInfo } from "react-icons/lu";
 
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Menu, MenuTrigger, MenuContent, MenuItem } from "@/components/ui/menu";
 import { CALENDARS, type Visibility } from "@/lib/create-event";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 
 const pill =
   "flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-[13px] font-semibold text-foreground ring-1 ring-border outline-none transition-colors hover:bg-muted/70 data-popup-open:bg-muted/70";
@@ -42,7 +42,10 @@ function CalendarMenu({
     <Menu>
       <MenuTrigger className={cn(pill, "min-w-0")}>
         <Avatar className="size-5">
-          <AvatarImage src={current.avatar} alt="" />
+          {current.avatar && <AvatarImage src={current.avatar} alt="" />}
+          <AvatarFallback className="text-[9px] font-semibold">
+            {initials(current.name)}
+          </AvatarFallback>
         </Avatar>
         <span className="truncate">{current.name}</span>
         <LuChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -58,7 +61,10 @@ function CalendarMenu({
             className="gap-2.5 px-2 py-2"
           >
             <Avatar className="size-7">
-              <AvatarImage src={c.avatar} alt="" />
+              {c.avatar && <AvatarImage src={c.avatar} alt="" />}
+              <AvatarFallback className="text-[10px] font-semibold">
+                {initials(c.name)}
+              </AvatarFallback>
             </Avatar>
             <span className="flex-1 text-[14px] font-medium text-foreground">{c.name}</span>
             {c.id === value && <LuCheck className="size-4 text-foreground" aria-hidden />}

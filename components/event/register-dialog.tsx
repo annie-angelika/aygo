@@ -10,6 +10,7 @@ import {
 } from "react-icons/lu";
 
 import { useRegistrations } from "@/hooks/use-registrations";
+import { useProfileEdits } from "@/hooks/use-profile";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -39,21 +40,21 @@ export function RegisterDialog({
   children: React.ReactNode;
 }) {
   const { apply, join } = useRegistrations();
+  const { edits } = useProfileEdits();
   const auth = useAuth();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState("");
 
   const cfg = applyConfigFor(event);
-  // Your details come pre-loaded from the social login — the host sees who's
-  // applying without you re-typing anything. Falls back to the mock profile
-  // when a field isn't provided by the auth provider.
+  // Your details come pre-loaded, same precedence as everywhere: explicit
+  // profile edits win, then the social login, then the neutral base.
   const base = currentApplicant();
   const me: Applicant = {
-    name: auth.name ?? base.name,
-    avatar: auth.avatar ?? base.avatar,
+    name: edits.name ?? auth.name ?? base.name,
+    avatar: edits.avatar ?? auth.avatar ?? base.avatar,
     handle: auth.email ?? base.handle,
-    location: base.location,
+    location: edits.location ?? base.location,
   };
 
   function handleOpenChange(next: boolean) {

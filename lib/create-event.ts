@@ -39,6 +39,9 @@ export type EventDraft = {
   endsAt: string;
   timezone: string;
   location: string;
+  /** Filled server-side by geocoding `location` when the draft syncs. */
+  lat?: number;
+  lng?: number;
   description: string;
   price: number | null; // null/0 → free, BOB otherwise
   requiresApproval: boolean;
@@ -61,4 +64,13 @@ export const STOCK_COVERS = [
 export function saveDraft(draft: EventDraft): void {
   const existing = readStorage<EventDraft[]>(STORAGE_KEYS.created, []);
   writeStorage(STORAGE_KEYS.created, [draft, ...existing]);
+}
+
+/** Drop a created event from local storage (after the server delete succeeds). */
+export function removeDraft(id: string): void {
+  const existing = readStorage<EventDraft[]>(STORAGE_KEYS.created, []);
+  writeStorage(
+    STORAGE_KEYS.created,
+    existing.filter((d) => d.id !== id),
+  );
 }

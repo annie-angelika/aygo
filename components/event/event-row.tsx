@@ -3,10 +3,10 @@ import { LuClock, LuCheck } from "react-icons/lu";
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { CATEGORY_META, eventCode } from "@/lib/events-data";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
 
 /** Luma-style list row: time, title, host + place, attendees, thumbnail. */
@@ -34,7 +34,12 @@ export function EventRow({
             </h3>
             <div className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
               <Avatar size="sm" className="size-4">
-                <AvatarImage src={event.host.avatar} alt="" />
+                {event.host.avatar && (
+                  <AvatarImage src={event.host.avatar} alt="" />
+                )}
+                <AvatarFallback className="text-[7px] font-semibold">
+                  {initials(event.host.name)}
+                </AvatarFallback>
               </Avatar>
               <span className="truncate">By {event.host.name}</span>
               <span aria-hidden>·</span>
