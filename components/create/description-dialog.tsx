@@ -4,9 +4,6 @@ import { LuSparkles } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { getStyle } from "@/lib/create-themes";
-import { getFont } from "@/lib/fonts";
-import { cn } from "@/lib/utils";
 
 // A stand-in "AI" draft so the Suggest button does something useful without a
 // real model wired up. Swap for a real completion when the backend lands.
@@ -15,23 +12,20 @@ const SUGGESTION =
 
 /**
  * "Event Description" modal — a focused space to write the blurb (with a mocked
- * "Suggest with AI" helper). The text previews in the event's chosen font + style
- * so you can see how the description will read once published.
+ * "Suggest with AI" helper). Always the app font: the published event page
+ * renders the blurb in the default face, so previewing the theme font here
+ * would be a lie (and read as broken).
  */
 export function DescriptionDialog({
   open,
   onOpenChange,
   value,
   onChange,
-  fontId,
-  styleId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   value: string;
   onChange: (value: string) => void;
-  fontId: string;
-  styleId: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -46,11 +40,7 @@ export function DescriptionDialog({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="What's the event about?"
-            className={cn(
-              "mt-3 min-h-[220px] flex-1 resize-none bg-transparent px-5 text-[14px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground",
-              getStyle(styleId).className,
-            )}
-            style={{ fontFamily: getFont(fontId).family }}
+            className="mt-3 min-h-[220px] flex-1 resize-none bg-transparent px-5 text-[16px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
           />
 
           <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-3">

@@ -3,27 +3,23 @@
 import { useState } from "react";
 import { LuTicket, LuUserCheck, LuArrowUpFromLine, LuPencil } from "react-icons/lu";
 
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CapacityDialog } from "@/components/create/capacity-dialog";
-import { PaymentsDialog } from "@/components/create/payments-dialog";
 
-/** The "Event Options" card: ticket price, approval toggle, and capacity. */
+/** The "Event Options" card: ticket price (payments not live yet — every event
+ * is free for now), approval toggle, and capacity. */
 export function EventOptions({
-  price,
-  onPrice,
   requiresApproval,
   onApproval,
   capacity,
   onCapacity,
 }: {
-  price: number | null;
-  onPrice: (v: number | null) => void;
   requiresApproval: boolean;
   onApproval: (v: boolean) => void;
   capacity: number | null;
   onCapacity: (v: number | null) => void;
 }) {
-  const [payOpen, setPayOpen] = useState(false);
   const [capOpen, setCapOpen] = useState(false);
 
   return (
@@ -31,14 +27,12 @@ export function EventOptions({
       <h2 className="mb-2 text-[15px] font-semibold text-foreground">Event Options</h2>
       <div className="rounded-2xl bg-muted ring-1 ring-border">
         <Row Icon={LuTicket} label="Ticket Price">
-          <button
-            type="button"
-            onClick={() => setPayOpen(true)}
-            className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {price && price > 0 ? `Bs ${price}` : "Free"}
-            <LuPencil className="size-3.5" aria-hidden />
-          </button>
+          <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
+            Free
+            <Badge className="border-transparent bg-amber-100 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
+              Soon
+            </Badge>
+          </span>
         </Row>
         <Divider />
         <Row Icon={LuUserCheck} label="Require Approval">
@@ -57,7 +51,6 @@ export function EventOptions({
         </Row>
       </div>
 
-      <PaymentsDialog open={payOpen} onOpenChange={setPayOpen} price={price} onConfirm={onPrice} />
       <CapacityDialog
         open={capOpen}
         onOpenChange={setCapOpen}

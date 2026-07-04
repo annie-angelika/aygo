@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FONT_VARIABLES } from "@/lib/fonts";
@@ -14,6 +14,15 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// maximumScale: 1 stops iOS Safari's auto-zoom when focusing sub-16px inputs
+// (it zooms in and never zooms back out). Users can still pinch-zoom manually —
+// iOS ignores the cap for real gestures, only the focus auto-zoom respects it.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   // Luma-style tab titles: the page/event name first, then the brand, joined by
