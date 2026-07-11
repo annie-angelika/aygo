@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { LuSearch, LuHouse } from "react-icons/lu";
+import { LuSearch, LuCompass } from "react-icons/lu";
 
 import { TopBar } from "@/components/layout/top-bar";
 
@@ -35,11 +35,11 @@ export default function NotFound() {
         </p>
 
         <Link
-          href="/home"
+          href="/discover"
           className="mt-8 inline-flex h-11 items-center gap-2 rounded-xl bg-white/[0.06] px-5 text-[14px] font-semibold text-zinc-100 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
         >
-          <LuHouse className="size-[18px]" aria-hidden />
-          Return Home
+          <LuCompass className="size-[18px]" aria-hidden />
+          Discover events
         </Link>
       </main>
     </div>
