@@ -5,6 +5,7 @@
 
 import { CURRENT_USER } from "@/lib/events-data";
 import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
+import type { Category } from "@/types";
 
 export type { ThemeId } from "@/lib/create-themes";
 
@@ -47,6 +48,10 @@ export type EventDraft = {
   requiresApproval: boolean;
   capacity: number | null; // null → unlimited
   createdAt: string;
+  /** Admin overrides (an /admin edit of this draft) — the create flow never sets these. */
+  category?: Category;
+  hostName?: string;
+  hostPhone?: string;
 };
 
 /**

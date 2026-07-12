@@ -42,6 +42,7 @@ import {
 import {
   draftToEvent,
   adminInputToEvent,
+  applyAdminInput,
   slugify,
   type Creator,
 } from "@/lib/server/store/draft-event";
@@ -275,6 +276,25 @@ export class PostgresStore implements Store {
 
   async upsertEvent(input: AdminEventInput): Promise<AygoEvent> {
     const id = input.id || slugify(input.title);
+    // A guest-created event's draft is its single source of truth (lists read
+    // it directly), so an admin edit updates the draft in place — and drops any
+    // shadow copy an older build wrote to `events`, which made edits look lost.
+    const created = await this.sql`SELECT ce.data AS draft, p.data AS profile
+                                   FROM created_events ce
+                                   LEFT JOIN profiles p ON p.session_id = ce.session_id
+                                   WHERE ce.id = ${id}`;
+    if (created.length) {
+      const draft = applyAdminInput(created[0].draft as EventDraft, input);
+      await this.sql.transaction([
+        this
+          .sql`UPDATE created_events SET data = ${JSON.stringify(draft)}::jsonb WHERE id = ${id}`,
+        this.sql`DELETE FROM events WHERE id = ${id}`,
+      ]);
+      return draftToEvent(
+        draft,
+        (created[0].profile ?? undefined) as Creator | undefined,
+      );
+    }
     const existing = await this.getEvent(id);
     const event = adminInputToEvent(input, id, existing);
     await this

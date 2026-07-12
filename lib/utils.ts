@@ -14,6 +14,14 @@ export function realAvatar(src?: string): string | undefined {
   return src && !src.includes("picsum.photos") ? src : undefined
 }
 
+/**
+ * Normalize a city name for matching ("Santa cruz " ↔ "Santa Cruz"), so an
+ * admin's or host's casing never hides an event from its city page or counts.
+ */
+export function cityKey(name: string): string {
+  return name.trim().toLowerCase()
+}
+
 /** "Ana María Rojas" → "AM" — the avatar fallback when there's no photo. */
 export function initials(name: string): string {
   return name

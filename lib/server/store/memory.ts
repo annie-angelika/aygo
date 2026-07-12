@@ -40,6 +40,7 @@ import {
 import {
   draftToEvent,
   adminInputToEvent,
+  applyAdminInput,
   slugify,
 } from "@/lib/server/store/draft-event";
 
@@ -199,6 +200,15 @@ export class MemoryStore implements Store {
 
   async upsertEvent(input: AdminEventInput): Promise<AygoEvent> {
     const id = input.id || slugify(input.title);
+    // A guest-created event's draft is its single source of truth (lists read
+    // it directly), so an admin edit updates the draft in place — never a
+    // shadow copy in the catalog map, which made edits look lost.
+    const created = this.createdEvents.find((c) => c.draft.id === id);
+    if (created) {
+      created.draft = applyAdminInput(created.draft, input);
+      this.events.delete(id);
+      return draftToEvent(created.draft, this.guests.get(created.sid)?.profile);
+    }
     const event = adminInputToEvent(input, id, this.events.get(id));
     this.events.set(id, event);
     return event;

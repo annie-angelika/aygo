@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { useEvents } from "@/hooks/use-events";
+import { cityKey } from "@/lib/utils";
 import type { Category } from "@/types";
 
 export type When = "upcoming" | "past";
@@ -34,7 +35,7 @@ export function useEventFilter(
   const filtered = data
     .filter((e) => (past ? e.isPast : !e.isPast))
     .filter((e) => active === "all" || e.category === active)
-    .filter((e) => !city || e.city === city)
+    .filter((e) => !city || cityKey(e.city) === cityKey(city))
     .sort((a, b) =>
       past
         ? b.startsAt.localeCompare(a.startsAt)

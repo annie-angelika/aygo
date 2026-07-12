@@ -5,6 +5,7 @@
 // CATEGORY_META (lib/events-data) — presentation stays client-side.
 
 import { CATEGORIES } from "@/lib/events-data";
+import { cityKey } from "@/lib/utils";
 import type {
   AygoEvent,
   Category,
@@ -27,9 +28,10 @@ export function citiesWithCounts(
   const byCity = new Map<string, number>();
   for (const e of events) {
     if (e.isPast) continue;
-    byCity.set(e.city, (byCity.get(e.city) ?? 0) + 1);
+    const key = cityKey(e.city);
+    byCity.set(key, (byCity.get(key) ?? 0) + 1);
   }
-  return cities.map((c) => ({ ...c, eventCount: byCity.get(c.name) ?? 0 }));
+  return cities.map((c) => ({ ...c, eventCount: byCity.get(cityKey(c.name)) ?? 0 }));
 }
 
 export function categoriesWithCounts(

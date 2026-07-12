@@ -18,6 +18,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { LocationFields } from "@/components/admin/location-fields";
 import { DatePopover } from "@/components/create/date-popover";
 import { TimePopover } from "@/components/create/time-popover";
 import { formatDayPill, formatTimePill } from "@/lib/date-utils";
@@ -185,21 +186,6 @@ function FormBody({
                 onChange={(v) => set({ startsAt: v })}
               />
             </Field>
-            <Field label="City">
-              <Input
-                value={draft.city}
-                onChange={(e) => set({ city: e.target.value })}
-                required
-              />
-            </Field>
-            <Field label="Place">
-              <Input
-                value={draft.place}
-                onChange={(e) => set({ place: e.target.value })}
-                placeholder="Killi Killi Lookout"
-                required
-              />
-            </Field>
             <Field label="Price (BOB, empty = free)">
               <Input
                 type="number"
@@ -217,30 +203,13 @@ function FormBody({
               />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
-        <Field label="Latitude (empty = auto)">
-          <Input
-            type="number"
-            step="any"
-            value={draft.lat ?? ""}
-            onChange={(e) =>
-              set({ lat: e.target.value === "" ? undefined : Number(e.target.value) })
-            }
-            placeholder="-16.4957"
+          <LocationFields
+            city={draft.city}
+            place={draft.place}
+            lat={draft.lat}
+            lng={draft.lng}
+            onChange={set}
           />
-        </Field>
-        <Field label="Longitude (empty = auto)">
-          <Input
-            type="number"
-            step="any"
-            value={draft.lng ?? ""}
-            onChange={(e) =>
-              set({ lng: e.target.value === "" ? undefined : Number(e.target.value) })
-            }
-            placeholder="-68.1372"
-          />
-        </Field>
-      </div>
       <Field label="Host WhatsApp (optional)">
             <Input
               value={draft.hostPhone ?? ""}
