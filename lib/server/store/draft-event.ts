@@ -108,6 +108,33 @@ export function adminInputToEvent(
 /** Who created the draft — the fields we can borrow from their saved profile. */
 export type Creator = { name?: string; avatar?: string };
 
+/**
+ * Merge an admin edit into a guest-created draft. The draft stays the single
+ * source of truth for created events, so an /admin edit must land here — not
+ * as a shadow copy in the catalog. Location round-trips through the
+ * "Place, City" shape `draftToEvent` splits on.
+ */
+export function applyAdminInput(
+  draft: EventDraft,
+  input: AdminEventInput,
+): EventDraft {
+  return {
+    ...draft,
+    title: input.title.trim(),
+    category: input.category,
+    startsAt: input.startsAt,
+    location: `${input.place.trim()}, ${input.city.trim()}`,
+    price: input.price,
+    description: input.blurb.trim(),
+    ...(input.cover?.trim() ? { cover: input.cover.trim() } : null),
+    ...(input.lat != null && input.lng != null
+      ? { lat: input.lat, lng: input.lng }
+      : null),
+    ...(input.hostName?.trim() ? { hostName: input.hostName.trim() } : null),
+    ...(input.hostPhone?.trim() ? { hostPhone: input.hostPhone.trim() } : null),
+  };
+}
+
 export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
   // Location is free text. "Place, City" splits on the last comma; a bare
   // place falls back to the app's home city.
@@ -120,7 +147,7 @@ export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
   return {
     id: draft.id,
     title: draft.title.trim() || "Untitled event",
-    category: DEFAULT_CATEGORY,
+    category: draft.category ?? DEFAULT_CATEGORY,
     // No cover picked → a stable image derived from the chosen THEME, so the
     // same theme always shows the same photo (not a fresh random per event).
     cover:
@@ -133,10 +160,11 @@ export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
       ? { lat: draft.lat, lng: draft.lng }
       : null),
     host: {
-      name: creator?.name || "aygo member",
+      name: draft.hostName || creator?.name || "aygo member",
       // No invented faces — and ignore stock-photo avatars older builds baked
       // into synced profiles. Empty renders as initials in the UI.
       avatar: realAvatar(creator?.avatar) ?? "",
+      ...(draft.hostPhone ? { phone: draft.hostPhone } : null),
     },
     attendees: 0,
     attendeeAvatars: [],
