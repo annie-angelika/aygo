@@ -40,6 +40,8 @@ export type EventDraft = {
   endsAt: string;
   timezone: string;
   location: string;
+  /** City the event belongs to (its grouping bucket). Chosen in the create flow. */
+  city?: string;
   /** Filled server-side by geocoding `location` when the draft syncs. */
   lat?: number;
   lng?: number;

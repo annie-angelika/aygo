@@ -6,11 +6,22 @@ const MONTHS = [
   "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
   "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
 ];
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 /** "2026-06-21" → { month: "JUN", day: "21" } for the calendar tile. */
 function calendarParts(dayKey: string) {
   const [, m, d] = dayKey.split("-");
   return { month: MONTHS[Number(m) - 1] ?? "", day: String(Number(d)) };
+}
+
+/** "2026-08-10T…" → "Mon, Aug 10" for a range's end. */
+function shortDay(iso: string): string {
+  const d = new Date(iso);
+  return `${WEEKDAYS_SHORT[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
 
 /**
@@ -22,6 +33,16 @@ export function EventDetailMeta({ event }: { event: AygoEvent }) {
   const { month, day } = calendarParts(event.dayKey);
   const dateText = event.dayLabel.replace(/^\w+,\s*/, "");
   const mapQuery = encodeURIComponent(`${event.place}, ${event.city}, Bolivia`);
+
+  // When an end is set, show it: a same-day end adds a time range, a later day
+  // shows the full date span so a multi-day event never looks like one day.
+  const endTime = event.endsAt?.slice(11, 16);
+  const multiDay = !!event.endsAt && event.endsAt.slice(0, 10) !== event.dayKey;
+  const dateLine = multiDay
+    ? `${event.weekday}, ${dateText} → ${shortDay(event.endsAt!)}`
+    : `${event.weekday}, ${dateText}`;
+  const timeLine =
+    !multiDay && endTime ? `${event.timeLabel} – ${endTime}` : event.timeLabel;
 
   return (
     <div className="flex flex-col gap-3">
@@ -36,10 +57,10 @@ export function EventDetailMeta({ event }: { event: AygoEvent }) {
         </div>
         <div className="min-w-0">
           <p className="text-[14px] font-semibold text-foreground">
-            {event.weekday}, {dateText}
+            {dateLine}
           </p>
           <p className="text-[12.5px] text-muted-foreground">
-            {event.timeLabel}
+            {timeLine}
           </p>
         </div>
       </div>

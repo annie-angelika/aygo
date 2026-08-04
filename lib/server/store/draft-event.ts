@@ -27,7 +27,7 @@ function dayKeyOf(d: Date): string {
  * "YYYY-MM-DDTHH:mm" start so relative labels never go stale. Shared by the
  * draft projection below and the admin's event upsert.
  */
-export function eventTimeFields(startsAt: string) {
+export function eventTimeFields(startsAt: string, endsAt?: string) {
   const start = new Date(startsAt); // local time
   const now = new Date();
   const dayKey = startsAt.slice(0, 10);
@@ -41,13 +41,16 @@ export function eventTimeFields(startsAt: string) {
       : dayKey === tomorrowKey
         ? "Tomorrow"
         : `${WEEKDAYS_SHORT[start.getDay()]}, ${MONTHS_SHORT[start.getMonth()]} ${start.getDate()}`;
+  // A multi-day event stays "upcoming" until it actually ends, not the moment it
+  // starts — so isPast keys off the end when there is one.
+  const endMs = endsAt ? new Date(endsAt).getTime() : start.getTime();
   return {
     startsAt,
     dayKey,
     dayLabel,
     weekday: WEEKDAYS[start.getDay()],
     timeLabel: startsAt.slice(11, 16),
-    isPast: start.getTime() < now.getTime(),
+    isPast: endMs < now.getTime(),
   };
 }
 
@@ -136,13 +139,18 @@ export function applyAdminInput(
 }
 
 export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
-  // Location is free text. "Place, City" splits on the last comma; a bare
-  // place falls back to the app's home city.
+  // City resolution: an explicit "Place, City" typed into the location wins (the
+  // manage editor works this way), then the create flow's `city` field, then the
+  // app's home city. The create flow's location is a bare venue (no comma), so it
+  // falls through to `draft.city`.
   const comma = draft.location.lastIndexOf(",");
   const place =
     (comma > 0 ? draft.location.slice(0, comma) : draft.location).trim() ||
     "To be announced";
-  const city = (comma > 0 ? draft.location.slice(comma + 1) : "").trim() || "La Paz";
+  const city =
+    (comma > 0 ? draft.location.slice(comma + 1) : "").trim() ||
+    draft.city?.trim() ||
+    "La Paz";
 
   return {
     id: draft.id,
@@ -153,7 +161,8 @@ export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
     cover:
       draft.cover ??
       `https://picsum.photos/seed/aygo-theme-${draft.theme}/800/600`,
-    ...eventTimeFields(draft.startsAt),
+    ...eventTimeFields(draft.startsAt, draft.endsAt),
+    ...(draft.endsAt ? { endsAt: draft.endsAt } : null),
     place,
     city,
     ...(draft.lat != null && draft.lng != null

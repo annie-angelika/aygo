@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { CITIES, findCity } from "@/lib/cities-data";
 import { getStore } from "@/lib/server/store";
+import { anchoredCatalogEvents } from "@/lib/server/store/catalog";
 import { FEATURED_CALENDARS, findCalendar } from "@/lib/discover-data";
 import {
   CATEGORIES,
@@ -32,6 +33,15 @@ import { EventDetail } from "@/components/screens/event-detail";
  */
 const findCreatedByCode = cache((code: string) =>
   getStore().getEventByCode(code),
+);
+
+/**
+ * Resolve a seeded event by its share code from the re-anchored catalog, so the
+ * detail page shows the same live dates the seeded database (and every list)
+ * does — not the raw authoring-time dates frozen in the static array.
+ */
+const findSeededByCode = cache((code: string) =>
+  anchoredCatalogEvents().find((e) => eventCode(e.id) === code),
 );
 
 export function generateStaticParams() {
@@ -93,7 +103,9 @@ export default async function SlugPage({
     );
   }
 
-  const event = findEventByCode(slug) ?? (await findCreatedByCode(slug));
+  // Seeded events resolve from the re-anchored catalog (live dates, refreshed
+  // when-fields); guest-created events come from the store already fresh.
+  const event = findSeededByCode(slug) ?? (await findCreatedByCode(slug));
   if (event) {
     return (
       <main className="mx-auto min-h-svh w-full max-w-md bg-[#f6f4ef]">

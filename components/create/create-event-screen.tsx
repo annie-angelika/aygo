@@ -12,7 +12,9 @@ import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { ThemeSheet } from "@/components/create/theme-sheet";
 import { WhenCard } from "@/components/create/when-card";
 import { WhereWhat } from "@/components/create/where-what";
+import type { LocationMeta } from "@/components/create/location-field";
 import { CALENDARS, TIMEZONES, type Visibility } from "@/lib/create-event";
+import { CITY_DATA } from "@/lib/cities-data";
 import { DEFAULT_THEME_ID, getTheme, type ThemeTone } from "@/lib/create-themes";
 import { createEvent } from "@/lib/api";
 import { useMutation } from "@/hooks/use-mutation";
@@ -25,6 +27,8 @@ import { cn } from "@/lib/utils";
  * dark with the active display tone (via the `.dark` token toggle), so it always
  * reads against the background. Portalled menus/sheets/popovers inherit it too.
  */
+const KNOWN_CITIES = new Set(CITY_DATA.map((c) => c.name));
+
 export function CreateEventScreen() {
   const [themeId, setThemeId] = useState<string>(DEFAULT_THEME_ID);
   const [fontId, setFontId] = useState(getTheme(DEFAULT_THEME_ID).font);
@@ -38,7 +42,9 @@ export function CreateEventScreen() {
   const [start, setStart] = useState(`${todayValue()}T22:30`);
   const [end, setEnd] = useState(`${todayValue()}T23:30`);
   const [timezone, setTimezone] = useState(TIMEZONES[0]);
+  const [city, setCity] = useState(CITY_DATA[0].name); // La Paz — now visible & changeable
   const [location, setLocation] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [description, setDescription] = useState("");
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [capacity, setCapacity] = useState<number | null>(null);
@@ -46,6 +52,16 @@ export function CreateEventScreen() {
 
   const theme = getTheme(themeId);
   const tone: ThemeTone = displayOverride ?? theme.tone;
+
+  // Picking a real search result carries its coordinates (for the pin) and, when
+  // it's one of our known cities, snaps the city selector to match.
+  function handleLocation(loc: string, meta?: LocationMeta) {
+    setLocation(loc);
+    setCoords(
+      meta?.lat != null && meta?.lng != null ? { lat: meta.lat, lng: meta.lng } : null,
+    );
+    if (meta?.city && KNOWN_CITIES.has(meta.city)) setCity(meta.city);
+  }
 
   // Reactively match the document's token mode to the active tone. Split from the
   // restore so switching themes never flashes the default in between (the flicker).
@@ -91,7 +107,9 @@ export function CreateEventScreen() {
       startsAt: start,
       endsAt: end,
       timezone,
+      city,
       location: location.trim(),
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : null),
       description: description.trim(),
       price: null, // payments aren't live yet — every event is free
       requiresApproval,
@@ -146,8 +164,10 @@ export function CreateEventScreen() {
         />
 
         <WhereWhat
+          city={city}
+          onCity={setCity}
           location={location}
-          onLocation={setLocation}
+          onLocationSelect={handleLocation}
           description={description}
           onDescription={setDescription}
         />
