@@ -25,9 +25,13 @@ export const POST = handler(async (req: Request) => {
   if (!owner && (await store.getEvent(draft.id)))
     throw new HttpError(409, "That id is taken");
   // Pin the event on the real map: geocode its free-text location once, at
-  // write time. Bolivia-biased since the create flow is La Paz-first.
+  // write time. Anchor to the chosen city (then Bolivia) so the pin lands in the
+  // right place instead of a same-named venue elsewhere. Skipped when the picker
+  // already supplied coordinates from a selected search result.
   if (draft.lat == null || draft.lng == null) {
+    const withCity = draft.city ? `${draft.location}, ${draft.city}` : null;
     const coords =
+      (withCity ? await geocode(withCity) : null) ??
       (await geocode(`${draft.location}, Bolivia`)) ??
       (await geocode(draft.location));
     if (coords) {

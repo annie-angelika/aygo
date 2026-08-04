@@ -28,11 +28,11 @@ import type {
   EventReport,
 } from "@/lib/server/store/types";
 import {
-  CATALOG_EVENTS,
   CATALOG_USERS,
   CATALOG_CITIES,
   CATALOG_CALENDARS,
   CATALOG_CATEGORY_PAGES,
+  anchoredCatalogEvents,
   citiesWithCounts,
   categoriesWithCounts,
   withLiveAttendance,
@@ -84,7 +84,7 @@ export class MemoryStore implements Store {
   }
 
   async seed(): Promise<{ events: number; users: number }> {
-    this.events = new Map(CATALOG_EVENTS.map((e) => [e.id, e]));
+    this.events = new Map(anchoredCatalogEvents().map((e) => [e.id, e]));
     this.users = new Map(CATALOG_USERS.map((u) => [u.username, u]));
     this.calendars = new Map(CATALOG_CALENDARS.map((c) => [c.id, c]));
     return { events: this.events.size, users: this.users.size };

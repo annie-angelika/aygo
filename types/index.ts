@@ -26,6 +26,8 @@ export type AygoEvent = {
   cover: string;
   // when
   startsAt: string; // ISO — sort key
+  /** ISO end. Present when the event spans a range (esp. multiple days). */
+  endsAt?: string;
   dayKey: string; // "2026-06-27" — groups rows under one date header
   dayLabel: string; // "Today", "Tomorrow", "Sat, Jun 27"
   weekday: string; // "Saturday"

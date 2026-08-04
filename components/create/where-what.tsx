@@ -3,18 +3,23 @@
 import { useState } from "react";
 import { LuAlignLeft } from "react-icons/lu";
 
-import { LocationField } from "@/components/create/location-field";
+import { CitySelect } from "@/components/create/city-select";
+import { LocationField, type LocationMeta } from "@/components/create/location-field";
 import { DescriptionDialog } from "@/components/create/description-dialog";
 
-/** Location + description — the two rows below the date block. */
+/** City + location + description — the block below the date card. */
 export function WhereWhat({
+  city,
+  onCity,
   location,
-  onLocation,
+  onLocationSelect,
   description,
   onDescription,
 }: {
+  city: string;
+  onCity: (v: string) => void;
   location: string;
-  onLocation: (v: string) => void;
+  onLocationSelect: (value: string, meta?: LocationMeta) => void;
   description: string;
   onDescription: (v: string) => void;
 }) {
@@ -22,7 +27,9 @@ export function WhereWhat({
 
   return (
     <div className="space-y-2">
-      <LocationField value={location} onChange={onLocation} />
+      <CitySelect value={city} onChange={onCity} />
+
+      <LocationField value={location} city={city} onSelect={onLocationSelect} />
 
       <button
         type="button"

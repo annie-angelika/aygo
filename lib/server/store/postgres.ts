@@ -35,6 +35,7 @@ import {
   CATALOG_CITIES,
   CATALOG_CALENDARS,
   CATALOG_CATEGORY_PAGES,
+  anchoredCatalogEvents,
   citiesWithCounts,
   categoriesWithCounts,
   withLiveAttendance,
@@ -84,7 +85,7 @@ export class PostgresStore implements Store {
   async seed(): Promise<{ events: number; users: number }> {
     await this.init();
     await this.sql.transaction([
-      ...CATALOG_EVENTS.map(
+      ...anchoredCatalogEvents().map(
         (e) =>
           this.sql`INSERT INTO events (id, data) VALUES (${e.id}, ${JSON.stringify(e)}::jsonb)
                    ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`,
