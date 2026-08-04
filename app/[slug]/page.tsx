@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { CITIES, findCity } from "@/lib/cities-data";
 import { getStore } from "@/lib/server/store";
-import { anchoredCatalogEvents } from "@/lib/server/store/catalog";
 import { FEATURED_CALENDARS, findCalendar } from "@/lib/discover-data";
 import {
   CATEGORIES,
@@ -27,21 +26,14 @@ import { EventDetail } from "@/components/screens/event-detail";
  * immersive (its own back button + sticky RSVP), like /create.
  */
 /**
- * Guest-created events aren't in the static catalog — when every static lookup
- * misses, ask the store (deduped across metadata + page render). Only unknown
- * slugs reach this, so the static pages stay database-free.
+ * Resolve any event (seeded or guest-created) by its share code from the store,
+ * so the detail page reads the exact same rows — and the exact same dates — as
+ * the lists do. Resolving seeded events from the static array instead would drift
+ * out of sync once the seeded dates and "today" diverge. `cache` dedupes the
+ * lookup across metadata + render.
  */
-const findCreatedByCode = cache((code: string) =>
+const findEventByCodeInStore = cache((code: string) =>
   getStore().getEventByCode(code),
-);
-
-/**
- * Resolve a seeded event by its share code from the re-anchored catalog, so the
- * detail page shows the same live dates the seeded database (and every list)
- * does — not the raw authoring-time dates frozen in the static array.
- */
-const findSeededByCode = cache((code: string) =>
-  anchoredCatalogEvents().find((e) => eventCode(e.id) === code),
 );
 
 export function generateStaticParams() {
@@ -64,7 +56,7 @@ export async function generateMetadata({
     findCalendar(slug)?.name ??
     findCategory(slug) ??
     findEventByCode(slug)?.title ??
-    (await findCreatedByCode(slug))?.title;
+    (await findEventByCodeInStore(slug))?.title;
   return name ? { title: name } : { title: { absolute: "aygo" } };
 }
 
@@ -103,9 +95,9 @@ export default async function SlugPage({
     );
   }
 
-  // Seeded events resolve from the re-anchored catalog (live dates, refreshed
-  // when-fields); guest-created events come from the store already fresh.
-  const event = findSeededByCode(slug) ?? (await findCreatedByCode(slug));
+  // Every event — seeded or guest-created — resolves from the store, so the
+  // detail always matches the lists (same rows, same dates).
+  const event = await findEventByCodeInStore(slug);
   if (event) {
     return (
       <main className="mx-auto min-h-svh w-full max-w-md bg-[#f6f4ef]">
