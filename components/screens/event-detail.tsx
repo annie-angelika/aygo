@@ -9,7 +9,10 @@ import type { AygoEvent } from "@/types";
 
 export function EventDetail({ event }: { event: AygoEvent }) {
   return (
-    <div className="flex min-h-svh flex-col pb-32">
+    // overflow-x-hidden: this is a full-bleed immersive screen (like /create) —
+    // guard against any child nudging past the viewport and scrolling the whole
+    // page sideways, which clips every row on the left at mobile widths.
+    <div className="flex min-h-svh flex-col overflow-x-hidden pb-32">
       {/* Always-on-top controls — stay pinned as the page scrolls. */}
       <div className="fixed inset-x-0 top-0 z-40 px-4 pt-4">
         <div className="mx-auto flex w-full max-w-md items-center justify-between">
