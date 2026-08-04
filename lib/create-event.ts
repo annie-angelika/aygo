@@ -50,8 +50,9 @@ export type EventDraft = {
   requiresApproval: boolean;
   capacity: number | null; // null → unlimited
   createdAt: string;
-  /** Admin overrides (an /admin edit of this draft) — the create flow never sets these. */
+  /** Interest the event is filed under — chosen in the create flow. */
   category?: Category;
+  /** Admin overrides (an /admin edit of this draft) — the create flow never sets these. */
   hostName?: string;
   hostPhone?: string;
 };

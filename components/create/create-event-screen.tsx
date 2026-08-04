@@ -12,9 +12,11 @@ import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { ThemeSheet } from "@/components/create/theme-sheet";
 import { WhenCard } from "@/components/create/when-card";
 import { WhereWhat } from "@/components/create/where-what";
+import { CategorySelect } from "@/components/create/category-select";
 import type { LocationMeta } from "@/components/create/location-field";
 import { CALENDARS, TIMEZONES, type Visibility } from "@/lib/create-event";
 import { CITY_DATA } from "@/lib/cities-data";
+import type { Category } from "@/types";
 import { DEFAULT_THEME_ID, getTheme, type ThemeTone } from "@/lib/create-themes";
 import { createEvent } from "@/lib/api";
 import { useMutation } from "@/hooks/use-mutation";
@@ -39,6 +41,7 @@ export function CreateEventScreen() {
   const [calendarId, setCalendarId] = useState(CALENDARS[0].id);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<Category>("Party");
   const [start, setStart] = useState(`${todayValue()}T22:30`);
   const [end, setEnd] = useState(`${todayValue()}T23:30`);
   const [timezone, setTimezone] = useState(TIMEZONES[0]);
@@ -104,6 +107,7 @@ export function CreateEventScreen() {
       cover,
       calendarId,
       visibility,
+      category,
       startsAt: start,
       endsAt: end,
       timezone,
@@ -153,6 +157,8 @@ export function CreateEventScreen() {
           aria-label="Event name"
           className="w-full bg-transparent text-[30px] font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
         />
+
+        <CategorySelect value={category} onChange={setCategory} />
 
         <WhenCard
           start={start}
