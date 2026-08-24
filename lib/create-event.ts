@@ -34,6 +34,12 @@ export type EventDraft = {
   title: string;
   theme: string; // theme id, see lib/create-themes
   cover: string | null;
+  /** Every photo (the cover is the first). Absent on older drafts. */
+  images?: string[];
+  /** CSS object-position for the cover — the host's chosen focal point. */
+  coverPosition?: string;
+  /** Small (≤480px) copy of the cover for lists, generated client-side on save. */
+  thumb?: string;
   calendarId: string;
   visibility: Visibility;
   startsAt: string;
@@ -68,10 +74,39 @@ export const STOCK_COVERS = [
   "festival", "garden", "studio", "neon-room", "desert", "forest",
 ].map((seed, i) => `https://picsum.photos/seed/aygo-${seed}/600/${COVER_HEIGHTS[i % COVER_HEIGHTS.length]}`);
 
-/** Append a created event to local storage so the flow has a real effect. */
+/** How many photos an event can carry (each is a resized JPEG data URL). */
+export const MAX_IMAGES = 6;
+
+/**
+ * Uploaded photos are data URLs; keep them out of localStorage (they'd blow the
+ * quota after a couple of events) — the server copy is the source of truth for
+ * media, the local list only needs ids + metadata.
+ */
+export function stripDraftMedia(draft: EventDraft): EventDraft {
+  const local = (src: string | null | undefined) =>
+    src && src.startsWith("data:") ? null : (src ?? null);
+  const { thumb: _thumb, ...rest } = draft;
+  void _thumb;
+  return {
+    ...rest,
+    cover: local(draft.cover),
+    images: draft.images?.map((i) => local(i)).filter((i): i is string => !!i),
+  };
+}
+const stripMedia = stripDraftMedia;
+
+/** Save (or replace) a created event in local storage so the flow has a real effect. */
 export function saveDraft(draft: EventDraft): void {
   const existing = readStorage<EventDraft[]>(STORAGE_KEYS.created, []);
-  writeStorage(STORAGE_KEYS.created, [draft, ...existing]);
+  writeStorage(STORAGE_KEYS.created, [
+    stripMedia(draft),
+    ...existing.filter((d) => d.id !== draft.id),
+  ]);
+}
+
+/** Replace the local list wholesale (from the server's copy on sync). */
+export function replaceDrafts(drafts: EventDraft[]): void {
+  writeStorage(STORAGE_KEYS.created, drafts.map(stripMedia));
 }
 
 /** Drop a created event from local storage (after the server delete succeeds). */

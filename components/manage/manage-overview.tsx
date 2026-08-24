@@ -28,12 +28,16 @@ export function ManageOverview({
         <img
           src={event.cover}
           alt=""
-          className="h-36 w-full object-cover"
+          className="aspect-[4/3] w-full object-cover"
+          style={event.coverPosition ? { objectPosition: event.coverPosition } : undefined}
         />
         <div className="flex flex-col gap-2.5 p-4">
           <p className="flex items-center gap-2 text-[13.5px] font-semibold text-foreground">
             <LuCalendar className="size-4 shrink-0 text-amber-600" aria-hidden />
-            {event.weekday}, {event.dayLabel}
+            {/* dayLabel already carries a short weekday ("Fri, Aug 28") except for Today/Tomorrow. */}
+            {/^\w{3}, /.test(event.dayLabel)
+              ? `${event.weekday}, ${event.dayLabel.slice(5)}`
+              : `${event.weekday}, ${event.dayLabel}`}
           </p>
           <p className="flex items-center gap-2 text-[13.5px] font-semibold text-foreground">
             <LuClock className="size-4 shrink-0 text-amber-600" aria-hidden />

@@ -5,6 +5,7 @@ import { LuLock, LuCompass } from "react-icons/lu";
 import type { IconType } from "react-icons";
 
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConsentNote } from "@/components/auth/consent-note";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -44,8 +45,9 @@ export function AuthGate({
           <p className="max-w-[26ch] text-[12.5px] leading-snug text-violet-200/70">
             {description}
           </p>
-          <div className="mt-4 flex w-full flex-col gap-2">
+          <div className="mt-4 flex w-full flex-col items-center gap-2">
             <SignInButton className="h-11 w-full rounded-full text-[14px]" />
+            <ConsentNote tone="dark" />
             <Link
               href="/discover"
               className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold text-violet-200/80 transition-colors hover:text-white"
@@ -68,6 +70,7 @@ export function AuthGate({
         action={
           <div className="flex flex-col items-center gap-2">
             <SignInButton className="h-11 rounded-full px-8 text-[14px]" />
+            <ConsentNote />
             <Link
               href="/discover"
               className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"

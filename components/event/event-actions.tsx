@@ -6,6 +6,7 @@ import { useRegistrations } from "@/hooks/use-registrations";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { RegisterDialog } from "@/components/event/register-dialog";
+import { TicketContact } from "@/components/event/ticket-contact";
 import { applyConfigFor } from "@/lib/apply";
 import type { AygoEvent } from "@/types";
 
@@ -22,19 +23,28 @@ export function EventActions({ event }: { event: AygoEvent }) {
   const going = hydrated && isGoing(event.id);
   const pending = hydrated && isApplied(event.id);
   const cfg = applyConfigFor(event);
+  const paid = event.price != null && event.price > 0;
+  const cta = cfg.requiresApproval
+    ? "Request to join"
+    : paid
+      ? `Get your ticket · Bs ${event.price}`
+      : "Get your spot";
 
   // Registering needs an identity. Signed-out, the CTA opens the login modal;
   // the registration sheet (which prefills your profile) only appears once
   // you're in, so the host always sees who's applying.
   if (!isAuthenticated) {
     return (
-      <Button
-        size="lg"
-        onClick={openLoginModal}
-        className="h-12 w-full rounded-full text-[14px]"
-      >
-        {cfg.requiresApproval ? "Request to join" : "Get your spot"}
-      </Button>
+      <div className="flex flex-col gap-2.5">
+        <Button
+          size="lg"
+          onClick={openLoginModal}
+          className="h-12 w-full rounded-full text-[14px]"
+        >
+          {cta}
+        </Button>
+        <TicketContact event={event} />
+      </div>
     );
   }
 
@@ -83,10 +93,13 @@ export function EventActions({ event }: { event: AygoEvent }) {
   }
 
   return (
-    <RegisterDialog event={event}>
-      <Button size="lg" className="h-12 w-full rounded-full text-[14px]">
-        {cfg.requiresApproval ? "Request to join" : "Get your spot"}
-      </Button>
-    </RegisterDialog>
+    <div className="flex flex-col gap-2.5">
+      <RegisterDialog event={event}>
+        <Button size="lg" className="h-12 w-full rounded-full text-[14px]">
+          {cta}
+        </Button>
+      </RegisterDialog>
+      <TicketContact event={event} />
+    </div>
   );
 }

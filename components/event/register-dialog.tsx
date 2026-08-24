@@ -30,7 +30,8 @@ import type { AygoEvent } from "@/types";
  * The in-app registration sheet — replaces the WhatsApp handoff. You apply
  * directly: your profile is already loaded (so the host sees who you are), you
  * skim the host's requirements, and either get an instant spot or send a request
- * that waits on the host's approval. Visual flow only; the writes are local.
+ * that waits on the host's approval. The write happens when the sheet closes
+ * (Done, X, backdrop or Escape all route through `handleOpenChange`).
  */
 export function RegisterDialog({
   event,
@@ -82,7 +83,7 @@ export function RegisterDialog({
       <DialogTrigger render={children as React.ReactElement} />
       <DialogContent className="gap-0 p-0">
         {submitted ? (
-          <SubmittedView event={event} cfg={cfg} onDone={() => setOpen(false)} />
+          <SubmittedView event={event} cfg={cfg} onDone={() => handleOpenChange(false)} />
         ) : (
           <div className="flex max-h-[80vh] flex-col">
             <div className="px-5 pt-7">

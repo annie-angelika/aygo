@@ -17,7 +17,7 @@ export function EventRow({
   event: AygoEvent;
   going?: boolean;
 }) {
-  const free = event.price == null;
+  const free = !(event.price != null && event.price > 0);
   const { Icon, accent } = CATEGORY_META[event.category];
 
   return (

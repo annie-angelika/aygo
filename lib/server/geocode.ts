@@ -3,8 +3,15 @@
 // write-time-only usage: we geocode ONCE when an event is created/edited and
 // store the result — never per request or per render). A failure just returns
 // null; the event stays un-mapped rather than blocking the write.
+//
+// Every lookup is BOUNDED to the chosen city: Nominatim's `viewbox` +
+// `bounded=1` restricts hits to the city's box, `countrycodes` to its country,
+// so "Plaza" in La Paz never resolves to La Paz, Mexico. When the box yields
+// nothing (a venue just outside town) we fall back to the country, and only
+// then to the bare query.
 
 import "server-only";
+import { findCityByName } from "@/lib/cities-seed";
 
 export type Coords = { lat: number; lng: number };
 
@@ -20,68 +27,96 @@ export type PlaceHit = {
   lng: number;
 };
 
-/**
- * Live place search for the location picker — same Nominatim endpoint as
- * {@link geocode} but returning several structured hits with address details.
- * Callers should debounce; the route that fronts this is invoked per keystroke
- * only after a pause, keeping us within Nominatim's 1 req/s policy.
- */
-export async function searchPlaces(
-  query: string,
-  limit = 6,
-): Promise<PlaceHit[]> {
-  const q = query.trim();
-  if (q.length < 3) return [];
+/** Where to look: a city's box + country, or just a country. */
+export type SearchScope = {
+  countryCode?: string;
+  bbox?: [number, number, number, number];
+};
+
+/** The search scope for a city name the host picked (undefined → unbounded). */
+export function scopeForCity(city?: string | null): SearchScope | undefined {
+  if (!city) return undefined;
+  const info = findCityByName(city);
+  return info ? { countryCode: info.countryCode, bbox: info.bbox } : undefined;
+}
+
+type Row = {
+  lat: string;
+  lon: string;
+  display_name: string;
+  name?: string;
+  address?: Record<string, string>;
+};
+
+const HEADERS = { "User-Agent": "aygo-events (dev)" };
+
+async function nominatim(
+  q: string,
+  limit: number,
+  scope: SearchScope | undefined,
+  bounded: boolean,
+): Promise<Row[]> {
+  const params = new URLSearchParams({
+    format: "json",
+    addressdetails: "1",
+    "accept-language": "es",
+    limit: String(limit),
+    q,
+  });
+  if (scope?.countryCode) params.set("countrycodes", scope.countryCode);
+  if (bounded && scope?.bbox) {
+    const [w, s, e, n] = scope.bbox;
+    params.set("viewbox", `${w},${n},${e},${s}`);
+    params.set("bounded", "1");
+  }
   try {
-    const url =
-      `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1` +
-      `&limit=${limit}&q=${encodeURIComponent(q)}`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "aygo-events (dev)" },
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+      headers: HEADERS,
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return [];
-    type Row = {
-      lat: string;
-      lon: string;
-      display_name: string;
-      name?: string;
-      address?: Record<string, string>;
-    };
-    const rows = (await res.json()) as Row[];
-    return rows
-      .map((r) => {
-        const lat = Number(r.lat);
-        const lng = Number(r.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        const a = r.address ?? {};
-        const city =
-          a.city || a.town || a.village || a.municipality || a.county || "";
-        const name = r.name?.trim() || r.display_name.split(",")[0].trim();
-        return { name, city, label: r.display_name, lat, lng } satisfies PlaceHit;
-      })
-      .filter((h): h is PlaceHit => h !== null);
+    return (await res.json()) as Row[];
   } catch {
     return [];
   }
 }
 
-export async function geocode(query: string): Promise<Coords | null> {
+function toHit(r: Row): PlaceHit | null {
+  const lat = Number(r.lat);
+  const lng = Number(r.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const a = r.address ?? {};
+  const city = a.city || a.town || a.village || a.municipality || a.county || "";
+  const name = r.name?.trim() || r.display_name.split(",")[0].trim();
+  return { name, city, label: r.display_name, lat, lng };
+}
+
+/**
+ * Live place search for the location picker. Tries the city box first, then
+ * the whole country; never leaks results from other countries when a scope is
+ * known. Callers debounce (Nominatim allows ~1 req/s).
+ */
+export async function searchPlaces(
+  query: string,
+  scope?: SearchScope,
+  limit = 6,
+): Promise<PlaceHit[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+  let rows = await nominatim(q, limit, scope, true);
+  if (rows.length === 0 && scope?.bbox) rows = await nominatim(q, limit, scope, false);
+  return rows.map(toHit).filter((h): h is PlaceHit => h !== null);
+}
+
+/** One best coordinate for a free-text location, within the scope when given. */
+export async function geocode(
+  query: string,
+  scope?: SearchScope,
+): Promise<Coords | null> {
   const q = query.trim();
   if (!q) return null;
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "aygo-events (dev)" },
-      signal: AbortSignal.timeout(4000),
-    });
-    if (!res.ok) return null;
-    const results = (await res.json()) as { lat: string; lon: string }[];
-    if (!results.length) return null;
-    const lat = Number(results[0].lat);
-    const lng = Number(results[0].lon);
-    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-  } catch {
-    return null;
-  }
+  let rows = await nominatim(q, 1, scope, true);
+  if (rows.length === 0 && scope?.bbox) rows = await nominatim(q, 1, scope, false);
+  const hit = rows[0] ? toHit(rows[0]) : null;
+  return hit ? { lat: hit.lat, lng: hit.lng } : null;
 }

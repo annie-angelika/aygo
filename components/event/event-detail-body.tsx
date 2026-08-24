@@ -5,6 +5,7 @@ import { EventLocation } from "@/components/event/event-location";
 import { HostCard } from "@/components/event/host-card";
 import { GoingSection } from "@/components/event/going-section";
 import { EventHelp } from "@/components/event/event-help";
+import { EventGallery } from "@/components/event/event-gallery";
 import { ManageBanner } from "@/components/manage/manage-banner";
 import type { AygoEvent } from "@/types";
 
@@ -15,14 +16,10 @@ import type { AygoEvent } from "@/types";
  * the surrounding shell supplies those.
  */
 export function EventDetailBody({ event }: { event: AygoEvent }) {
-  const free = event.price == null;
+  const free = !(event.price != null && event.price > 0);
   return (
     <>
-      <div className="relative h-[300px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={event.cover} alt="" className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-background" />
-      </div>
+      <EventGallery event={event} />
 
       <div className="relative -mt-10 flex flex-col gap-4 px-5">
         <ManageBanner eventId={event.id} />

@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { LuArrowUpRight, LuLock } from "react-icons/lu";
 
 import { BackButton } from "@/components/ui/back-button";
@@ -20,10 +21,15 @@ import { useManageEvent } from "@/hooks/use-manage-event";
 import { eventCode } from "@/lib/events-data";
 
 type Tab = "overview" | "guests" | "settings" | "inbox";
+const TABS: Tab[] = ["overview", "guests", "settings", "inbox"];
 
 export function ManageScreen({ eventId }: { eventId: string }) {
   const { data, loading, forbidden, refetch } = useManageEvent(eventId);
-  const [tab, setTab] = useState<Tab>("overview");
+  // Notifications deep-link straight to a tab (?tab=guests / ?tab=inbox).
+  const wanted = useSearchParams().get("tab");
+  const [tab, setTab] = useState<Tab>(
+    TABS.includes(wanted as Tab) ? (wanted as Tab) : "overview",
+  );
 
   if (forbidden) {
     return (

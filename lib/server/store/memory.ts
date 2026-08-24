@@ -9,6 +9,8 @@ import type {
   ProfileEdits,
   Preferences,
   Stamp,
+  FeedbackReply,
+  AppNotification,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type {
@@ -26,6 +28,8 @@ import type {
   AdminEventInput,
   AdminCalendarInput,
   EventReport,
+  ReportRecord,
+  NotificationInput,
 } from "@/lib/server/store/types";
 import {
   CATALOG_USERS,
@@ -72,6 +76,7 @@ export class MemoryStore implements Store {
   private reports: (Omit<EventReport, "eventTitle" | "from"> & {
     sid: string;
   })[] = [];
+  private notifications = new Map<string, AppNotification[]>();
   private createdEvents: { sid: string; draft: EventDraft; createdAt: string }[] =
     [];
 
@@ -102,9 +107,9 @@ export class MemoryStore implements Store {
   // --- Catalog ---
 
   /** Guest drafts, projected into the catalog shape (host = creator profile). */
-  private created(): AygoEvent[] {
+  private created(light: boolean): AygoEvent[] {
     return this.createdEvents.map(({ sid, draft }) =>
-      draftToEvent(draft, this.guests.get(sid)?.profile),
+      draftToEvent(draft, this.guests.get(sid)?.profile, { light }),
     );
   }
 
@@ -126,14 +131,14 @@ export class MemoryStore implements Store {
 
   async listEvents(): Promise<AygoEvent[]> {
     return withLiveAttendance(
-      [...this.created(), ...this.events.values()],
+      [...this.created(true), ...this.events.values()],
       this.goingByEvent(),
     );
   }
 
   async getEvent(id: string): Promise<AygoEvent | null> {
     const event =
-      this.events.get(id) ?? this.created().find((e) => e.id === id);
+      this.events.get(id) ?? this.created(false).find((e) => e.id === id);
     if (!event) return null;
     return withLiveAttendance([event], this.goingByEvent())[0];
   }
@@ -303,6 +308,10 @@ export class MemoryStore implements Store {
     });
   }
 
+  async listMyEvents(sid: string): Promise<EventDraft[]> {
+    return this.createdEvents.filter((c) => c.sid === sid).map((c) => c.draft);
+  }
+
   // --- Host tools ---
 
   async getEventOwner(eventId: string): Promise<string | null> {
@@ -354,27 +363,47 @@ export class MemoryStore implements Store {
     eventId: string,
     kind: FeedbackKind,
     message: string,
-  ): Promise<void> {
+  ): Promise<string> {
+    const id = randomUUID();
     this.reports.unshift({
-      id: randomUUID(),
+      id,
       sid,
       eventId,
       kind,
       message,
       createdAt: new Date().toISOString(),
       status: "open",
+      replies: [],
     });
+    return id;
   }
 
-  async listReports(): Promise<EventReport[]> {
+  private async projectReports(
+    rows: typeof this.reports,
+  ): Promise<EventReport[]> {
     const titles = new Map(
       (await this.listEvents()).map((e) => [e.id, e.title]),
     );
-    return this.reports.map(({ sid, ...r }) => ({
+    return rows.map(({ sid, ...r }) => ({
       ...r,
       eventTitle: titles.get(r.eventId) ?? "(deleted event)",
       from: this.guests.get(sid)?.profile.name || "Guest",
     }));
+  }
+
+  async listReports(): Promise<EventReport[]> {
+    return this.projectReports(this.reports);
+  }
+
+  async listMyReports(sid: string): Promise<EventReport[]> {
+    return this.projectReports(this.reports.filter((r) => r.sid === sid));
+  }
+
+  async getReport(id: string): Promise<ReportRecord | null> {
+    const r = this.reports.find((r) => r.id === id);
+    return r
+      ? { id: r.id, sid: r.sid, eventId: r.eventId, kind: r.kind, status: r.status }
+      : null;
   }
 
   async setReportStatus(
@@ -385,5 +414,43 @@ export class MemoryStore implements Store {
     if (!report) return false;
     report.status = status;
     return true;
+  }
+
+  async addReply(
+    reportId: string,
+    author: FeedbackReply["author"],
+    message: string,
+  ): Promise<void> {
+    const report = this.reports.find((r) => r.id === reportId);
+    if (!report) return;
+    report.replies.push({
+      id: randomUUID(),
+      author,
+      message,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  // --- Notifications ---
+
+  async addNotification(sid: string, input: NotificationInput): Promise<void> {
+    const list = this.notifications.get(sid) ?? [];
+    list.unshift({
+      ...input,
+      id: randomUUID(),
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
+    this.notifications.set(sid, list.slice(0, 100));
+  }
+
+  async listNotifications(sid: string): Promise<AppNotification[]> {
+    return [...(this.notifications.get(sid) ?? [])];
+  }
+
+  async markNotificationsRead(sid: string, ids?: string[]): Promise<void> {
+    for (const n of this.notifications.get(sid) ?? []) {
+      if (!ids || ids.includes(n.id)) n.read = true;
+    }
   }
 }

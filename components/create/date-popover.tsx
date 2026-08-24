@@ -20,10 +20,13 @@ import { cn } from "@/lib/utils";
  */
 export function DatePopover({
   value,
+  min,
   onChange,
   children,
 }: {
   value: string;
+  /** Earliest pickable "YYYY-MM-DD" (inclusive) — days before it are disabled. */
+  min?: string;
   onChange: (value: string) => void;
   children: React.ReactNode;
 }) {
@@ -40,8 +43,15 @@ export function DatePopover({
   };
   const goToday = () => setView({ y: now.getFullYear(), m: now.getMonth() });
 
+  // Reopen on the month of the current value (it may have moved since mount).
+  const syncView = (open: boolean) => {
+    if (!open) return;
+    const d = value ? parseDate(value) : new Date();
+    setView({ y: d.getFullYear(), m: d.getMonth() });
+  };
+
   return (
-    <Popover>
+    <Popover onOpenChange={syncView}>
       <PopoverTrigger render={children as React.ReactElement} />
       <PopoverContent align="start" initialFocus={false} className="w-[300px] p-3">
         <div className="mb-2 flex items-center justify-between">
@@ -81,18 +91,24 @@ export function DatePopover({
           {grid.map(({ value: v, date, inMonth }) => {
             const selected = v === value;
             const isToday = v === today;
+            // ISO date strings compare lexicographically, so this is a date compare.
+            const disabled = !!min && v < min;
             return (
               <button
                 key={v}
                 type="button"
+                disabled={disabled}
+                aria-disabled={disabled}
                 onClick={() => onChange(v)}
                 className={cn(
                   "mx-auto grid size-9 place-items-center rounded-xl text-[13.5px] font-medium transition-colors",
                   selected
                     ? "bg-amber-500 font-semibold text-white"
-                    : inMonth
-                      ? "text-foreground hover:bg-muted"
-                      : "text-muted-foreground/40 hover:bg-muted",
+                    : disabled
+                      ? "cursor-not-allowed text-muted-foreground/30 line-through decoration-muted-foreground/30"
+                      : inMonth
+                        ? "text-foreground hover:bg-muted"
+                        : "text-muted-foreground/40 hover:bg-muted",
                   !selected && isToday && "ring-1 ring-amber-500/60",
                 )}
               >

@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   featured: "aygo.featured", // string[] of stamp eventIds pinned to your passport
   preferences: "aygo.preferences", // Preferences — theme, language, notifications
   created: "aygo.created", // EventDraft[] — events you created (Luma-style create flow)
+  onboarded: "aygo.onboarded", // boolean — the welcome tour was seen/dismissed
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
@@ -43,5 +44,13 @@ export function clearStorage(key: StorageKey): void {
     window.dispatchEvent(new CustomEvent("aygo:storage", { detail: { key } }));
   } catch {
     /* noop */
+  }
+}
+
+/** Drop every per-account key (sign-out / account switch). The welcome-tour
+ * flag is a device fact, not an account one, so it stays. */
+export function clearAllStorage(): void {
+  for (const key of Object.values(STORAGE_KEYS)) {
+    if (key !== STORAGE_KEYS.onboarded) clearStorage(key);
   }
 }

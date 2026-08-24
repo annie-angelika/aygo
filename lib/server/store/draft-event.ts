@@ -8,6 +8,7 @@ import type { AygoEvent, Category } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { AdminEventInput } from "@/lib/server/store/types";
 import { realAvatar } from "@/lib/utils";
+import { localToInstant, dayKeyAt, wallClock } from "@/lib/event-time";
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -16,41 +17,36 @@ const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "S
 /** The create flow doesn't capture a category (yet) — every draft lands here. */
 const DEFAULT_CATEGORY: Category = "Party";
 
-/** Local "YYYY-MM-DD" for a Date, matching the draft's datetime-local shape. */
-function dayKeyOf(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
 /**
  * The derived when-fields every catalog event carries, recomputed from a
- * "YYYY-MM-DDTHH:mm" start so relative labels never go stale. Shared by the
- * draft projection below and the admin's event upsert.
+ * "YYYY-MM-DDTHH:mm" start so relative labels never go stale. Everything is
+ * resolved in the EVENT's timezone (default Bolivia), never the server's —
+ * see lib/event-time.ts. Shared by the draft projection below and the admin's
+ * event upsert.
  */
-export function eventTimeFields(startsAt: string, endsAt?: string) {
-  const start = new Date(startsAt); // local time
-  const now = new Date();
+export function eventTimeFields(startsAt: string, endsAt?: string, timezone?: string) {
+  const startMs = localToInstant(startsAt, timezone);
+  const endMs = endsAt ? localToInstant(endsAt, timezone) : startMs;
+  const now = Date.now();
   const dayKey = startsAt.slice(0, 10);
-  const todayKey = dayKeyOf(now);
-  const tomorrowKey = dayKeyOf(
-    new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
-  );
+  const todayKey = dayKeyAt(now, timezone);
+  const tomorrowKey = dayKeyAt(now + 86_400_000, timezone);
+  const start = wallClock(startMs, timezone);
   const dayLabel =
     dayKey === todayKey
       ? "Today"
       : dayKey === tomorrowKey
         ? "Tomorrow"
-        : `${WEEKDAYS_SHORT[start.getDay()]}, ${MONTHS_SHORT[start.getMonth()]} ${start.getDate()}`;
+        : `${WEEKDAYS_SHORT[start.weekday]}, ${MONTHS_SHORT[start.month]} ${start.day}`;
   // A multi-day event stays "upcoming" until it actually ends, not the moment it
   // starts — so isPast keys off the end when there is one.
-  const endMs = endsAt ? new Date(endsAt).getTime() : start.getTime();
   return {
     startsAt,
     dayKey,
     dayLabel,
-    weekday: WEEKDAYS[start.getDay()],
+    weekday: WEEKDAYS[start.weekday],
     timeLabel: startsAt.slice(11, 16),
-    isPast: endMs < now.getTime(),
+    isPast: Number.isFinite(endMs) ? endMs < now : false,
   };
 }
 
@@ -138,7 +134,16 @@ export function applyAdminInput(
   };
 }
 
-export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
+/**
+ * `light` is the list projection: no gallery, and the small `thumb` in place
+ * of a base64 cover — so `GET /events` stays a few KB per event instead of
+ * shipping every photo of every hosted event. Detail reads use the full shape.
+ */
+export function draftToEvent(
+  draft: EventDraft,
+  creator?: Creator,
+  { light = false }: { light?: boolean } = {},
+): AygoEvent {
   // City resolution: an explicit "Place, City" typed into the location wins (the
   // manage editor works this way), then the create flow's `city` field, then the
   // app's home city. The create flow's location is a bare venue (no comma), so it
@@ -159,9 +164,13 @@ export function draftToEvent(draft: EventDraft, creator?: Creator): AygoEvent {
     // No cover picked → a stable image derived from the chosen THEME, so the
     // same theme always shows the same photo (not a fresh random per event).
     cover:
+      (light ? draft.thumb : undefined) ??
+      draft.images?.[0] ??
       draft.cover ??
       `https://picsum.photos/seed/aygo-theme-${draft.theme}/800/600`,
-    ...eventTimeFields(draft.startsAt, draft.endsAt),
+    ...(!light && draft.images && draft.images.length > 0 ? { images: draft.images } : null),
+    ...(draft.coverPosition ? { coverPosition: draft.coverPosition } : null),
+    ...eventTimeFields(draft.startsAt, draft.endsAt, draft.timezone),
     ...(draft.endsAt ? { endsAt: draft.endsAt } : null),
     place,
     city,

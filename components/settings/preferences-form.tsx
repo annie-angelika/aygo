@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { ThemePicker } from "@/components/settings/theme-picker";
 import { NotificationsSettings } from "@/components/settings/notifications-settings";
+import { TasteSettings } from "@/components/settings/taste-settings";
 import { usePreferences } from "@/hooks/use-preferences";
 import type { LanguagePref, ThemePref } from "@/types";
 
@@ -23,6 +24,8 @@ export function PreferencesForm() {
 
   return (
     <div className="flex flex-col gap-7">
+      <TasteSettings />
+
       <section className="flex flex-col gap-3">
         <h2 className="text-[15px] font-semibold text-foreground">Display</h2>
         <ThemePicker

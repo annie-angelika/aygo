@@ -41,6 +41,8 @@ export function useAuth() {
     avatar: profile?.avatar ?? null,
     login,
     logout,
+    /** Like `logout`, but resolves once Pollar has actually cleared its session. */
+    logoutAsync: () => getClient().logout(),
     openLoginModal,
   };
 }

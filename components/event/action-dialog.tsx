@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { LuCheck } from "react-icons/lu";
 
 import {
   Dialog,
@@ -11,16 +13,19 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 /**
  * A secondary "muted link → modal with a note field" action, reused for both
  * Contact host and Report event. The caller supplies the icon, copy, submit
- * style and the actual `onSubmit` — the message really goes to the backend
- * (admin inbox), and the dialog closes on success.
+ * style and the actual `onSubmit`. On success the modal turns into a
+ * confirmation (with a link to /inbox where the thread lives) instead of
+ * silently vanishing. `trigger` swaps the muted text link for any element.
  */
 export function ActionDialog({
   label,
+  trigger,
   icon,
   iconClassName,
   title,
@@ -29,9 +34,13 @@ export function ActionDialog({
   helper,
   submitLabel,
   destructive = false,
+  successTitle,
+  successBody,
+  defaultMessage = "",
   onSubmit,
 }: {
   label: string;
+  trigger?: ReactNode;
   icon: ReactNode;
   iconClassName?: string;
   title: string;
@@ -40,13 +49,26 @@ export function ActionDialog({
   helper?: string;
   submitLabel: string;
   destructive?: boolean;
+  successTitle: string;
+  successBody: string;
+  defaultMessage?: string;
   /** Sends the message; throw to keep the dialog open with an error. */
-  onSubmit: (message: string) => Promise<void>;
+  onSubmit: (message: string) => Promise<unknown>;
 }) {
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(defaultMessage);
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      setSent(false);
+      setError(null);
+      setMessage(defaultMessage);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,67 +78,98 @@ export function ActionDialog({
     setError(null);
     try {
       await onSubmit(text);
-      setMessage("");
-      setOpen(false);
-    } catch {
-      setError("Couldn't send it — check your connection and try again.");
+      setSent(true);
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 400
+          ? err.message
+          : "Couldn't send it — check your connection and try again.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground">
-        {label}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger ? (
+        <DialogTrigger render={trigger as React.ReactElement} />
+      ) : (
+        <DialogTrigger className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+          {label}
+        </DialogTrigger>
+      )}
 
       <DialogContent className="gap-4">
-        <div className="flex flex-col gap-3">
-          <span
-            className={cn(
-              "grid size-11 place-items-center rounded-full",
-              iconClassName ?? "bg-muted text-muted-foreground",
-            )}
-          >
-            {icon}
-          </span>
-          <div>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription className="mt-1 leading-snug">
-              {description}
-            </DialogDescription>
+        {sent ? (
+          <div className="flex flex-col items-center gap-3 py-2 text-center">
+            <span className="grid size-12 place-items-center rounded-full bg-emerald-100 text-emerald-700">
+              <LuCheck className="size-6" aria-hidden />
+            </span>
+            <div>
+              <DialogTitle>{successTitle}</DialogTitle>
+              <DialogDescription className="mt-1 leading-snug">
+                {successBody}
+              </DialogDescription>
+            </div>
+            <Button
+              nativeButton={false}
+              render={<Link href="/inbox" />}
+              variant="outline"
+              className="h-10 rounded-full px-5 text-[13px]"
+            >
+              Open my inbox
+            </Button>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-3">
+              <span
+                className={cn(
+                  "grid size-11 place-items-center rounded-full",
+                  iconClassName ?? "bg-muted text-muted-foreground",
+                )}
+              >
+                {icon}
+              </span>
+              <div>
+                <DialogTitle>{title}</DialogTitle>
+                <DialogDescription className="mt-1 leading-snug">
+                  {description}
+                </DialogDescription>
+              </div>
+            </div>
 
-        <form onSubmit={submit} className="flex flex-col gap-4">
-          <Textarea
-            placeholder={placeholder}
-            rows={3}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
+            <form onSubmit={submit} className="flex flex-col gap-4">
+              <Textarea
+                placeholder={placeholder}
+                rows={3}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
 
-          {helper && (
-            <p className="-mt-1 text-[11.5px] leading-snug text-muted-foreground">
-              {helper}
-            </p>
-          )}
-          {error && (
-            <p className="-mt-1 text-[12px] font-medium text-destructive">
-              {error}
-            </p>
-          )}
+              {helper && (
+                <p className="-mt-1 text-[11.5px] leading-snug text-muted-foreground">
+                  {helper}
+                </p>
+              )}
+              {error && (
+                <p className="-mt-1 text-[12px] font-medium text-destructive">
+                  {error}
+                </p>
+              )}
 
-          <Button
-            type="submit"
-            disabled={!message.trim() || busy}
-            variant={destructive ? "destructive" : "default"}
-            className="h-11 w-full rounded-xl text-[13.5px]"
-          >
-            {busy ? "Sending…" : submitLabel}
-          </Button>
-        </form>
+              <Button
+                type="submit"
+                disabled={!message.trim() || busy}
+                variant={destructive ? "destructive" : "default"}
+                className="h-11 w-full rounded-xl text-[13.5px]"
+              >
+                {busy ? "Sending…" : submitLabel}
+              </Button>
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

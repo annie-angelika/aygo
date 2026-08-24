@@ -6,6 +6,7 @@ import { LuTicket, LuCompass, LuPlus } from "react-icons/lu";
 
 import { Logo } from "@/components/layout/logo";
 import { ProfileMenu } from "@/components/layout/profile-menu";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export function TopBar({ tone = "light" }: { tone?: "light" | "dark" }) {
   const onDiscover = pathname.startsWith("/discover");
   const onProfile = pathname.startsWith("/user") || pathname.startsWith("/settings");
   const onCreate = pathname.startsWith("/create");
+  const onInbox = pathname.startsWith("/inbox");
 
   return (
     <header
@@ -70,6 +72,8 @@ export function TopBar({ tone = "light" }: { tone?: "light" | "dark" }) {
               <NavIcon href="/home" label="Your events" active={onHome} dark={dark}>
                 <LuTicket className="size-[18px]" />
               </NavIcon>
+
+              <NotificationBell active={onInbox} dark={dark} />
 
               <ProfileMenu active={onProfile} dark={dark} />
             </>

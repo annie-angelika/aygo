@@ -2,6 +2,9 @@ import { SectionTitle } from "@/components/ui/section-title";
 import { InterestRow } from "@/components/discover/interest-row";
 import { CalendarRow } from "@/components/discover/calendar-row";
 import { CityExplorer } from "@/components/city/city-explorer";
+import { ForYouRow } from "@/components/discover/for-you-row";
+import { DiscoverEvents } from "@/components/discover/discover-events";
+import { WelcomeSheet } from "@/components/onboarding/welcome-sheet";
 import { SiteFooter } from "@/components/layout/site-footer";
 
 export function DiscoverScreen() {
@@ -17,9 +20,16 @@ export function DiscoverScreen() {
         </p>
       </header>
 
+      <ForYouRow />
+
       <section>
         <SectionTitle>Browse by interest</SectionTitle>
         <InterestRow />
+      </section>
+
+      <section>
+        <SectionTitle>All events</SectionTitle>
+        <DiscoverEvents />
       </section>
 
       <section>
@@ -35,6 +45,8 @@ export function DiscoverScreen() {
       <div className="-mx-4 mt-auto">
         <SiteFooter />
       </div>
+
+      <WelcomeSheet />
     </div>
   );
 }

@@ -7,6 +7,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // is what makes repeat visits feel instant. It's in-memory by design (per tab,
 // cleared on reload) so it never competes with the audited localStorage surface.
 const cache = new Map<string, unknown>();
+// Instances sharing a cacheKey also share invalidation: `refetch` from one
+// (e.g. the inbox marking everything read) re-runs every other (the bell).
+const listeners = new Map<string, Set<() => void>>();
 
 export type AsyncState<T> = {
   data: T | undefined;
@@ -65,7 +68,23 @@ export function useAsyncData<T>(
     fetcherRef.current = fetcher;
   });
 
-  const refetch = useCallback(() => setNonce((n) => n + 1), []);
+  const refetch = useCallback(() => {
+    const peers = cacheKey ? listeners.get(cacheKey) : undefined;
+    if (peers && peers.size > 0) peers.forEach((bump) => bump());
+    else setNonce((n) => n + 1);
+  }, [cacheKey]);
+
+  useEffect(() => {
+    if (!cacheKey) return;
+    const bump = () => setNonce((n) => n + 1);
+    const set = listeners.get(cacheKey) ?? new Set<() => void>();
+    set.add(bump);
+    listeners.set(cacheKey, set);
+    return () => {
+      set.delete(bump);
+      if (set.size === 0) listeners.delete(cacheKey);
+    };
+  }, [cacheKey]);
 
   useEffect(() => {
     if (!enabled) return;
