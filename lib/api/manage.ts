@@ -50,3 +50,12 @@ export async function setFeedbackStatus(
 ): Promise<void> {
   await api.patch(`/events/${eventId}/feedback/${reportId}`, { status });
 }
+
+/** Answer a question/report in your event's inbox — the guest is notified. */
+export async function replyToFeedback(
+  eventId: string,
+  reportId: string,
+  message: string,
+): Promise<void> {
+  await api.post(`/events/${eventId}/feedback/${reportId}/reply`, { message });
+}

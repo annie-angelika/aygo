@@ -24,6 +24,10 @@ export type AygoEvent = {
   title: string;
   category: Category;
   cover: string;
+  /** Every photo the host added (the cover is the first). Absent → just `cover`. */
+  images?: string[];
+  /** CSS object-position for the cover ("50% 30%") — the host's chosen focal point. */
+  coverPosition?: string;
   // when
   startsAt: string; // ISO — sort key
   /** ISO end. Present when the event spans a range (esp. multiple days). */
@@ -84,6 +88,10 @@ export type Preferences = {
   language: LanguagePref;
   /** Per notification-type id → the channels it's delivered on. */
   notifications: Record<string, NotificationChannel[]>;
+  /** Interests that drive "For you" recommendations. Absent → not chosen yet. */
+  interests?: Category[];
+  /** Home city (a CityInfo name) — recommendations lean toward it. */
+  homeCity?: string;
 };
 
 /** A collected experience — earned by attending an event. */
@@ -108,10 +116,19 @@ export type CityInfo = {
   slug: string;
   name: string;
   country: string;
+  /** ISO 3166-1 alpha-2, lowercase ("bo") — bounds the place search. */
+  countryCode?: string;
   region: Region;
   eventCount: number;
   subscribed?: boolean;
   tagline?: string;
+  /** City centre, for map defaults and search proximity. */
+  lat?: number;
+  lng?: number;
+  /** [west, south, east, north] — the place search is bounded to this box. */
+  bbox?: [number, number, number, number];
+  /** Other names the same city goes by ("Santa Cruz de la Sierra"). */
+  aliases?: string[];
 };
 
 /** A featured community calendar. `category` scopes its events board. */
@@ -145,6 +162,38 @@ export type Attendee = {
 
 /** What a user can send about an event: a question to the host, or a report. */
 export type FeedbackKind = "question" | "report";
+
+/** One reply inside a question/report thread. `mine` is resolved per reader. */
+export type FeedbackReply = {
+  id: string;
+  /** Who wrote it, from the reader's point of view. */
+  author: "host" | "guest";
+  message: string;
+  createdAt: string;
+};
+
+/** What a notification is about — drives its icon and where it links. */
+export type NotificationKind =
+  | "registration" // someone got a spot at your event
+  | "request" // someone asked to join your event
+  | "approved" // the host approved your request
+  | "rejected" // the host declined your request
+  | "question" // a guest asked you something
+  | "reply" // the other side answered in a thread
+  | "report_update"; // your report was resolved / reopened
+
+/** An in-app notification for the signed-in user. */
+export type AppNotification = {
+  id: string;
+  kind: NotificationKind;
+  title: string;
+  body: string;
+  /** Where tapping it goes (event page, manage, or the inbox). */
+  href: string;
+  eventId?: string;
+  read: boolean;
+  createdAt: string;
+};
 
 /** A gamification tier, reached at `min` stamps. */
 export type Level = {

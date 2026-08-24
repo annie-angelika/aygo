@@ -4,6 +4,7 @@ import "./globals.css";
 import { FONT_VARIABLES } from "@/lib/fonts";
 import { PollarAuthProvider } from "@/components/auth/pollar-provider";
 import { ServerSync } from "@/components/layout/server-sync";
+import { AccountSession } from "@/components/layout/account-session";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <PollarAuthProvider>
+          <AccountSession />
           <ServerSync />
           {children}
         </PollarAuthProvider>

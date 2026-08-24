@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { ManageScreen } from "@/components/screens/manage-screen";
 
@@ -16,7 +17,10 @@ export default async function ManageEventPage({
   const { id } = await params;
   return (
     <main className="mx-auto min-h-svh w-full max-w-md bg-background">
-      <ManageScreen eventId={id} />
+      {/* useSearchParams (tab deep-links) needs a Suspense boundary to prerender. */}
+      <Suspense fallback={null}>
+        <ManageScreen eventId={id} />
+      </Suspense>
     </main>
   );
 }

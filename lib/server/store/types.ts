@@ -15,6 +15,8 @@ import type {
   Category,
   Attendee,
   FeedbackKind,
+  FeedbackReply,
+  AppNotification,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { Registrations } from "@/lib/api/registrations";
@@ -83,7 +85,22 @@ export type EventReport = {
   from: string;
   createdAt: string;
   status: "open" | "resolved";
+  /** The conversation under it — host/admin answers and the guest's follow-ups. */
+  replies: FeedbackReply[];
 };
+
+/** What a store needs to know about a report to authorize actions on it. */
+export type ReportRecord = {
+  id: string;
+  /** The reporter's session id — only ever used server-side. */
+  sid: string;
+  eventId: string;
+  kind: FeedbackKind;
+  status: "open" | "resolved";
+};
+
+/** What a route hands the store to create a notification. */
+export type NotificationInput = Omit<AppNotification, "id" | "read" | "createdAt">;
 
 /** One row in the admin "recent creations" feed. */
 export type CreatedEventSummary = {
@@ -158,6 +175,8 @@ export interface Store {
   savePreferences(sid: string, prefs: Preferences): Promise<void>;
 
   createEvent(sid: string, draft: EventDraft): Promise<void>;
+  /** The drafts this session created (newest first) — hydrates a new browser. */
+  listMyEvents(sid: string): Promise<EventDraft[]>;
 
   // --- Host tools (the creator managing their own event) ---
   /** Creator's session id for a user-created event; null for catalog events. */
@@ -165,14 +184,31 @@ export interface Store {
   /** Everything the manage screen shows; null when the event doesn't exist. */
   manageEvent(eventId: string): Promise<ManageData | null>;
 
-  /** File a question/report about an event. */
+  /** File a question/report about an event. Returns the new report's id. */
   addReport(
     sid: string,
     eventId: string,
     kind: FeedbackKind,
     message: string,
-  ): Promise<void>;
+  ): Promise<string>;
   /** The admin inbox, newest first. */
   listReports(): Promise<EventReport[]>;
+  /** The threads THIS session opened (questions + reports), newest first. */
+  listMyReports(sid: string): Promise<EventReport[]>;
+  /** Authorization facts about one report; null when it doesn't exist. */
+  getReport(id: string): Promise<ReportRecord | null>;
   setReportStatus(id: string, status: "open" | "resolved"): Promise<boolean>;
+  /** Append a reply to a thread. `author` is who's speaking, resolved by the route. */
+  addReply(
+    reportId: string,
+    author: FeedbackReply["author"],
+    message: string,
+  ): Promise<void>;
+
+  // --- Notifications (in-app inbox, per session) ---
+  addNotification(sid: string, input: NotificationInput): Promise<void>;
+  /** Newest first, capped to a sensible page. */
+  listNotifications(sid: string): Promise<AppNotification[]>;
+  /** Mark the given ids read — or everything when `ids` is omitted. */
+  markNotificationsRead(sid: string, ids?: string[]): Promise<void>;
 }

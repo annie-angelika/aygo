@@ -106,6 +106,30 @@ server-side for anyone with the link.
 | `fetchRegistrations()` | `GET /me/registrations` | → `{ going, applied, stamps }` | wired |
 | `fetchProfile()` | `GET /me/profile` | → `Partial<ProfileEdits>` | wired |
 | `fetchPreferences()` | `GET /me/preferences` | → `Preferences` | wired |
+| `fetchMyEvents()` | `GET /me/events` | → `EventDraft[]` (what you host) | wired |
+
+### Inbox, messaging and accounts
+
+| Function | Method & path | Body | |
+| --- | --- | --- | --- |
+| `fetchNotifications()` | `GET /me/notifications` | → `{ items, unread }` | wired |
+| `markNotificationsRead(ids?)` | `POST /me/notifications/read` | `{ ids? }` (none = all) | wired |
+| `sendEventFeedback(id, kind, msg)` | `POST /events/:id/feedback` | `{ kind, message }` → `{ id }` | wired |
+| `fetchMyThreads()` | `GET /me/reports` | → `EventReport[]` (your questions/reports + replies) | wired |
+| `replyToMyThread(id, msg)` | `POST /me/reports/:id/reply` | `{ message }` | wired |
+| `replyToFeedback(eventId, reportId, msg)` | `POST /events/:id/feedback/:reportId/reply` | `{ message }` (host) | wired |
+| `linkAccountSession({ account, name, avatar })` | `POST /me/session` | → `{ changed }` | wired |
+| `endAccountSession()` | `DELETE /me/session` | → `{ changed }` | wired |
+
+Notifications are emitted server-side by the routes that cause them
+(`lib/server/notify.ts`): a registration or join request notifies the host,
+a decision notifies the guest, a question/reply notifies the other side, and
+a report status change notifies the reporter. `POST /events` validates dates
+(no past events), media (≤ 6 photos), price, and runs the content filter
+(`lib/server/moderation.ts`) on every free-text field; the same filter guards
+questions, replies and join notes. Accounts: see `lib/server/session.ts` —
+one session id per Pollar account per browser, switched on sign-in and
+rotated on sign-out.
 
 The **hydration** functions (`fetch*`) are called once per page load by
 `hooks/use-server-sync.ts` (mounted in the root layout via

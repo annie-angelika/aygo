@@ -3,36 +3,38 @@
 import { useState } from "react";
 import { LuTicket, LuUserCheck, LuArrowUpFromLine, LuPencil } from "react-icons/lu";
 
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { CapacityDialog } from "@/components/create/capacity-dialog";
+import { PriceDialog } from "@/components/create/price-dialog";
 
-/** The "Event Options" card: ticket price (payments not live yet — every event
- * is free for now), approval toggle, and capacity. */
+/** The "Event Options" card: ticket price (paid to the host directly), approval
+ * toggle, and capacity. */
 export function EventOptions({
+  price,
+  onPrice,
   requiresApproval,
   onApproval,
   capacity,
   onCapacity,
 }: {
+  price: number | null;
+  onPrice: (v: number | null) => void;
   requiresApproval: boolean;
   onApproval: (v: boolean) => void;
   capacity: number | null;
   onCapacity: (v: number | null) => void;
 }) {
   const [capOpen, setCapOpen] = useState(false);
+  const [priceOpen, setPriceOpen] = useState(false);
 
   return (
     <div>
       <h2 className="mb-2 text-[15px] font-semibold text-foreground">Event Options</h2>
       <div className="rounded-2xl bg-muted ring-1 ring-border">
         <Row Icon={LuTicket} label="Ticket Price">
-          <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-            Free
-            <Badge className="border-transparent bg-amber-100 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
-              Soon
-            </Badge>
-          </span>
+          <EditButton onClick={() => setPriceOpen(true)}>
+            {price != null && price > 0 ? `Bs ${price}` : "Free"}
+          </EditButton>
         </Row>
         <Divider />
         <Row Icon={LuUserCheck} label="Require Approval">
@@ -40,14 +42,9 @@ export function EventOptions({
         </Row>
         <Divider />
         <Row Icon={LuArrowUpFromLine} label="Capacity">
-          <button
-            type="button"
-            onClick={() => setCapOpen(true)}
-            className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <EditButton onClick={() => setCapOpen(true)}>
             {capacity != null ? capacity : "Unlimited"}
-            <LuPencil className="size-3.5" aria-hidden />
-          </button>
+          </EditButton>
         </Row>
       </div>
 
@@ -57,7 +54,28 @@ export function EventOptions({
         capacity={capacity}
         onConfirm={onCapacity}
       />
+      {/* Keyed so reopening picks up the latest value. */}
+      <PriceDialog
+        key={`${priceOpen}-${price ?? "free"}`}
+        open={priceOpen}
+        onOpenChange={setPriceOpen}
+        price={price}
+        onConfirm={onPrice}
+      />
     </div>
+  );
+}
+
+function EditButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+    >
+      {children}
+      <LuPencil className="size-3.5" aria-hidden />
+    </button>
   );
 }
 

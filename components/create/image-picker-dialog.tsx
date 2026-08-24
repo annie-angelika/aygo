@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LuUpload, LuSearch } from "react-icons/lu";
+import { LuUpload, LuSearch, LuLoaderCircle } from "react-icons/lu";
 
 import {
   Sheet,
@@ -10,34 +10,67 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { STOCK_COVERS } from "@/lib/create-event";
+import { fileToCover } from "@/lib/image";
 import { cn } from "@/lib/utils";
 
 const CHIPS = ["Featured", "Cup", "Sports", "Spring", "July 4th", "Climate", "Music"];
 
-/** Full-screen "Choose Image" sheet — upload your own, or pick a stock photo. */
+/**
+ * Full-screen "Choose Image" sheet — upload your own (several at once; each is
+ * downscaled client-side so nothing huge is stored), or pick a stock photo.
+ * `remaining` caps how many uploads are still allowed.
+ */
 export function ImagePickerDialog({
   open,
   onOpenChange,
   onSelect,
+  remaining = 1,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (src: string) => void;
+  /** One or more image sources, in the order picked. */
+  onSelect: (srcs: string[]) => void;
+  remaining?: number;
 }) {
   const [active, setActive] = useState("Featured");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function pick(src: string) {
-    onSelect(src);
+  function pick(srcs: string[]) {
+    if (srcs.length === 0) return;
+    onSelect(srcs);
     onOpenChange(false);
   }
 
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => pick(reader.result as string);
-    reader.readAsDataURL(file);
+  async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+      .filter((f) => f.type.startsWith("image/"))
+      .slice(0, Math.max(1, remaining));
+    e.target.value = ""; // let the same file be picked again later
+    if (files.length === 0) return;
+    setBusy(true);
+    setError(null);
+    // Convert one by one so a single unreadable file (e.g. HEIC on some
+    // browsers) doesn't sink the rest.
+    const ok: string[] = [];
+    let failed = 0;
+    for (const f of files) {
+      try {
+        ok.push(await fileToCover(f));
+      } catch {
+        failed++;
+      }
+    }
+    setBusy(false);
+    if (failed > 0)
+      setError(
+        failed === files.length
+          ? "Couldn't read that photo — try a JPG or PNG."
+          : `${failed} photo${failed > 1 ? "s" : ""} couldn't be read and were skipped.`,
+      );
+    if (ok.length > 0 && failed === 0) pick(ok);
+    else if (ok.length > 0) onSelect(ok);
   }
 
   return (
@@ -53,17 +86,32 @@ export function ImagePickerDialog({
         <div className="shrink-0 space-y-3 px-5 pt-4">
           <button
             type="button"
+            disabled={busy}
             onClick={() => fileRef.current?.click()}
-            className="flex w-full flex-col items-center gap-1.5 rounded-2xl border border-dashed border-border bg-background py-7 text-muted-foreground transition-colors hover:bg-muted"
+            className="flex w-full flex-col items-center gap-1.5 rounded-2xl border border-dashed border-border bg-background py-7 text-muted-foreground transition-colors hover:bg-muted disabled:opacity-60"
           >
-            <LuUpload className="size-5" aria-hidden />
-            <span className="text-[12.5px] font-medium">Tap here to upload</span>
+            {busy ? (
+              <LuLoaderCircle className="size-5 animate-spin" aria-hidden />
+            ) : (
+              <LuUpload className="size-5" aria-hidden />
+            )}
+            <span className="text-[12.5px] font-medium">
+              {busy
+                ? "Preparing photos…"
+                : remaining > 1
+                  ? `Tap to upload (up to ${remaining} photos)`
+                  : "Tap here to upload"}
+            </span>
           </button>
+          {error && (
+            <p className="text-center text-[12px] font-medium text-destructive">{error}</p>
+          )}
           <input
             ref={fileRef}
             type="file"
             accept="image/*"
-            onChange={onFile}
+            multiple={remaining > 1}
+            onChange={onFiles}
             className="hidden"
           />
 
@@ -101,7 +149,7 @@ export function ImagePickerDialog({
               <button
                 key={src}
                 type="button"
-                onClick={() => pick(src)}
+                onClick={() => pick([src])}
                 className="block w-full break-inside-avoid overflow-hidden rounded-xl ring-1 ring-border transition-transform active:scale-95"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}

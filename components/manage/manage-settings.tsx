@@ -2,7 +2,8 @@
 
 // Registration & details settings for the host's event — edits the same draft
 // the create flow produced and re-syncs it (the server re-geocodes if the
-// location changed and keeps the share link stable).
+// location changed and keeps the share link stable). Photos, cover framing and
+// price are editable here too.
 
 import { useState } from "react";
 
@@ -18,10 +19,13 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { WhenCard } from "@/components/create/when-card";
+import { WhenCard, whenProblem } from "@/components/create/when-card";
+import { CoverCard } from "@/components/create/cover-card";
+import { PhotosStrip } from "@/components/create/photos-strip";
+import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { DeleteEvent } from "@/components/manage/delete-event";
-import { createEvent } from "@/lib/api";
-import type { EventDraft, Visibility } from "@/lib/create-event";
+import { createEvent, ApiError } from "@/lib/api";
+import { MAX_IMAGES, type EventDraft, type Visibility } from "@/lib/create-event";
 
 export function ManageSettings({
   draft,
@@ -52,27 +56,38 @@ function SettingsForm({
   draft: EventDraft;
   onSaved: () => void;
 }) {
-  const [draft, setDraft] = useState<EventDraft>(initial);
+  // Older drafts only have `cover`; treat it as a one-photo gallery.
+  const [draft, setDraft] = useState<EventDraft>({
+    ...initial,
+    images: initial.images ?? (initial.cover ? [initial.cover] : []),
+  });
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const [note, setNote] = useState<{ text: string; error?: boolean } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const set = (patch: Partial<EventDraft>) =>
     setDraft((d) => ({ ...d, ...patch }));
+  const images = draft.images ?? [];
+  const dateProblem = whenProblem(draft.startsAt, draft.endsAt);
+  const datesUnchanged =
+    draft.startsAt === initial.startsAt && draft.endsAt === initial.endsAt;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setNote(null);
     try {
-      // Location changed → drop the old pin so the server re-geocodes.
-      const next =
-        draft.location === initial.location
-          ? draft
-          : { ...draft, lat: undefined, lng: undefined };
+      const next = { ...draft, cover: images[0] ?? null };
       await createEvent(next);
-      setNote("Saved — your event page is up to date.");
+      setNote({ text: "Saved — your event page is up to date." });
       onSaved();
-    } catch {
-      setNote("Couldn't save — try again.");
+    } catch (err) {
+      setNote({
+        text:
+          err instanceof ApiError && err.status === 400
+            ? err.message
+            : "Couldn't save — try again.",
+        error: true,
+      });
     } finally {
       setBusy(false);
     }
@@ -80,6 +95,21 @@ function SettingsForm({
 
   return (
     <form onSubmit={save} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[12px] font-semibold text-foreground">Photos</span>
+        <CoverCard
+          themeId={draft.theme}
+          cover={images[0] ?? null}
+          position={draft.coverPosition ?? "50% 50%"}
+          onPosition={(p) => set({ coverPosition: p })}
+          onPickImage={() => setPickerOpen(true)}
+        />
+        <PhotosStrip
+          images={images}
+          onChange={(next) => set({ images: next })}
+          onAdd={() => setPickerOpen(true)}
+        />
+      </div>
       <Field label="Title">
         <Input
           value={draft.title}
@@ -101,7 +131,9 @@ function SettingsForm({
       <Field label="Location">
         <Input
           value={draft.location}
-          onChange={(e) => set({ location: e.target.value })}
+          // A new address means the old pin is wrong: drop it so the server
+          // re-geocodes on save (and on any later save too).
+          onChange={(e) => set({ location: e.target.value, lat: undefined, lng: undefined })}
           placeholder="Place, City"
           required
         />
@@ -114,8 +146,17 @@ function SettingsForm({
         />
       </Field>
       <div className="grid grid-cols-2 gap-2.5">
-        <Field label="Price — payments soon">
-          <Input value="Free" disabled aria-label="Price (payments coming soon)" />
+        <Field label="Price in Bs (empty = free)">
+          <Input
+            type="number"
+            min={0}
+            step="0.5"
+            inputMode="decimal"
+            value={draft.price ?? ""}
+            onChange={(e) =>
+              set({ price: e.target.value === "" ? null : Number(e.target.value) })
+            }
+          />
         </Field>
         <Field label="Capacity (empty = unlimited)">
           <Input
@@ -130,6 +171,9 @@ function SettingsForm({
           />
         </Field>
       </div>
+      <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">
+        Paid events are settled directly with you — aygo doesn&apos;t process payments yet.
+      </p>
       <label className="flex items-center justify-between rounded-xl bg-muted/40 px-3.5 py-2.5">
         <span className="text-[12.5px] font-semibold text-foreground">
           Require approval to join
@@ -155,11 +199,30 @@ function SettingsForm({
       </Field>
 
       {note && (
-        <p className="text-[12px] font-medium text-foreground/80">{note}</p>
+        <p
+          className={
+            note.error
+              ? "text-[12px] font-medium text-destructive"
+              : "text-[12px] font-medium text-foreground/80"
+          }
+        >
+          {note.text}
+        </p>
       )}
-      <Button type="submit" disabled={busy} className="h-11 rounded-full text-[14px]">
+      <Button
+        type="submit"
+        disabled={busy || (!datesUnchanged && !!dateProblem)}
+        className="h-11 rounded-full text-[14px]"
+      >
         {busy ? "Saving…" : "Save changes"}
       </Button>
+
+      <ImagePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        remaining={MAX_IMAGES - images.length}
+        onSelect={(srcs) => set({ images: [...images, ...srcs].slice(0, MAX_IMAGES) })}
+      />
     </form>
   );
 }

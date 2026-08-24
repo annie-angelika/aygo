@@ -10,6 +10,11 @@ const LINKS = [
   { href: "/settings", label: "Settings" },
 ];
 
+const LEGAL = [
+  { href: "/terms", label: "Terms" },
+  { href: "/privacy", label: "Privacy" },
+];
+
 const SOCIALS = [
   { href: "https://instagram.com", label: "Instagram", icon: FaInstagram },
   { href: "https://x.com", label: "X", icon: FaXTwitter },
@@ -64,6 +69,22 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
           </Link>
         ))}
       </nav>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 text-[12px] text-muted-foreground">
+        {LEGAL.map(({ href, label }, i) => (
+          <span key={href} className="flex items-center gap-x-2">
+            {i > 0 && <span aria-hidden>·</span>}
+            <Link
+              href={href}
+              className="transition-colors hover:text-foreground"
+            >
+              {label}
+            </Link>
+          </span>
+        ))}
+        <span aria-hidden>·</span>
+        <span>© 2026 aygo</span>
+      </div>
     </footer>
   );
 }

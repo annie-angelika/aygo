@@ -19,12 +19,14 @@ import {
   fetchRegistrations,
   fetchProfile,
   fetchPreferences,
+  fetchMyEvents,
   rsvp,
   applyToEvent,
   collectStamp,
   saveProfile,
   savePreferences,
 } from "@/lib/api";
+import { replaceDrafts } from "@/lib/create-event";
 import type { Preferences, ProfileEdits, Stamp } from "@/types";
 
 let started = false; // module-level: one sync per page load, across mounts
@@ -90,6 +92,13 @@ async function syncPreferences(): Promise<void> {
   }
 }
 
+/** The server's list of events you host is authoritative (it's what /manage
+ * checks), so the local "Hosting" hint simply mirrors it. */
+async function syncHostedEvents(): Promise<void> {
+  const server = await fetchMyEvents();
+  if (server) replaceDrafts(server);
+}
+
 /** Mount once (see components/layout/server-sync.tsx). No-op in mock mode. */
 export function useServerSync(): void {
   useEffect(() => {
@@ -99,6 +108,7 @@ export function useServerSync(): void {
       syncRegistrations(),
       syncProfile(),
       syncPreferences(),
+      syncHostedEvents(),
     ]).then((results) => {
       for (const r of results)
         if (r.status === "rejected")

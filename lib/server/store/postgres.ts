@@ -18,6 +18,8 @@ import type {
   CalendarInfo,
   CategoryStat,
   Attendee,
+  FeedbackReply,
+  AppNotification,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { FeedbackKind } from "@/types";
@@ -29,6 +31,8 @@ import type {
   AdminEventInput,
   AdminCalendarInput,
   EventReport,
+  ReportRecord,
+  NotificationInput,
 } from "@/lib/server/store/types";
 import {
   CATALOG_EVENTS,
@@ -66,6 +70,11 @@ const SCHEMA = [
   // Registration timestamps for the host's manage view.
   `ALTER TABLE going ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()`,
   `ALTER TABLE applications ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()`,
+  // Threads under a question/report (host ↔ guest), and the in-app inbox.
+  `CREATE TABLE IF NOT EXISTS report_replies (id text PRIMARY KEY, report_id text NOT NULL, author text NOT NULL, message text NOT NULL, created_at timestamptz NOT NULL DEFAULT now())`,
+  `CREATE INDEX IF NOT EXISTS report_replies_report_idx ON report_replies (report_id)`,
+  `CREATE TABLE IF NOT EXISTS notifications (id text PRIMARY KEY, session_id text NOT NULL, kind text NOT NULL, title text NOT NULL, body text NOT NULL, href text NOT NULL, event_id text, read boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now())`,
+  `CREATE INDEX IF NOT EXISTS notifications_session_idx ON notifications (session_id, created_at DESC)`,
 ];
 
 export class PostgresStore implements Store {
@@ -146,7 +155,9 @@ export class PostgresStore implements Store {
     return withLiveAttendance(
       [
         ...created.map((r) =>
-          draftToEvent(r.draft as EventDraft, (r.profile ?? undefined) as Creator | undefined),
+          draftToEvent(r.draft as EventDraft, (r.profile ?? undefined) as Creator | undefined, {
+            light: true,
+          }),
         ),
         ...catalog.map((r) => r.data as AygoEvent),
       ],
@@ -203,10 +214,18 @@ export class PostgresStore implements Store {
       this.sql`SELECT data FROM cities`,
       this.listEvents(),
     ]);
-    return citiesWithCounts(
-      rows.map((r) => r.data as Omit<CityInfo, "eventCount">),
-      events,
+    // Seed cities always show (a new city in the code shouldn't wait for a
+    // reseed); a stored row for the same slug carries admin edits and wins.
+    const stored = new Map(
+      rows.map((r) => {
+        const c = r.data as Omit<CityInfo, "eventCount">;
+        return [c.slug, c] as const;
+      }),
     );
+    const merged = CATALOG_CITIES.map((c) => ({ ...c, ...stored.get(c.slug) }));
+    const seeded = new Set(CATALOG_CITIES.map((c) => c.slug));
+    for (const [slug, c] of stored) if (!seeded.has(slug)) merged.push(c);
+    return citiesWithCounts(merged, events);
   }
 
   async listCalendars(): Promise<CalendarInfo[]> {
@@ -418,6 +437,12 @@ export class PostgresStore implements Store {
            ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`;
   }
 
+  async listMyEvents(sid: string): Promise<EventDraft[]> {
+    const rows = await this
+      .sql`SELECT data FROM created_events WHERE session_id = ${sid} ORDER BY created_at DESC`;
+    return rows.map((r) => r.data as EventDraft);
+  }
+
   // --- Host tools ---
 
   async getEventOwner(eventId: string): Promise<string | null> {
@@ -469,21 +494,37 @@ export class PostgresStore implements Store {
     eventId: string,
     kind: FeedbackKind,
     message: string,
-  ): Promise<void> {
+  ): Promise<string> {
+    const id = randomUUID();
     await this
       .sql`INSERT INTO reports (id, session_id, event_id, kind, message)
-           VALUES (${randomUUID()}, ${sid}, ${eventId}, ${kind}, ${message})`;
+           VALUES (${id}, ${sid}, ${eventId}, ${kind}, ${message})`;
+    return id;
   }
 
-  async listReports(): Promise<EventReport[]> {
-    const [rows, events] = await Promise.all([
-      this.sql`SELECT r.id, r.event_id, r.kind, r.message, r.status, r.created_at, p.data AS profile
-               FROM reports r
-               LEFT JOIN profiles p ON p.session_id = r.session_id
-               ORDER BY r.created_at DESC`,
+  /** Project report rows (+ their replies and event titles) into inbox rows. */
+  private async projectReports(
+    rows: Record<string, unknown>[],
+  ): Promise<EventReport[]> {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id as string);
+    const [events, replies] = await Promise.all([
       this.listEvents(),
+      this.sql`SELECT id, report_id, author, message, created_at FROM report_replies
+               WHERE report_id = ANY(${ids}) ORDER BY created_at ASC`,
     ]);
     const titles = new Map(events.map((e) => [e.id, e.title]));
+    const byReport = new Map<string, FeedbackReply[]>();
+    for (const r of replies) {
+      const list = byReport.get(r.report_id as string) ?? [];
+      list.push({
+        id: r.id as string,
+        author: r.author as FeedbackReply["author"],
+        message: r.message as string,
+        createdAt: new Date(r.created_at as string).toISOString(),
+      });
+      byReport.set(r.report_id as string, list);
+    }
     return rows.map((r) => ({
       id: r.id as string,
       eventId: r.event_id as string,
@@ -493,7 +534,41 @@ export class PostgresStore implements Store {
       from: ((r.profile ?? undefined) as Creator | undefined)?.name || "Guest",
       createdAt: new Date(r.created_at as string).toISOString(),
       status: r.status as "open" | "resolved",
+      replies: byReport.get(r.id as string) ?? [],
     }));
+  }
+
+  async listReports(): Promise<EventReport[]> {
+    const rows = await this
+      .sql`SELECT r.id, r.event_id, r.kind, r.message, r.status, r.created_at, p.data AS profile
+           FROM reports r
+           LEFT JOIN profiles p ON p.session_id = r.session_id
+           ORDER BY r.created_at DESC`;
+    return this.projectReports(rows);
+  }
+
+  async listMyReports(sid: string): Promise<EventReport[]> {
+    const rows = await this
+      .sql`SELECT r.id, r.event_id, r.kind, r.message, r.status, r.created_at, p.data AS profile
+           FROM reports r
+           LEFT JOIN profiles p ON p.session_id = r.session_id
+           WHERE r.session_id = ${sid}
+           ORDER BY r.created_at DESC`;
+    return this.projectReports(rows);
+  }
+
+  async getReport(id: string): Promise<ReportRecord | null> {
+    const rows = await this
+      .sql`SELECT id, session_id, event_id, kind, status FROM reports WHERE id = ${id}`;
+    if (!rows.length) return null;
+    const r = rows[0];
+    return {
+      id: r.id as string,
+      sid: r.session_id as string,
+      eventId: r.event_id as string,
+      kind: r.kind as FeedbackKind,
+      status: r.status as "open" | "resolved",
+    };
   }
 
   async setReportStatus(
@@ -503,5 +578,49 @@ export class PostgresStore implements Store {
     const rows = await this
       .sql`UPDATE reports SET status = ${status} WHERE id = ${id} RETURNING id`;
     return rows.length > 0;
+  }
+
+  async addReply(
+    reportId: string,
+    author: FeedbackReply["author"],
+    message: string,
+  ): Promise<void> {
+    await this
+      .sql`INSERT INTO report_replies (id, report_id, author, message)
+           VALUES (${randomUUID()}, ${reportId}, ${author}, ${message})`;
+  }
+
+  // --- Notifications ---
+
+  async addNotification(sid: string, input: NotificationInput): Promise<void> {
+    await this
+      .sql`INSERT INTO notifications (id, session_id, kind, title, body, href, event_id)
+           VALUES (${randomUUID()}, ${sid}, ${input.kind}, ${input.title}, ${input.body}, ${input.href}, ${input.eventId ?? null})`;
+  }
+
+  async listNotifications(sid: string): Promise<AppNotification[]> {
+    const rows = await this
+      .sql`SELECT id, kind, title, body, href, event_id, read, created_at FROM notifications
+           WHERE session_id = ${sid} ORDER BY created_at DESC LIMIT 100`;
+    return rows.map((r) => ({
+      id: r.id as string,
+      kind: r.kind as AppNotification["kind"],
+      title: r.title as string,
+      body: r.body as string,
+      href: r.href as string,
+      eventId: (r.event_id as string | null) ?? undefined,
+      read: r.read as boolean,
+      createdAt: new Date(r.created_at as string).toISOString(),
+    }));
+  }
+
+  async markNotificationsRead(sid: string, ids?: string[]): Promise<void> {
+    if (ids) {
+      await this
+        .sql`UPDATE notifications SET read = true WHERE session_id = ${sid} AND id = ANY(${ids})`;
+    } else {
+      await this
+        .sql`UPDATE notifications SET read = true WHERE session_id = ${sid} AND read = false`;
+    }
   }
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LuUser, LuStamp, LuSettings, LuLogOut } from "react-icons/lu";
+import { LuUser, LuStamp, LuSettings, LuLogOut, LuInbox } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -15,6 +14,7 @@ import {
 import { useProfileEdits } from "@/hooks/use-profile";
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useAuth } from "@/hooks/use-auth";
+import { signOutEverywhere } from "@/hooks/use-account-session";
 import { CURRENT_USER } from "@/lib/events-data";
 import { cn, initials } from "@/lib/utils";
 
@@ -26,7 +26,6 @@ export function ProfileMenu({
   active: boolean;
   dark?: boolean;
 }) {
-  const router = useRouter();
   const { edits } = useProfileEdits();
   const { stamps, hydrated } = useRegistrations();
   const auth = useAuth();
@@ -40,9 +39,11 @@ export function ProfileMenu({
   const subtitle = auth.email ?? `@${CURRENT_USER.username}`;
   const href = `/user/${CURRENT_USER.username}`;
 
+  // Sign out clears the Pollar login, rotates the server session AND wipes the
+  // local caches, so a second account on this device never inherits this one's
+  // events, RSVPs or inbox.
   function handleSignOut() {
-    auth.logout();
-    router.push("/discover");
+    void signOutEverywhere(auth.logoutAsync);
   }
 
   return (
@@ -104,6 +105,9 @@ export function ProfileMenu({
               {count}
             </span>
           )}
+        </MenuItem>
+        <MenuItem render={<Link href="/inbox" />}>
+          <LuInbox /> Inbox
         </MenuItem>
         <MenuItem render={<Link href="/settings" />}>
           <LuSettings /> Settings
