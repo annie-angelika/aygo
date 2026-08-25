@@ -10,6 +10,7 @@ const TONE = {
 /**
  * One-line "by signing in you agree…" notice shown under any sign-in CTA.
  * Defined once so the wording and the legal links never drift between gates.
+ * The links open in a new tab so a sign-in in progress isn't lost.
  */
 export function ConsentNote({
   tone = "light",
@@ -27,11 +28,11 @@ export function ConsentNote({
       )}
     >
       By signing in you agree to our{" "}
-      <Link href="/terms" className="underline underline-offset-2">
+      <Link href="/terms" target="_blank" rel="noopener" className="underline underline-offset-2">
         Terms
       </Link>{" "}
       and{" "}
-      <Link href="/privacy" className="underline underline-offset-2">
+      <Link href="/privacy" target="_blank" rel="noopener" className="underline underline-offset-2">
         Privacy Policy
       </Link>
       .

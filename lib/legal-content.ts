@@ -6,7 +6,7 @@ export type LegalDoc = {
   sections: LegalSection[];
 };
 
-const UPDATED = "August 24, 2026";
+const UPDATED = "August 25, 2026";
 /** aygo has no email support channel: questions and requests go through social DMs. */
 const CONTACT = "a direct message on Instagram (@aygo.bo) or TikTok (@go.aygo)";
 
@@ -61,7 +61,7 @@ export const TERMS: LegalDoc = {
     {
       heading: "Termination",
       body: [
-        "You can stop using aygo at any time and ask us to delete your account by emailing us.",
+        `You can stop using aygo at any time and ask us to delete your account by sending us ${CONTACT}.`,
         "We may suspend or close accounts that break these Terms, put other people at risk, or abuse the service, with or without notice.",
       ],
     },
@@ -94,7 +94,8 @@ export const PRIVACY: LegalDoc = {
       body: [
         "When you sign in, your login provider (Pollar) shares your name, email address, and avatar with us. That becomes your aygo profile.",
         "As you use the app we store the events you create and register for, your preferences (like interests and city), any messages you send, and any reports you file.",
-        "We set one browser cookie to keep you signed in. We don't collect precise location unless you use a map feature, and we don't run advertising trackers.",
+        "Photos you upload for an event are stored with that event. When you check in at an event by scanning the host's QR, we record that you attended (that's your aygo).",
+        "We set two essential browser cookies to keep you signed in (see Cookies). If you allow it, we use your device's location only to find nearby places while you're creating an event — it's used for that search and not stored. We don't run advertising trackers.",
       ],
     },
     {
@@ -107,7 +108,7 @@ export const PRIVACY: LegalDoc = {
     {
       heading: "Cookies",
       body: [
-        "The aygo_session cookie is essential: it's how the app knows who you are between page loads. Clearing it signs you out.",
+        "Two cookies are essential: aygo_session is how the app knows who you are between page loads, and aygo_accounts links that session to the account you signed in with on this browser. Clearing them signs you out.",
         "We don't use analytics or advertising cookies.",
       ],
     },
@@ -116,7 +117,7 @@ export const PRIVACY: LegalDoc = {
       body: [
         "Hosts can see the names and avatars of guests registered for their events. Other guests may see your name and avatar on an event's guest list.",
         "aygo admins can see reports, including the content reported and who filed them, in order to act on them.",
-        "We rely on a few providers to run the service: Pollar for sign-in, Neon for database hosting (Postgres), and OpenStreetMap Nominatim for place search when you type a location. Each receives only what's needed to do its job.",
+        "We rely on a few providers to run the service: Pollar for sign-in, Neon for database hosting (Postgres), Vercel for hosting the app, and OpenStreetMap Nominatim for place search when you type a location. Each receives only what's needed to do its job.",
       ],
     },
     {
@@ -130,7 +131,7 @@ export const PRIVACY: LegalDoc = {
       heading: "Your rights",
       body: [
         "You can view and edit your profile and preferences in Settings at any time.",
-        "You can ask us for a copy of your data, ask us to correct it, or ask us to delete it. Email us and we'll help.",
+        `You can ask us for a copy of your data, ask us to correct it, or ask us to delete it. Send us ${CONTACT} and we'll help.`,
       ],
     },
     {
