@@ -15,6 +15,11 @@ export function generateStaticParams() {
   return CITIES.map((c) => ({ slug: c.slug }));
 }
 
+/** Cities hosts added on the fly live in the store (see /[slug]). */
+const findCityInStore = cache(async (slug: string) =>
+  findCity(slug) ? undefined : (await getStore().listCities()).find((c) => c.slug === slug),
+);
+
 /** Calendars are curated in the admin and live in the store (see /[slug]). */
 const findCalendarInStore = cache(async (id: string) =>
   (await getStore().listCalendars()).find((c) => c.id === id),
@@ -26,7 +31,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const name = findCity(slug)?.name ?? (await findCalendarInStore(slug))?.name;
+  const name =
+    findCity(slug)?.name ??
+    (await findCityInStore(slug))?.name ??
+    (await findCalendarInStore(slug))?.name;
   return name ? { title: `${name} map` } : { title: { absolute: "aygo" } };
 }
 
@@ -39,9 +47,10 @@ export default async function MapPage({
 }) {
   const { slug } = await params;
 
-  if (findCity(slug)) {
+  const storedCity = await findCityInStore(slug);
+  if (findCity(slug) || storedCity) {
     const { interest } = await searchParams;
-    return <CityMapScreen slug={slug} initialInterest={interest} />;
+    return <CityMapScreen slug={slug} initialInterest={interest} initial={storedCity} />;
   }
 
   const calendar = await findCalendarInStore(slug);

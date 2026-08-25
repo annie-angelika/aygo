@@ -162,6 +162,77 @@ body {
   background-color: var(--cream);
 }
 
+/* Pollar's login modal, dressed as aygo: navy ink, cream paper, gold focus,
+   pill buttons, Geist. The SDK exposes these variables; the rest are small
+   overrides on its class names (see @pollar/react/styles.css). */
+.pollar-overlay {
+  --pollar-accent: #091935;
+  --pollar-bg: #f8f3ed;
+  --pollar-text: #091935;
+  --pollar-muted: #5b667a;
+  --pollar-border: #e3e0d8;
+  --pollar-input-bg: #ffffff;
+  --pollar-buttons-border-radius: 9999px;
+  --pollar-buttons-height: 48px;
+  --pollar-input-border-radius: 16px;
+  --pollar-input-height: 48px;
+  --pollar-card-border-radius: 28px;
+  --pollar-modal-padding: 24px;
+  --pollar-modal-heading-size: 22px;
+  --pollar-modal-subtitle-size: 13.5px;
+  background-color: rgba(9, 25, 53, 0.55);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+.pollar-overlay .pollar-title {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.pollar-overlay .pollar-subtitle {
+  color: #5b667a;
+}
+.pollar-overlay .pollar-btn-primary {
+  color: #f8f3ed;
+  font-weight: 600;
+  box-shadow: 0 12px 24px -12px rgba(9, 25, 53, 0.6);
+}
+.pollar-overlay .pollar-btn-primary:disabled {
+  background-color: #e6eaf2;
+  color: #5b667a;
+  box-shadow: none;
+  opacity: 1;
+}
+.pollar-overlay .pollar-input:focus,
+.pollar-overlay .pollar-email-input:focus,
+.pollar-overlay .pollar-code-input:focus {
+  box-shadow: 0 0 0 2px #f3a72f;
+  border-color: transparent;
+}
+.pollar-overlay .pollar-social-btn {
+  font-weight: 600;
+}
+.pollar-overlay .pollar-social-btn:hover {
+  background-color: #e6eaf2;
+}
+.pollar-overlay .pollar-close-btn,
+.pollar-overlay .pollar-modal-close,
+.pollar-overlay .pollar-back-btn {
+  border-radius: 9999px;
+  width: 36px;
+  height: 36px;
+  background-color: #ffffff;
+}
+.pollar-overlay .pollar-divider-text,
+.pollar-overlay .pollar-divider-label {
+  color: #5b667a;
+  font-size: 12.5px;
+}
+.pollar-overlay .pollar-footer {
+  border-top-color: #e3e0d8;
+  color: #5b667a;
+  font-size: 12px;
+}
+
 /* The line that sweeps a QR viewport while it "scans". */
 @keyframes aygo-scan {
   0% {

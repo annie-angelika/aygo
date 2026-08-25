@@ -36,14 +36,18 @@ export function TimePopover({
 function TimeList({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Open scrolled to the current selection so it's centered, like a wheel picker.
+  // Open scrolled to the current selection so it's centered, like a wheel
+  // picker. Scroll the LIST only — `scrollIntoView` would also scroll the page
+  // (and every other ancestor) to chase the row, yanking the form away.
   useEffect(() => {
-    const el = ref.current?.querySelector<HTMLElement>('[data-selected="true"]');
-    el?.scrollIntoView({ block: "center" });
+    const list = ref.current;
+    const el = list?.querySelector<HTMLElement>('[data-selected="true"]');
+    if (!list || !el) return;
+    list.scrollTop = el.offsetTop - list.clientHeight / 2 + el.offsetHeight / 2;
   }, []);
 
   return (
-    <div ref={ref} className="max-h-64 overflow-y-auto no-scrollbar">
+    <div ref={ref} className="relative max-h-64 overflow-y-auto no-scrollbar">
       {SLOTS.map((slot) => {
         const selected = slot === value;
         return (

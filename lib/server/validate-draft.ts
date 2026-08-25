@@ -55,9 +55,10 @@ export function parseDraft(body: unknown, previous: EventDraft | null): EventDra
   const title = str(b.title, "title", { min: 2, max: LIMITS.title });
   const description = optStr(b.description, "description", { max: LIMITS.description, multiline: true }) ?? "";
   const location = str(b.location, "location", { max: LIMITS.location });
+  // A seeded city normalises to its canonical name; any other name is kept as
+  // typed — the events route resolves it to a real Bolivian town (or refuses).
   const cityRaw = optStr(b.city, "city", { max: 60 });
-  const city = cityRaw ? findCityByName(cityRaw)?.name : undefined;
-  if (cityRaw && !city) throw new HttpError(400, "Pick a city from the list.");
+  const city = cityRaw ? (findCityByName(cityRaw)?.name ?? cityRaw.trim()) : undefined;
 
   const theme = enumOf(b.theme ?? THEME_IDS[0], "theme", THEME_IDS);
   const calendarId = enumOf(b.calendarId ?? CALENDAR_IDS[0], "calendarId", CALENDAR_IDS);

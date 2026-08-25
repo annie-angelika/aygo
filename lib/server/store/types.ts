@@ -145,6 +145,8 @@ export interface Store {
 
   // --- Discover (shared, read-only; counts computed from real events) ---
   listCities(): Promise<CityInfo[]>;
+  /** Add (or update) a city — hosts can file events under any Bolivian town. */
+  upsertCity(city: Omit<CityInfo, "eventCount">): Promise<void>;
   listCalendars(): Promise<CalendarInfo[]>;
   listCategoryStats(): Promise<CategoryStat[]>;
 
