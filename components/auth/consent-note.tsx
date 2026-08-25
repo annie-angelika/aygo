@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const TONE = {
   light: "text-muted-foreground",
-  dark: "text-violet-200/60",
+  dark: "text-cream/60",
 } as const;
 
 /**

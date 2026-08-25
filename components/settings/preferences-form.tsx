@@ -23,7 +23,7 @@ export function PreferencesForm() {
   const { prefs, update, setChannels } = usePreferences();
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-7 lg:max-w-2xl">
       <TasteSettings />
 
       <section className="flex flex-col gap-3">
@@ -65,7 +65,7 @@ export function PreferencesForm() {
           Choose how you would like to be notified about updates, invites and
           subscriptions.
         </p>
-        <p className="mt-1 px-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="mt-1 px-0.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gold-deep">
           Events You Attend
         </p>
         <NotificationsSettings

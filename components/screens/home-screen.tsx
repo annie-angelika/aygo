@@ -34,9 +34,11 @@ export function HomeScreen({ period }: { period: Period }) {
   const list = period === "past" ? past : upcoming;
 
   return (
-    <div className="flex min-h-[calc(100svh-3.5rem)] -mb-16 flex-col gap-4 px-4 pt-4">
+    <div className="flex min-h-[calc(100svh-3.5rem)] -mb-16 flex-col gap-4 px-4 pt-4 lg:-mb-24 lg:min-h-[calc(100svh-4rem)] lg:pt-8">
       <ScreenHeader
+        eyebrow="Your events"
         title="Events"
+        className="lg:[&_h1]:text-[36px]"
         trailing={
           <Tabs
             value={period}
@@ -53,9 +55,9 @@ export function HomeScreen({ period }: { period: Period }) {
       />
 
       {loading ? (
-        <div className="flex flex-col gap-3 pt-2">
+        <div className="flex flex-col gap-3 pt-2 md:grid md:grid-cols-2">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+            <Skeleton key={i} className="h-28 rounded-[18px]" />
           ))}
         </div>
       ) : list.length === 0 ? (
@@ -64,13 +66,15 @@ export function HomeScreen({ period }: { period: Period }) {
             icon={LuMountain}
             title="No past events yet"
             subtitle="Events you check in to show up here and earn a passport stamp."
+            className="lg:mx-auto lg:w-full lg:max-w-xl"
           />
         ) : (
           <EmptyState
             icon={LuTicket}
             title="You're not going to anything yet"
             subtitle="Find something you like and tap “I'm going”."
-            action={<Button nativeButton={false} render={<Link href="/discover" />}>Discover events</Button>}
+            className="lg:mx-auto lg:w-full lg:max-w-xl"
+            action={<Button nativeButton={false} render={<Link href="/discover" />} className="h-10 rounded-full px-5 font-semibold">Discover events</Button>}
           />
         )
       ) : (

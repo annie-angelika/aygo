@@ -65,12 +65,12 @@ export function FilterSheet({
             variant="outline"
             size="sm"
             aria-label={count ? `Filters, ${count} active` : "Filters"}
-            className={cn("h-9 gap-1.5 rounded-full px-3.5 text-[12.5px]", count > 0 && "ring-2 ring-amber-400")}
+            className={cn("h-9 gap-1.5 rounded-full bg-card px-3.5 text-[13px] font-semibold", count > 0 && "ring-2 ring-gold")}
           >
             <LuSlidersHorizontal className="size-4" aria-hidden />
             Filters
             {count > 0 && (
-              <span className="grid size-4 place-items-center rounded-full bg-amber-500 text-[9.5px] font-bold text-white">
+              <span className="grid size-4 place-items-center rounded-full bg-gold text-[9.5px] font-bold text-navy">
                 {count}
               </span>
             )}
@@ -104,7 +104,7 @@ export function FilterSheet({
             onChange={(price) => onChange({ ...value, price })}
           />
         </div>
-        <Button variant="ghost" onClick={onReset} disabled={count === 0} className="h-10 rounded-full text-[13px]">
+        <Button variant="ghost" onClick={onReset} disabled={count === 0} className="h-10 rounded-full text-[13px] font-semibold">
           Clear filters
         </Button>
       </SheetContent>

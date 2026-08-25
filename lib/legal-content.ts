@@ -7,7 +7,8 @@ export type LegalDoc = {
 };
 
 const UPDATED = "August 24, 2026";
-const CONTACT = "hello@aygo.app";
+/** aygo has no email support channel: questions and requests go through social DMs. */
+const CONTACT = "a direct message on Instagram (@aygo.bo) or TikTok (@go.aygo)";
 
 export const TERMS: LegalDoc = {
   title: "Terms of Use",
@@ -79,7 +80,7 @@ export const TERMS: LegalDoc = {
     },
     {
       heading: "Contact",
-      body: [`Questions about these Terms? Write to us at ${CONTACT}.`],
+      body: [`Questions about these Terms? Send us ${CONTACT}.`],
     },
   ],
 };
@@ -122,7 +123,7 @@ export const PRIVACY: LegalDoc = {
       heading: "Retention & deletion",
       body: [
         "We keep your data while your account is active. Past events and stamps stay in your passport so your history is preserved.",
-        `To delete your account and the personal data tied to it, email ${CONTACT} from the address you signed in with. We'll remove it within a reasonable time, except where we need to keep records for safety or legal reasons.`,
+        `To delete your account and the personal data tied to it, send us ${CONTACT} telling us the email you signed in with, so we can verify it is you. We'll remove it within a reasonable time, except where we need to keep records for safety or legal reasons.`,
       ],
     },
     {
@@ -146,7 +147,7 @@ export const PRIVACY: LegalDoc = {
     },
     {
       heading: "Contact",
-      body: [`Privacy questions or requests? Write to us at ${CONTACT}.`],
+      body: [`Privacy questions or requests? Send us ${CONTACT}.`],
     },
   ],
 };

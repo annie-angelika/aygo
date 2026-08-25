@@ -11,7 +11,7 @@ import {
   LuPalette,
   LuUtensils,
   LuMountain,
-  LuActivity,
+  LuDumbbell,
 } from "react-icons/lu";
 import type { AygoEvent, Category, Level } from "@/types";
 
@@ -27,12 +27,14 @@ export const CATEGORY_META: Record<
   Category,
   { Icon: IconType; chip: string; soft: string; accent: string }
 > = {
-  Party: { Icon: LuPartyPopper, chip: "bg-amber-100 text-amber-800", soft: "bg-amber-50", accent: "text-amber-600" },
-  Music: { Icon: LuMusic, chip: "bg-violet-100 text-violet-800", soft: "bg-violet-50", accent: "text-violet-600" },
-  Culture: { Icon: LuPalette, chip: "bg-rose-100 text-rose-800", soft: "bg-rose-50", accent: "text-rose-600" },
-  Food: { Icon: LuUtensils, chip: "bg-orange-100 text-orange-800", soft: "bg-orange-50", accent: "text-orange-600" },
-  Outdoors: { Icon: LuMountain, chip: "bg-emerald-100 text-emerald-800", soft: "bg-emerald-50", accent: "text-emerald-600" },
-  Sports: { Icon: LuActivity, chip: "bg-sky-100 text-sky-800", soft: "bg-sky-50", accent: "text-sky-600" },
+  // One palette for every interest — navy on navy-soft, gold when active. What
+  // tells them apart is the icon plus its label, never a colour.
+  Party: { Icon: LuPartyPopper, chip: "bg-primary text-primary-foreground", soft: "bg-secondary", accent: "text-foreground" },
+  Music: { Icon: LuMusic, chip: "bg-primary text-primary-foreground", soft: "bg-secondary", accent: "text-foreground" },
+  Culture: { Icon: LuPalette, chip: "bg-primary text-primary-foreground", soft: "bg-secondary", accent: "text-foreground" },
+  Food: { Icon: LuUtensils, chip: "bg-primary text-primary-foreground", soft: "bg-secondary", accent: "text-foreground" },
+  Outdoors: { Icon: LuMountain, chip: "bg-primary text-primary-foreground", soft: "bg-secondary", accent: "text-foreground" },
+  Sports: { Icon: LuDumbbell, chip: "bg-primary text-primary-foreground", soft: "bg-secondary", accent: "text-foreground" },
 };
 
 /** The signed-in user's neutral base identity. No mock photo: the avatar is

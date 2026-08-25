@@ -1,6 +1,6 @@
-import { LuMapPin, LuUsers, LuSparkles } from "react-icons/lu";
+import { LuMapPin } from "react-icons/lu";
 
-import { Badge } from "@/components/ui/badge";
+import { AygoStar } from "@/components/ui/brand-icons";
 import { ProfileHero } from "@/components/discover/profile-hero";
 import type { Calendar } from "@/lib/discover-data";
 
@@ -19,19 +19,15 @@ export function CalendarHero({
       cover={calendar.cover}
       logo={
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={calendar.logo}
-          alt=""
-          className="size-[68px] rounded-2xl object-cover shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] ring-4 ring-card"
-        />
+        <img src={calendar.logo} alt="" className="size-full object-cover" />
       }
       name={calendar.name}
       badge={
         calendar.featured && (
-          <Badge variant="secondary" className="gap-1.5 px-2.5">
-            <LuSparkles className="size-3" aria-hidden />
+          <span className="inline-flex h-6 items-center gap-1.5 rounded-full bg-white/10 px-2.5 text-[11px] font-semibold text-cream ring-1 ring-white/15">
+            <AygoStar className="size-3 text-gold" />
             {calendar.featured}
-          </Badge>
+          </span>
         )
       }
       meta={
@@ -47,7 +43,7 @@ export function CalendarHero({
           )}
           {calendar.subscribers && (
             <span className="inline-flex items-center gap-1.5">
-              <LuUsers className="size-3.5 shrink-0" aria-hidden />
+              <AygoStar className="size-3.5 shrink-0 text-gold" />
               {calendar.subscribers} subscribers
             </span>
           )}

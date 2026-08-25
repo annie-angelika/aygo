@@ -57,7 +57,7 @@ export function WelcomeSheet() {
     <Sheet open onOpenChange={(o) => !o && done()}>
       <SheetContent className="gap-5 overflow-hidden px-6 pt-4">
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="grid size-14 place-items-center rounded-full bg-amber-100 text-amber-700">
+          <span className="grid size-14 place-items-center rounded-full bg-gold-soft text-gold-deep">
             <Icon className="size-7" aria-hidden />
           </span>
           <div>

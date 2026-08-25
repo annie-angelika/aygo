@@ -5,18 +5,18 @@
 import { getStore } from "@/lib/server/store";
 import { requireEventOwner } from "@/lib/server/manage";
 import { notifyGuest } from "@/lib/server/notify";
+import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
+import { pathId, expectObject, enumOf, UUID } from "@/lib/server/validate";
 import { handler, noContent, readJson, HttpError } from "@/lib/server/http";
 
 export const PATCH = handler(
-  async (
-    req: Request,
-    ctx: { params: Promise<{ id: string; reportId: string }> },
-  ) => {
-    const { id, reportId } = await ctx.params;
-    await requireEventOwner(id);
-    const { status } = await readJson<{ status?: string }>(req);
-    if (status !== "open" && status !== "resolved")
-      throw new HttpError(400, "status must be 'open' or 'resolved'");
+  async (req: Request, ctx: { params: Promise<{ id: string; reportId: string }> }) => {
+    const { id: rawId, reportId } = await ctx.params;
+    const id = pathId(rawId);
+    if (!UUID.test(reportId)) throw new HttpError(400, "Invalid report id");
+    const sid = await requireEventOwner(id);
+    rateLimit(req, "host:action", sid, LIMITS.hostAction);
+    const status = enumOf(expectObject(await readJson<unknown>(req)).status, "status", ["open", "resolved"] as const);
 
     // The report must belong to this event — a host can't touch other inboxes.
     const report = await getStore().getReport(reportId);

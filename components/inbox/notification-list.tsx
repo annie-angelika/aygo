@@ -16,7 +16,7 @@ export function NotificationList({
     return (
       <div className="flex flex-col gap-2">
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-16 rounded-2xl" />
+          <Skeleton key={i} className="h-16 rounded-[18px]" />
         ))}
       </div>
     );
@@ -31,7 +31,7 @@ export function NotificationList({
     );
   }
   return (
-    <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
+    <div className="overflow-hidden rounded-[18px] bg-card ring-1 ring-foreground/8">
       {items.map((n, i) => (
         <div key={n.id} className={i > 0 ? "border-t border-border" : ""}>
           <NotificationRow item={n} />

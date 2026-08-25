@@ -103,13 +103,13 @@ export function DatePopover({
                 className={cn(
                   "mx-auto grid size-9 place-items-center rounded-xl text-[13.5px] font-medium transition-colors",
                   selected
-                    ? "bg-amber-500 font-semibold text-white"
+                    ? "bg-primary font-semibold text-primary-foreground"
                     : disabled
                       ? "cursor-not-allowed text-muted-foreground/30 line-through decoration-muted-foreground/30"
                       : inMonth
                         ? "text-foreground hover:bg-muted"
                         : "text-muted-foreground/40 hover:bg-muted",
-                  !selected && isToday && "ring-1 ring-amber-500/60",
+                  !selected && isToday && "ring-1 ring-gold",
                 )}
               >
                 {date.getDate()}

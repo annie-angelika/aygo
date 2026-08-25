@@ -1,12 +1,10 @@
 import { MapScreen } from "@/components/discover/map-screen";
-import { findCalendar } from "@/lib/discover-data";
+import type { CalendarInfo } from "@/types";
 
 /** Dedicated map view for a community calendar, at /<calendar>/map. Centers on
- *  the calendar's location and scopes to the calendar's interest. */
-export function CalendarMapScreen({ id }: { id: string }) {
-  const calendar = findCalendar(id);
-  if (!calendar) return null;
-
+ *  the calendar's location and scopes to the calendar's interest. The row is
+ *  resolved server-side from the store (see /[slug]/map). */
+export function CalendarMapScreen({ calendar }: { calendar: CalendarInfo }) {
   return (
     <MapScreen
       title={calendar.name}

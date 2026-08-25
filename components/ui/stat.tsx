@@ -25,7 +25,7 @@ export function Stat({
   }
   return (
     <div className={cn("flex flex-col", className)}>
-      <span className="text-[18px] font-semibold leading-none text-foreground">
+      <span className="text-[18px] font-bold leading-none tracking-[-0.02em] text-foreground">
         {value}
       </span>
       <span className="mt-1 text-[11.5px] text-muted-foreground">{label}</span>

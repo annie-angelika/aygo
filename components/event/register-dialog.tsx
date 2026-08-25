@@ -5,14 +5,14 @@ import {
   LuCalendarDays,
   LuMapPin,
   LuCheck,
-  LuClock,
+  LuDoorOpen,
   LuShieldCheck,
 } from "react-icons/lu";
 
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useProfileEdits } from "@/hooks/use-profile";
 import { useAuth } from "@/hooks/use-auth";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,9 +22,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { RegisterTicket } from "@/components/event/register-ticket";
 import { applyConfigFor, currentApplicant, type Applicant } from "@/lib/apply";
-import { cn } from "@/lib/utils";
+import { initials } from "@/lib/utils";
+import { ThemeCover } from "@/components/event/theme-cover";
 import type { AygoEvent } from "@/types";
+
+const EYEBROW =
+  "text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
 
 /**
  * The in-app registration sheet — replaces the WhatsApp handoff. You apply
@@ -48,6 +53,7 @@ export function RegisterDialog({
   const [message, setMessage] = useState("");
 
   const cfg = applyConfigFor(event);
+  const paid = event.price != null && event.price > 0;
   // Your details come pre-loaded, same precedence as everywhere: explicit
   // profile edits win, then the social login, then the neutral base.
   const base = currentApplicant();
@@ -81,16 +87,16 @@ export function RegisterDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* The trigger is the caller's CTA, rendered as the dialog opener. */}
       <DialogTrigger render={children as React.ReactElement} />
-      <DialogContent className="gap-0 p-0">
+      <DialogContent className="gap-0 bg-background p-0">
         {submitted ? (
-          <SubmittedView event={event} cfg={cfg} onDone={() => handleOpenChange(false)} />
+          <RegisterTicket event={event} cfg={cfg} onDone={() => handleOpenChange(false)} />
         ) : (
           <div className="flex max-h-[80vh] flex-col">
-            <div className="px-5 pt-7">
-              <DialogTitle>
+            <div className="px-5 pr-14 pt-7">
+              <DialogTitle className="text-[22px] font-bold leading-[1.15] tracking-[-0.03em]">
                 {cfg.requiresApproval ? "Request to join" : "Get your spot"}
               </DialogTitle>
-              <DialogDescription className="mt-1.5">
+              <DialogDescription className="mt-1 text-[13px] leading-snug">
                 {cfg.requiresApproval
                   ? `${event.host.name} reviews each request before confirming.`
                   : "One tap and you're on the list. No approval needed."}
@@ -99,6 +105,7 @@ export function RegisterDialog({
 
             <div className="mt-5 flex-1 space-y-5 overflow-y-auto px-5 pb-1">
               <EventRecap event={event} />
+              {paid && <TicketCard event={event} />}
               <ApplicantCard me={me} />
               <Requirements items={cfg.requirements} />
               {cfg.asksMessage && (
@@ -120,7 +127,7 @@ export function RegisterDialog({
               <Button
                 size="lg"
                 onClick={handleSubmit}
-                className="h-12 w-full rounded-full text-[14px]"
+                className="h-12 w-full rounded-full text-[14px] font-semibold shadow-[0_12px_24px_-12px_rgba(9,25,53,0.6)]"
               >
                 {cfg.requiresApproval ? "Send request" : "Confirm spot"}
               </Button>
@@ -136,12 +143,16 @@ export function RegisterDialog({
 function EventRecap({ event }: { event: AygoEvent }) {
   return (
     <div className="flex items-center gap-3">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={event.cover}
-        alt=""
-        className="size-16 shrink-0 rounded-2xl object-cover"
-      />
+      {event.cover ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={event.cover}
+          alt=""
+          className="size-16 shrink-0 rounded-[16px] object-cover"
+        />
+      ) : (
+        <ThemeCover theme={event.theme} className="size-16 shrink-0 rounded-[16px]" />
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13.5px] font-semibold text-foreground">
           {event.title}
@@ -161,20 +172,40 @@ function EventRecap({ event }: { event: AygoEvent }) {
   );
 }
 
+/**
+ * Paid events: how the ticket is settled. aygo doesn't take payments, so the
+ * one real option is cash to the host when you arrive.
+ */
+function TicketCard({ event }: { event: AygoEvent }) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <p className={`${EYEBROW} text-gold-deep`}>Ticket · Bs {event.price}</p>
+      <div className="flex items-center gap-3 rounded-[18px] bg-card px-3.5 py-3 ring-1 ring-foreground/8">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
+          <LuDoorOpen className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold text-foreground">Pay at the door</p>
+          <p className="truncate text-[11.5px] text-muted-foreground">
+            Cash to {event.host.name} when you arrive
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** The already-loaded profile — what the host will see on your request. */
-function ApplicantCard({
-  me,
-}: {
-  me: ReturnType<typeof currentApplicant>;
-}) {
+function ApplicantCard({ me }: { me: Applicant }) {
   return (
     <div>
-      <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Registering as
-      </p>
+      <p className={`mb-2.5 ${EYEBROW}`}>Registering as</p>
       <div className="flex items-center gap-3">
         <Avatar size="lg">
-          <AvatarImage src={me.avatar} alt={me.name} />
+          {me.avatar && <AvatarImage src={me.avatar} alt={me.name} />}
+          <AvatarFallback className="bg-navy text-[13px] font-semibold text-cream">
+            {initials(me.name)}
+          </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-semibold text-foreground">
@@ -194,14 +225,12 @@ function Requirements({ items }: { items: string[] }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Good to know
-      </p>
+      <p className={`mb-2 ${EYEBROW}`}>Good to know</p>
       <ul className="space-y-2">
         {items.map((item) => (
           <li key={item} className="flex items-start gap-2.5">
-            <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700">
-              <LuCheck className="size-3" aria-hidden />
+            <span className="mt-px grid size-5 shrink-0 place-items-center rounded-full bg-secondary text-foreground">
+              <LuCheck className="size-[11px]" strokeWidth={3} aria-hidden />
             </span>
             <span className="text-[12.5px] leading-snug text-foreground/80">
               {item}
@@ -225,10 +254,7 @@ function MessageField({
 }) {
   return (
     <div>
-      <label
-        htmlFor="register-message"
-        className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground"
-      >
+      <label htmlFor="register-message" className={`mb-1.5 block ${EYEBROW}`}>
         Note to {host}{" "}
         <span className="font-medium normal-case tracking-normal text-muted-foreground/70">
           (optional)
@@ -240,53 +266,8 @@ function MessageField({
         onChange={(e) => onChange(e.target.value)}
         rows={3}
         placeholder="Tell the host a bit about you…"
+        className="rounded-[14px] bg-card"
       />
-    </div>
-  );
-}
-
-/** Confirmation that stays on screen after you submit, Luma-style. */
-function SubmittedView({
-  event,
-  cfg,
-  onDone,
-}: {
-  event: AygoEvent;
-  cfg: ReturnType<typeof applyConfigFor>;
-  onDone: () => void;
-}) {
-  const pending = cfg.requiresApproval;
-  return (
-    <div className="flex flex-col items-center px-5 py-7 text-center">
-      <span
-        className={cn(
-          "grid size-14 place-items-center rounded-full",
-          pending
-            ? "bg-amber-100 text-amber-700"
-            : "bg-emerald-100 text-emerald-700",
-        )}
-      >
-        {pending ? (
-          <LuClock className="size-7" aria-hidden />
-        ) : (
-          <LuCheck className="size-7" aria-hidden />
-        )}
-      </span>
-      <DialogTitle className="mt-4 text-[18px]">
-        {pending ? "Request sent" : "You're going!"}
-      </DialogTitle>
-      <DialogDescription className="mt-1.5 max-w-[18rem] text-[13px]">
-        {pending
-          ? `${event.host.name} will review your request for "${event.title}". We'll let you know the moment you're approved.`
-          : `Your spot for "${event.title}" is saved. See you there!`}
-      </DialogDescription>
-      <Button
-        size="lg"
-        onClick={onDone}
-        className="mt-5 h-11 w-full rounded-full text-[14px]"
-      >
-        Done
-      </Button>
     </div>
   );
 }

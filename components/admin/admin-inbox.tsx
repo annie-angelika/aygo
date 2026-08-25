@@ -82,7 +82,7 @@ export function AdminInbox({
                     <LuFlag className="size-3" aria-hidden /> Report
                   </Badge>
                 ) : (
-                  <Badge className="gap-1 border-transparent bg-amber-100 text-amber-800">
+                  <Badge className="gap-1 border-transparent bg-gold-soft text-gold-deep">
                     <LuMail className="size-3" aria-hidden /> Question
                   </Badge>
                 )}

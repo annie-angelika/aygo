@@ -6,18 +6,19 @@ import type { AygoEvent } from "@/types";
 
 /**
  * Where it happens — address row, a real interactive mini-map (when the venue
- * is geocoded), and one-tap directions into Google/Apple Maps or Waze.
+ * is geocoded) in a navy-soft card, and one-tap directions into Google/Apple
+ * Maps or Waze.
  */
 export function EventLocation({ event }: { event: AygoEvent }) {
   const hasCoords = event.lat != null && event.lng != null;
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-[10.5px] font-semibold uppercase tracking-wider text-amber-600">
+    <section className="flex flex-col gap-2.5">
+      <h2 className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gold-deep">
         Location
       </h2>
 
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
           <LuMapPin className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">

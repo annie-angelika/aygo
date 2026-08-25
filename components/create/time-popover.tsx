@@ -57,7 +57,7 @@ function TimeList({ value, onChange }: { value: string; onChange: (v: string) =>
                 className={cn(
                   "flex w-full items-center justify-center rounded-xl px-3 py-2 text-[13.5px] font-medium transition-colors",
                   selected
-                    ? "bg-amber-500 font-semibold text-white"
+                    ? "bg-primary font-semibold text-primary-foreground"
                     : "text-foreground hover:bg-muted",
                 )}
               >

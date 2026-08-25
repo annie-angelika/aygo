@@ -6,17 +6,17 @@ import { LuTicket, LuCompass, LuPlus } from "react-icons/lu";
 
 import { Logo } from "@/components/layout/logo";
 import { ProfileMenu } from "@/components/layout/profile-menu";
-import { NotificationBell } from "@/components/layout/notification-bell";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 /**
- * Luma-style top app bar — the whole navigation. Wordmark and the ticket open
- * your events (Home), the compass opens Discover, and the avatar opens your
- * profile (with a small level badge as the gamification hint).
+ * The top app bar — the whole navigation, in the brand's navy with the cream
+ * mark. Wordmark and the ticket open your events (Home), the compass opens
+ * Discover, and the avatar opens your profile (with a small aygo-count badge).
+ * `tone="light"` is kept for the rare light canvas (e.g. a light create theme).
  */
-export function TopBar({ tone = "light" }: { tone?: "light" | "dark" }) {
+export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
   // `usePathname` can be null while rendering the global not-found page.
   const pathname = usePathname() ?? "";
   const { isAuthenticated } = useAuth();
@@ -27,18 +27,15 @@ export function TopBar({ tone = "light" }: { tone?: "light" | "dark" }) {
   const onDiscover = pathname.startsWith("/discover");
   const onProfile = pathname.startsWith("/user") || pathname.startsWith("/settings");
   const onCreate = pathname.startsWith("/create");
-  const onInbox = pathname.startsWith("/inbox");
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b backdrop-blur-xl",
-        dark
-          ? "border-white/10 bg-[#0c0b11]/40"
-          : "border-border/70 bg-background/80",
+        "sticky top-0 z-40",
+        dark ? "bg-navy" : "border-b border-border/70 bg-background/80 backdrop-blur-xl",
       )}
     >
-      <div className="mx-auto flex max-w-md items-center justify-between px-4 py-2.5">
+      <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4 lg:h-16 lg:max-w-6xl lg:px-8">
         <Link href={isAuthenticated ? "/home" : "/discover"} aria-label="aygo, home">
           <Logo tone={dark ? "dark" : "light"} />
         </Link>
@@ -58,10 +55,10 @@ export function TopBar({ tone = "light" }: { tone?: "light" | "dark" }) {
                   "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold ring-1 transition-colors",
                   onCreate
                     ? dark
-                      ? "bg-white text-zinc-900 ring-transparent"
+                      ? "bg-cream text-navy ring-transparent"
                       : "bg-foreground text-background ring-transparent"
                     : dark
-                      ? "bg-white/10 text-white ring-white/15 hover:bg-white/15"
+                      ? "bg-white/10 text-cream ring-white/15 hover:bg-white/15"
                       : "bg-card text-foreground ring-border hover:bg-muted",
                 )}
               >
@@ -73,15 +70,13 @@ export function TopBar({ tone = "light" }: { tone?: "light" | "dark" }) {
                 <LuTicket className="size-[18px]" />
               </NavIcon>
 
-              <NotificationBell active={onInbox} dark={dark} />
-
               <ProfileMenu active={onProfile} dark={dark} />
             </>
           ) : (
             <SignInButton
               className={cn(
                 "h-9 rounded-full px-4 text-[13px] font-semibold",
-                dark && "bg-white text-zinc-900 hover:bg-white/90",
+                dark && "bg-gold text-navy hover:bg-gold/90",
               )}
             />
           )}
@@ -114,10 +109,10 @@ function NavIcon({
         "grid size-9 place-items-center rounded-full ring-1 transition-colors",
         active
           ? dark
-            ? "bg-white text-zinc-900 ring-transparent"
+            ? "bg-cream text-navy ring-transparent"
             : "bg-foreground text-background ring-transparent"
           : dark
-            ? "bg-white/10 text-white/70 ring-white/15 hover:text-white"
+            ? "bg-white/10 text-cream/75 ring-white/15 hover:text-cream"
             : "bg-card text-muted-foreground ring-border hover:text-foreground",
       )}
     >

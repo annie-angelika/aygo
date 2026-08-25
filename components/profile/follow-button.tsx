@@ -5,6 +5,7 @@ import { LuCheck, LuPlus } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 /** Follow / Following toggle for another traveler's profile. */
 export function FollowButton({ initial = false }: { initial?: boolean }) {
@@ -26,16 +27,19 @@ export function FollowButton({ initial = false }: { initial?: boolean }) {
       onClick={handleClick}
       variant={following ? "outline" : "default"}
       aria-label={following ? "Following" : "Follow"}
-      className="h-9 w-full rounded-full"
+      className={cn(
+        "h-9 w-full rounded-full text-[13px] font-semibold",
+        following && "border-0 bg-card ring-1 ring-border",
+      )}
     >
       {following ? (
         <>
-          <LuCheck className="size-4" />
+          <LuCheck className="size-4" aria-hidden />
           Following
         </>
       ) : (
         <>
-          <LuPlus className="size-4" />
+          <LuPlus className="size-4" aria-hidden />
           Follow
         </>
       )}

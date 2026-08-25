@@ -2,20 +2,21 @@
 
 import { useState } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { LuPlus, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 
 import {
   CollectSheet,
   METHODS,
   type Method,
 } from "@/components/passport/collect-sheet";
+import { AygoStar } from "@/components/ui/brand-icons";
 
 /**
  * The "Collect" action as a speed-dial. Built on Base UI's Menu (the same
  * primitive `ui/menu` wraps) so it gets the backdrop, positioning, focus and
  * flicker-free enter/exit for free — but each option is its own floating pill,
  * right-aligned above the button, over a see-through dimmed page. The pill flips
- * to an ✕ to fold them away. Picking one opens its step screen (CollectSheet).
+ * to a close mark to fold them away. Picking one opens its step screen (CollectSheet).
  */
 // Hidden for now (the flows still exist; just not offered yet).
 const HIDDEN: Method[] = ["nearby", "nfc"];
@@ -27,13 +28,13 @@ export function CollectFab() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 mx-auto flex w-full max-w-md justify-end px-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-50 mx-auto flex w-full max-w-md justify-end px-4 lg:max-w-6xl lg:px-8">
         <Menu.Root open={open} onOpenChange={setOpen}>
-          <Menu.Trigger className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-[14px] font-semibold text-primary-foreground shadow-[0_12px_24px_-12px_rgba(15,23,42,0.5)] outline-none transition-colors hover:bg-primary/90 active:translate-y-px">
+          <Menu.Trigger className="pointer-events-auto inline-flex h-12 items-center gap-2 rounded-full bg-primary pl-3.5 pr-[18px] text-[14px] font-semibold text-primary-foreground shadow-[0_12px_24px_-12px_rgba(9,25,53,0.6)] outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px">
             {open ? (
-              <LuX className="size-4" aria-hidden />
+              <LuX className="size-[18px]" aria-hidden />
             ) : (
-              <LuPlus className="size-4" aria-hidden />
+              <AygoStar className="size-[18px] text-gold" />
             )}
             {open ? "Close" : "Collect"}
           </Menu.Trigger>
@@ -51,10 +52,10 @@ export function CollectFab() {
                   <Menu.Item
                     key={m.id}
                     onClick={() => setMethod(m.id)}
-                    className="flex cursor-default items-center gap-3 rounded-full bg-card py-1.5 pl-5 pr-1.5 text-[13.5px] font-semibold text-foreground shadow-[0_10px_24px_-12px_rgba(15,23,42,0.45)] ring-1 ring-border outline-none transition-colors select-none data-highlighted:bg-muted"
+                    className="flex cursor-default items-center gap-3 rounded-full bg-card py-1.5 pl-5 pr-1.5 text-[13.5px] font-semibold text-foreground shadow-[0_10px_24px_-12px_rgba(9,25,53,0.45)] ring-1 ring-border outline-none transition-colors select-none data-highlighted:bg-muted"
                   >
                     {m.label}
-                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-foreground">
                       <m.Icon className="size-[18px]" aria-hidden />
                     </span>
                   </Menu.Item>

@@ -85,12 +85,11 @@ function FormBody({
     setBusy(true);
     setError(null);
     try {
-      // Empty artwork falls back to a stable placeholder, so the card never breaks.
-      const seed = draft.name.toLowerCase().replace(/\W+/g, "-");
+      // Empty artwork falls back to aygo's own assets — never a random photo.
       await adminUpsertCalendar({
         ...draft,
-        logo: draft.logo.trim() || `https://picsum.photos/seed/cal-${seed}/120/120`,
-        cover: draft.cover.trim() || `https://picsum.photos/seed/cal-${seed}-cover/480/360`,
+        logo: draft.logo.trim() || "/aygo-light.png",
+        cover: draft.cover.trim() || "/covers/aygo-night.png",
       });
       onDone();
     } catch (err) {
@@ -140,18 +139,18 @@ function FormBody({
               />
             </Field>
           </div>
-          <Field label="Logo URL (empty = auto)">
+          <Field label="Logo URL (empty = aygo mark)">
             <Input
               value={draft.logo}
               onChange={(e) => set({ logo: e.target.value })}
-              placeholder="https://…"
+              placeholder="https://… or /covers/aygo-night.png"
             />
           </Field>
-          <Field label="Cover URL (empty = auto)">
+          <Field label="Cover URL (empty = aygo cover)">
             <Input
               value={draft.cover}
               onChange={(e) => set({ cover: e.target.value })}
-              placeholder="https://…"
+              placeholder="https://… or /covers/aygo-night.png"
             />
           </Field>
           <Field label="Description">

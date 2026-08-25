@@ -10,14 +10,16 @@ export function HostCard({ event }: { event: AygoEvent }) {
   const host = event.host;
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         Hosted by
       </p>
 
       <div className="flex items-center gap-3">
         <Avatar size="lg">
           {host.avatar && <AvatarImage src={host.avatar} alt={host.name} />}
-          <AvatarFallback>{initials(host.name)}</AvatarFallback>
+          <AvatarFallback className="bg-navy text-[14px] font-semibold text-cream">
+            {initials(host.name)}
+          </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[14px] font-semibold text-foreground">

@@ -53,6 +53,9 @@ export type EventDraft = {
   lng?: number;
   description: string;
   price: number | null; // null/0 → free, BOB otherwise
+  /** Required when price > 0 (at least one): how guests pay the host. */
+  payWhatsapp?: string; // international digits, e.g. "59171234567"
+  payLink?: string; // https payment link
   requiresApproval: boolean;
   capacity: number | null; // null → unlimited
   createdAt: string;
@@ -63,16 +66,6 @@ export type EventDraft = {
   hostPhone?: string;
 };
 
-/**
- * Stock cover images for the picker (Picsum). Heights vary so the picker can lay
- * them out masonry-style and show each photo whole, rather than square-cropped.
- */
-const COVER_HEIGHTS = [820, 600, 540, 760, 640, 900, 700];
-export const STOCK_COVERS = [
-  "world-cup", "previous-events", "sports", "spring", "july-4th", "climate",
-  "music-fest", "art-night", "food-market", "mountains", "beach", "city-lights",
-  "festival", "garden", "studio", "neon-room", "desert", "forest",
-].map((seed, i) => `https://picsum.photos/seed/aygo-${seed}/600/${COVER_HEIGHTS[i % COVER_HEIGHTS.length]}`);
 
 /** How many photos an event can carry (each is a resized JPEG data URL). */
 export const MAX_IMAGES = 6;

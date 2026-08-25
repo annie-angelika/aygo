@@ -17,7 +17,7 @@ export function SectionTitle({
         className,
       )}
     >
-      <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
+      <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
         {children}
       </h2>
       {action}

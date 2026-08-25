@@ -47,7 +47,7 @@ export function ManageInbox({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start md:gap-3">
       {data.feedback.map((f) => (
         <ThreadCard
           key={f.id}

@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { LuMail, LuFlag } from "react-icons/lu";
+import { LuFlag } from "react-icons/lu";
 
 import { categorySlug } from "@/lib/events-data";
 import { ActionDialog } from "@/components/event/action-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { sendEventFeedback } from "@/lib/api";
+import { initials } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
 
 /**
@@ -48,8 +49,9 @@ export function EventHelp({ event }: { event: AygoEvent }) {
       <div className="flex flex-col items-start gap-2">
         <ActionDialog
           label="Contact the host"
-          icon={<LuMail className="size-5" aria-hidden />}
-          title="Contact the host"
+          icon={<span className="text-[15px] font-semibold">{initials(event.host.name)}</span>}
+          iconClassName="bg-navy text-cream"
+          title={`Message ${event.host.name}`}
           description="Have a question about the event? Send a message and the host can reply to you in aygo."
           placeholder="What's your question for the host?"
           helper={`${event.host.name} gets it in their inbox; their answer shows up in yours.`}
@@ -81,9 +83,9 @@ function CategoryTag({ event }: { event: AygoEvent }) {
   return (
     <Link
       href={`/${categorySlug(event.category)}`}
-      className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-medium text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
+      className="inline-flex h-[30px] items-center gap-1 rounded-full bg-card px-3 text-[12px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted"
     >
-      <span className="text-muted-foreground/60">#</span>
+      <span className="text-muted-foreground">#</span>
       {event.category}
     </Link>
   );

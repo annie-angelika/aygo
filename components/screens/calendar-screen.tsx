@@ -4,23 +4,29 @@ import { useState } from "react";
 
 import { CalendarHero } from "@/components/discover/calendar-hero";
 import { EventsBoard } from "@/components/discover/events-board";
-import { findCalendar } from "@/lib/discover-data";
 import { useCalendars } from "@/hooks/use-discover";
+import type { CalendarInfo } from "@/types";
 
 /**
  * Community-calendar page: banner hero + the events board, scoped to the
- * calendar's interest. Identity renders instantly from the seed; the live row
- * from the backend replaces it once loaded.
+ * calendar's interest. `initial` is the row the server resolved, so the page
+ * renders at once; the live list (with any admin edits) replaces it once loaded.
  */
-export function CalendarScreen({ id }: { id: string }) {
+export function CalendarScreen({
+  id,
+  initial,
+}: {
+  id: string;
+  initial?: CalendarInfo;
+}) {
   const { calendars } = useCalendars();
-  const calendar = calendars.find((c) => c.id === id) ?? findCalendar(id);
+  const calendar = calendars.find((c) => c.id === id) ?? initial;
   const [following, setFollowing] = useState(false);
 
   if (!calendar) return null;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-3">
+    <div className="flex flex-col gap-4 px-4 pt-3 lg:gap-8 lg:pt-4">
       <CalendarHero
         calendar={calendar}
         following={following}

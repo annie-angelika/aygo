@@ -5,20 +5,21 @@ import { LuTicket, LuUserCheck, LuArrowUpFromLine, LuPencil } from "react-icons/
 
 import { Switch } from "@/components/ui/switch";
 import { CapacityDialog } from "@/components/create/capacity-dialog";
-import { PriceDialog } from "@/components/create/price-dialog";
+import { PriceDialog, type PriceSettings } from "@/components/create/price-dialog";
+import { formatWhatsapp } from "@/lib/payment";
 
 /** The "Event Options" card: ticket price (paid to the host directly), approval
  * toggle, and capacity. */
 export function EventOptions({
-  price,
-  onPrice,
+  pricing,
+  onPricing,
   requiresApproval,
   onApproval,
   capacity,
   onCapacity,
 }: {
-  price: number | null;
-  onPrice: (v: number | null) => void;
+  pricing: PriceSettings;
+  onPricing: (v: PriceSettings) => void;
   requiresApproval: boolean;
   onApproval: (v: boolean) => void;
   capacity: number | null;
@@ -30,10 +31,18 @@ export function EventOptions({
   return (
     <div>
       <h2 className="mb-2 text-[15px] font-semibold text-foreground">Event Options</h2>
-      <div className="rounded-2xl bg-muted ring-1 ring-border">
+      <div className="rounded-2xl bg-card ring-1 ring-border">
         <Row Icon={LuTicket} label="Ticket Price">
           <EditButton onClick={() => setPriceOpen(true)}>
-            {price != null && price > 0 ? `Bs ${price}` : "Free"}
+            {pricing.price != null && pricing.price > 0
+              ? `Bs ${pricing.price} · ${
+                  pricing.payWhatsapp
+                    ? formatWhatsapp(pricing.payWhatsapp)
+                    : pricing.payLink
+                      ? "link"
+                      : "no way to pay!"
+                }`
+              : "Free"}
           </EditButton>
         </Row>
         <Divider />
@@ -56,11 +65,11 @@ export function EventOptions({
       />
       {/* Keyed so reopening picks up the latest value. */}
       <PriceDialog
-        key={`${priceOpen}-${price ?? "free"}`}
+        key={`${priceOpen}-${pricing.price ?? "free"}`}
         open={priceOpen}
         onOpenChange={setPriceOpen}
-        price={price}
-        onConfirm={onPrice}
+        value={pricing}
+        onConfirm={onPricing}
       />
     </div>
   );
@@ -98,5 +107,5 @@ function Row({
 }
 
 function Divider() {
-  return <div className="mx-3.5 h-px bg-border" />;
+  return <div className="mx-3 h-px bg-border" />;
 }

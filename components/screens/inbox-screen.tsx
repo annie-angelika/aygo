@@ -24,7 +24,7 @@ export function InboxScreen() {
   }, [unread, markAllRead]);
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-4 pb-10">
+    <div className="flex flex-col gap-4 px-4 pt-4 pb-10 lg:mx-auto lg:w-full lg:max-w-3xl lg:pt-8">
       <ScreenHeader
         title="Inbox"
         trailing={

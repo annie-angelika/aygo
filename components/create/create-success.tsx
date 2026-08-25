@@ -1,19 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LuCheck } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
+import { AygoStar } from "@/components/ui/brand-icons";
 
 /** Full-screen confirmation shown after an event is created. */
 export function CreateSuccess({ title, id }: { title: string; id: string }) {
   const router = useRouter();
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-background px-8 text-center">
-      <span className="grid size-16 place-items-center rounded-full bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
-        <LuCheck className="size-8" aria-hidden />
+    <div className="mx-auto flex min-h-svh flex-col items-center justify-center bg-background px-8 text-center lg:max-w-md">
+      <span className="grid size-16 place-items-center rounded-full bg-gold-soft text-gold ring-1 ring-gold/30">
+        <AygoStar className="size-8" />
       </span>
-      <h1 className="mt-5 text-[22px] font-semibold tracking-tight text-foreground">
+      <h1 className="mt-5 text-[22px] font-bold tracking-[-0.03em] text-foreground">
         Event created
       </h1>
       <p className="mt-2 max-w-[26ch] text-[13.5px] text-muted-foreground">
@@ -22,7 +22,7 @@ export function CreateSuccess({ title, id }: { title: string; id: string }) {
       <Button
         size="lg"
         onClick={() => router.push(`/manage/${id}`)}
-        className="mt-6 h-12 w-full max-w-xs rounded-full text-[14px]"
+        className="mt-6 h-12 w-full max-w-xs rounded-full text-[14px] font-semibold"
       >
         Manage event
       </Button>

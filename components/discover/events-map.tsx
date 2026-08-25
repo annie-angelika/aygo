@@ -95,7 +95,7 @@ export function EventsMap({
           style={{ width: "100%", height: "100%" }}
         >
           {mapped.map((event) => {
-            const { Icon, accent } = CATEGORY_META[event.category];
+            const { Icon } = CATEGORY_META[event.category];
             return (
               <Marker
                 key={event.id}
@@ -108,11 +108,11 @@ export function EventsMap({
                   onClick={() => setSelected(event)}
                   aria-label={`${event.title} — ${event.place}`}
                   className={cn(
-                    "grid size-9 place-items-center rounded-full bg-white shadow-[0_6px_16px_-6px_rgba(15,23,42,0.55)] ring-1 ring-black/5 transition-transform",
+                    "grid size-9 place-items-center rounded-full bg-navy text-gold shadow-[0_6px_16px_-6px_rgba(9,25,53,0.6)] ring-2 ring-cream transition-transform",
                     "hover:z-10 hover:scale-110 focus-visible:z-10 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   )}
                 >
-                  <Icon className={cn("size-[18px]", accent)} aria-hidden />
+                  <Icon className="size-[18px]" aria-hidden />
                 </button>
               </Marker>
             );

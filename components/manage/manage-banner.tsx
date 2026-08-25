@@ -15,16 +15,16 @@ export function ManageBanner({ eventId }: { eventId: string }) {
   if (!hydrated || !ownsEventLocally(eventId)) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl bg-card px-4 py-3 ring-1 ring-border">
+    <div className="flex items-center justify-between gap-3 rounded-[18px] bg-card px-4 py-3 ring-1 ring-foreground/8">
       <p className="min-w-0 text-[13px] leading-snug text-muted-foreground">
         You have manage access for this event.
       </p>
       <Link
         href={`/manage/${eventId}`}
-        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-foreground px-4 py-2 text-[13px] font-semibold text-background transition-opacity hover:opacity-90"
+        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         Manage
-        <LuArrowUpRight className="size-3.5" aria-hidden />
+        <LuArrowUpRight className="size-3.5 text-gold" aria-hidden />
       </Link>
     </div>
   );

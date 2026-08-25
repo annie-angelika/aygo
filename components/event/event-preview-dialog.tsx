@@ -60,7 +60,7 @@ export function EventPreviewDialog({
                 className="rounded-full"
               >
                 {copied ? (
-                  <LuCheck className="text-emerald-600" aria-hidden />
+                  <LuCheck className="text-gold-deep" aria-hidden />
                 ) : (
                   <LuLink aria-hidden />
                 )}

@@ -18,7 +18,10 @@ export function DateGroup({
   children: React.ReactNode;
 }) {
   return (
-    <section className="relative pl-5">
+    // `@container`: the rows go two-up when the timeline itself is wide enough
+    // (a full-width board on desktop), not merely when the viewport is — so a
+    // narrow rail (the map screen's list) or a phone-width column stays one-up.
+    <section className="@container relative pl-5">
       {/* The rail line runs the full height of the day; the dot rides with the
           sticky header so the marker stays put alongside the date. */}
       <span
@@ -42,7 +45,7 @@ export function DateGroup({
           </span>
         )}
       </div>
-      <div className="flex flex-col gap-3">{children}</div>
+      <div className="grid gap-3 @2xl:grid-cols-2">{children}</div>
     </section>
   );
 }

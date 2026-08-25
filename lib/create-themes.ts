@@ -42,6 +42,13 @@ export function getStyle(id: string) {
 
 export const THEMES: Theme[] = [
   {
+    // The brand's own: navy ink, a gold star, cream type. The page stays cream
+    // so the navy top bar reads against it.
+    id: "aygo", name: "aygo", tone: "light", swatch: "bg-navy",
+    page: "bg-background", cover: "bg-navy",
+    title: "text-[32px] font-bold leading-[1.1] tracking-[-0.03em] text-cream", font: "default", style: "tight",
+  },
+  {
     id: "minimal", name: "Minimal", tone: "light", swatch: "bg-neutral-100",
     page: "bg-[#f4f1ea]", cover: "bg-white",
     title: "text-[34px] font-bold leading-[1.05] text-neutral-900", font: "playfair", style: "tight",
@@ -96,7 +103,7 @@ export const THEMES: Theme[] = [
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
-export const DEFAULT_THEME_ID: ThemeId = "minimal";
+export const DEFAULT_THEME_ID: ThemeId = "aygo";
 
 export function getTheme(id: string): Theme {
   return THEMES.find((t) => t.id === id) ?? THEMES[0];

@@ -36,7 +36,7 @@ export function ForYouRow() {
           href="/settings/preferences"
           className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3.5 ring-1 ring-border transition-colors hover:bg-muted/60"
         >
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gold-soft text-gold-deep">
             <LuSparkles className="size-5" aria-hidden />
           </span>
           <span className="min-w-0">

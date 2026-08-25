@@ -14,13 +14,15 @@ import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/time-ago";
 import type { AppNotification, NotificationKind } from "@/types";
 
+// One palette: navy-soft for anything that happened, gold for the one good
+// news that confirms a spot, muted for closed/negative outcomes.
 const META: Record<NotificationKind, { Icon: IconType; tint: string }> = {
-  registration: { Icon: LuUserPlus, tint: "bg-emerald-100 text-emerald-700" },
-  request: { Icon: LuUserCheck, tint: "bg-amber-100 text-amber-800" },
-  approved: { Icon: LuCheck, tint: "bg-emerald-100 text-emerald-700" },
+  registration: { Icon: LuUserPlus, tint: "bg-secondary text-foreground" },
+  request: { Icon: LuUserCheck, tint: "bg-secondary text-foreground" },
+  approved: { Icon: LuCheck, tint: "bg-gold text-navy" },
   rejected: { Icon: LuX, tint: "bg-muted text-muted-foreground" },
-  question: { Icon: LuMessageCircle, tint: "bg-amber-100 text-amber-800" },
-  reply: { Icon: LuReply, tint: "bg-sky-100 text-sky-700" },
+  question: { Icon: LuMessageCircle, tint: "bg-secondary text-foreground" },
+  reply: { Icon: LuReply, tint: "bg-secondary text-foreground" },
   report_update: { Icon: LuFlag, tint: "bg-muted text-muted-foreground" },
 };
 
@@ -31,8 +33,8 @@ export function NotificationRow({ item }: { item: AppNotification }) {
     <Link
       href={item.href}
       className={cn(
-        "flex items-start gap-3 px-3.5 py-3 transition-colors hover:bg-muted/60",
-        !item.read && "bg-amber-50/60",
+        "flex items-start gap-3 px-3.5 py-3 transition-colors hover:bg-accent/40",
+        !item.read && "bg-gold-soft/60",
       )}
     >
       <span className={cn("mt-0.5 grid size-9 shrink-0 place-items-center rounded-full", tint)}>

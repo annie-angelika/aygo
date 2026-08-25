@@ -40,7 +40,7 @@ function SocialRow({ socials, className }: { socials: Socials; className?: strin
           target="_blank"
           rel="noreferrer"
           aria-label={label}
-          className="grid size-8 place-items-center rounded-full text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
+          className="grid size-8 place-items-center rounded-full bg-card text-muted-foreground ring-1 ring-border transition-colors hover:bg-muted hover:text-foreground"
         >
           <Icon className="size-4" aria-hidden />
         </a>
@@ -80,17 +80,17 @@ export function ProfileHeader({
       <div className="flex items-start gap-4">
         <Avatar className="size-20 shrink-0 ring-1 ring-border">
           {avatar && <AvatarImage src={avatar} alt={name} />}
-          <AvatarFallback className="text-[24px] font-semibold">
+          <AvatarFallback className="bg-navy text-[24px] font-semibold text-cream">
             {initials(name)}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+          <h1 className="truncate text-[26px] font-bold leading-[1.15] tracking-[-0.03em] text-foreground">
             {name}
           </h1>
-          <p className="text-[13px] text-muted-foreground">@{handle}</p>
-          {socials && <SocialRow socials={socials} className="mt-2.5" />}
+          <p className="mt-0.5 text-[13px] text-muted-foreground">@{handle}</p>
+          {socials && <SocialRow socials={socials} className="mt-2" />}
         </div>
       </div>
 

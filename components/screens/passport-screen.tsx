@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LuStamp, LuMoon, LuShare2 } from "react-icons/lu";
+import { LuStamp, LuShare2 } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,8 @@ import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { CollectionBanner } from "@/components/passport/collection-banner";
 import { CollectFab } from "@/components/passport/collect-fab";
-import { AygoArt } from "@/components/passport/aygo-art";
+import { StampBadge } from "@/components/passport/stamp-grid";
+import { AygoStar } from "@/components/ui/brand-icons";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   Select,
@@ -19,7 +20,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { StampModal } from "@/components/passport/stamp-modal";
-import { CATEGORY_META } from "@/lib/events-data";
 import { groupAygosByMonth, monthsForYear } from "@/lib/aygos";
 import { useTraveler } from "@/hooks/use-traveler";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export function PassportScreen({ username }: { username?: string }) {
 
   if (!user) {
     return (
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 lg:mx-auto lg:w-full lg:max-w-xl lg:pt-8">
         {loading ? (
           <Skeleton className="h-48 rounded-2xl" />
         ) : (
@@ -70,7 +70,7 @@ export function PassportScreen({ username }: { username?: string }) {
         joined={user.joined}
       />
 
-      <div className="flex flex-col gap-5 px-4 pt-5">
+      <div className="flex flex-col gap-5 px-4 pt-5 lg:px-8">
         {!hasAny ? (
           <EmptyState
             icon={LuStamp}
@@ -80,7 +80,7 @@ export function PassportScreen({ username }: { username?: string }) {
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <p className="text-[14px] font-semibold tracking-tight text-foreground">
+              <p className="text-[14px] font-semibold tracking-[-0.01em] text-foreground">
                 Your progress
               </p>
               {years.length > 1 && (
@@ -109,7 +109,7 @@ export function PassportScreen({ username }: { username?: string }) {
               {/* Continuous progress rail tying the months together. */}
               <span
                 aria-hidden
-                className="absolute bottom-2 left-[7px] top-2 w-0.5 rounded bg-foreground/20"
+                className="absolute bottom-2 left-[7px] top-2 w-0.5 rounded bg-foreground/15"
               />
               {shown.map((m) => (
                 <MonthSection
@@ -140,9 +140,9 @@ export function PassportScreen({ username }: { username?: string }) {
 }
 
 /**
- * The header of a collection, POAP-style: a living, place-aware banner up top,
- * the traveler's photo overlapping it, then their name, the count of aygos they
- * hold, and — across a hairline — the share action at the far end.
+ * The header of a collection: the navy star sky up top, the traveler's photo
+ * overlapping it, then their name, the count of aygos they hold, and — across a
+ * hairline — the share action at the far end.
  */
 function CollectionHero({
   count,
@@ -159,17 +159,22 @@ function CollectionHero({
 }) {
   return (
     <div className="relative">
-      <CollectionBanner count={count} />
-      <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
+      <CollectionBanner
+        count={count}
+        className="lg:mx-4 lg:mt-4 lg:h-52 lg:overflow-hidden lg:rounded-3xl"
+      />
+      <BackButton className="absolute left-4 top-4 size-9 border-0 bg-white text-navy shadow-[0_6px_16px_-8px_rgba(9,25,53,0.5)] hover:bg-white lg:left-8 lg:top-8" />
 
-      <div className="px-4">
+      <div className="relative px-4 lg:px-8">
         {/* Your photo, lifted onto the banner's lower edge. */}
-        <Avatar className="-mt-10 size-20 shadow-md ring-4 ring-background">
+        <Avatar className="-mt-10 size-20 shadow-[0_8px_16px_-10px_rgba(9,25,53,0.4)] ring-4 ring-background">
           <AvatarImage src={avatar} alt={name} />
-          <AvatarFallback>{name.slice(0, 1)}</AvatarFallback>
+          <AvatarFallback className="bg-secondary text-[24px] font-bold tracking-[-0.03em] text-foreground">
+            {name.slice(0, 1)}
+          </AvatarFallback>
         </Avatar>
 
-        <h1 className="mt-2.5 truncate text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+        <h1 className="mt-2.5 truncate text-[26px] font-bold leading-[1.15] tracking-[-0.03em] text-foreground">
           {name}
         </h1>
         <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
@@ -179,10 +184,11 @@ function CollectionHero({
         {/* The count of aygos, and the share action at the opposite end of the line. */}
         <div className="mt-3.5 flex items-center justify-between border-b border-border pb-3.5">
           <div className="flex items-baseline gap-2">
-            <span className="text-[30px] font-extrabold leading-none tracking-tight tabular-nums text-foreground">
+            <span className="text-[34px] font-bold leading-none tracking-[-0.03em] tabular-nums text-foreground">
               {count.toLocaleString()}
             </span>
-            <span className="text-[13px] font-semibold text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-muted-foreground">
+              <AygoStar className="size-3.5 text-gold" />
               aygos
             </span>
           </div>
@@ -191,7 +197,7 @@ function CollectionHero({
             title={`${name} on aygo`}
             text={`Check out @${username}'s aygo collection`}
             copiedLabel="Copied!"
-            className="inline-flex items-center gap-1.5 rounded-full bg-background px-3.5 py-2 text-[13px] font-semibold text-foreground shadow-sm ring-1 ring-border transition-colors hover:bg-muted active:translate-y-px"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-card px-3.5 text-[13px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted active:translate-y-px"
           >
             <LuShare2 className="size-3.5" aria-hidden />
             Share
@@ -202,7 +208,7 @@ function CollectionHero({
   );
 }
 
-/** One month on the timeline — a rail dot, its label, then its discs. */
+/** One month on the timeline — a rail dot (gold when you collected), its label, then its stamps. */
 function MonthSection({
   label,
   stamps,
@@ -212,22 +218,36 @@ function MonthSection({
   stamps: Stamp[];
   onSelect: (stamp: Stamp, dateLabel: string) => void;
 }) {
+  const active = stamps.length > 0;
   return (
     <section className="relative flex flex-col gap-3">
       <span
         aria-hidden
-        className="absolute -left-[22px] top-0.5 size-3 rounded-full bg-foreground ring-4 ring-background"
-      />
-      <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+        className="absolute -left-6 top-0.5 grid size-4 place-items-center rounded-full bg-background"
+      >
+        <span
+          className={cn(
+            "block size-2 rounded-full",
+            active ? "bg-gold" : "bg-foreground/25",
+          )}
+        />
+      </span>
+      <h2
+        className={cn(
+          "text-[13px] font-semibold",
+          active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
         {label}
       </h2>
 
-      {stamps.length > 0 ? (
-        <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+      {active ? (
+        <div className="grid grid-cols-3 gap-x-3 gap-y-4 pt-1.5 sm:grid-cols-4 lg:grid-cols-6">
           {stamps.map((s) => (
-            <AygoBadge
+            <StampBadge
               key={s.eventId}
               stamp={s}
+              dateLabel={label}
               onSelect={(stamp) => onSelect(stamp, label)}
             />
           ))}
@@ -239,66 +259,11 @@ function MonthSection({
   );
 }
 
-/** What an inactive month looks like — a gentle nudge, not a dead end. */
+/** What an inactive month looks like — one quiet line, not a dead end. */
 function QuietMonth() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-4">
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
-        <LuMoon className="size-5" aria-hidden />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[13px] font-semibold text-foreground/70">
-          A quiet month
-        </p>
-        <p className="text-[11.5px] text-muted-foreground">
-          No aygos collected. There&apos;s always next month.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/**
- * One collectible in the wall — tap to open its detail. Shows the aygo's image
- * (optimized + lazy-loaded so a long wall stays fast), falling back to the
- * category mark when there's no artwork yet.
- */
-function AygoBadge({
-  stamp,
-  onSelect,
-}: {
-  stamp: Stamp;
-  onSelect: (stamp: Stamp) => void;
-}) {
-  const { Icon, accent, soft } = CATEGORY_META[stamp.category];
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(stamp)}
-      aria-label={stamp.title}
-      className="flex flex-col items-center gap-1.5"
-    >
-      <span className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-full bg-card shadow-sm ring-1 ring-border transition-transform duration-200 hover:scale-105">
-        <AygoArt
-          image={stamp.image}
-          blurDataURL={stamp.blurDataURL}
-          alt=""
-          // The wall is 4 columns inside the phone shell — each disc is small,
-          // so request a small image (tiny srcset → minimal bytes).
-          sizes="(max-width: 480px) 23vw, 96px"
-          quality={45}
-          fallback={
-            <span
-              className={cn("grid size-full place-items-center", soft, accent)}
-            >
-              <Icon className="size-6" aria-hidden />
-            </span>
-          }
-        />
-      </span>
-      <span className="line-clamp-1 w-full text-center text-[9.5px] font-medium text-muted-foreground">
-        {stamp.title}
-      </span>
-    </button>
+    <p className="-mt-1 text-[12px] text-muted-foreground">
+      A quiet month — nothing collected.
+    </p>
   );
 }

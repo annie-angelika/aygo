@@ -51,7 +51,7 @@ export function AdminStatsGrid({ stats }: { stats?: AdminStats }) {
           className="flex flex-col gap-1 rounded-2xl bg-card px-3.5 py-3 ring-1 ring-border"
         >
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Icon className="size-3.5 text-amber-600" aria-hidden />
+            <Icon className="size-3.5 text-gold-deep" aria-hidden />
             {label}
           </span>
           <span className="text-[20px] font-semibold leading-none tracking-tight tabular-nums text-foreground">

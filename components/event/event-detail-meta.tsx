@@ -24,10 +24,13 @@ function shortDay(iso: string): string {
   return `${WEEKDAYS_SHORT[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
 
+const TILE =
+  "flex size-11 shrink-0 flex-col items-center justify-center rounded-[14px] bg-card ring-1 ring-border";
+
 /**
- * The when + where header, Luma-style: two rows, each led by a square icon tile
- * (a calendar block for the date, a pin for the place) so each fact reads on its
- * own line instead of crammed together.
+ * The when + where header, Luma-style: two rows, each led by a white square
+ * tile (a calendar block for the date, a pin for the place) so each fact reads
+ * on its own line instead of crammed together.
  */
 export function EventDetailMeta({ event }: { event: AygoEvent }) {
   const { month, day } = calendarParts(event.dayKey);
@@ -47,11 +50,11 @@ export function EventDetailMeta({ event }: { event: AygoEvent }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-xl bg-muted ring-1 ring-border">
-          <span className="text-[8.5px] font-semibold uppercase leading-none tracking-wider text-amber-600">
+        <div className={TILE}>
+          <span className="text-[8.5px] font-semibold uppercase leading-none tracking-[0.08em] text-gold-deep">
             {month}
           </span>
-          <span className="mt-0.5 text-[16px] font-semibold leading-none text-foreground">
+          <span className="mt-[3px] text-[16px] font-semibold leading-none text-foreground">
             {day}
           </span>
         </div>
@@ -71,14 +74,14 @@ export function EventDetailMeta({ event }: { event: AygoEvent }) {
         rel="noreferrer"
         className="group flex items-center gap-3"
       >
-        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground ring-1 ring-border">
+        <div className={`${TILE} text-muted-foreground`}>
           <LuMapPin className="size-5" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 text-[14px] font-semibold text-foreground">
             <span className="truncate">{event.place}</span>
             <LuArrowUpRight
-              className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+              className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-gold-deep"
               aria-hidden
             />
           </p>

@@ -16,7 +16,7 @@ export function ChipGroup<T extends string>({
 }) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <span className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gold-deep">
         {label}
       </span>
       <div className="flex flex-wrap gap-1.5">
@@ -29,10 +29,10 @@ export function ChipGroup<T extends string>({
               aria-pressed={selected}
               onClick={() => onChange(o.value)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-[12.5px] font-medium ring-1 transition-colors",
+                "inline-flex h-8 items-center rounded-full px-3 text-[12.5px] font-semibold ring-1 transition-colors",
                 selected
-                  ? "bg-foreground text-background ring-transparent"
-                  : "bg-card text-muted-foreground ring-border hover:text-foreground",
+                  ? "bg-primary text-primary-foreground ring-transparent"
+                  : "bg-card text-foreground ring-border hover:bg-secondary/60",
               )}
             >
               {o.label}

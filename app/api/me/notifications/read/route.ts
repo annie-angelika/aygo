@@ -2,12 +2,13 @@
 
 import { getStore } from "@/lib/server/store";
 import { getSessionId } from "@/lib/server/session";
+import { expectObject, arrayOf, str, UUID } from "@/lib/server/validate";
 import { handler, noContent, readJson } from "@/lib/server/http";
 
 export const POST = handler(async (req: Request) => {
   const sid = await getSessionId();
-  const body = await readJson<{ ids?: string[] }>(req).catch(() => ({}) as { ids?: string[] });
-  const ids = Array.isArray(body.ids) ? body.ids.filter((i) => typeof i === "string") : undefined;
+  const body = expectObject(await readJson<unknown>(req).catch(() => ({})));
+  const ids = body.ids == null ? undefined : arrayOf(body.ids, "ids", 100, (x) => str(x, "id", { max: 36, pattern: UUID }));
   await getStore().markNotificationsRead(sid, ids);
   return noContent();
 });

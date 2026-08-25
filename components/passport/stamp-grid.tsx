@@ -1,52 +1,44 @@
 import { LuLock, LuCheck } from "react-icons/lu";
 
-import { CATEGORY_META } from "@/lib/events-data";
+import { AygoStamp } from "@/components/passport/aygo-stamp";
 import { cn } from "@/lib/utils";
 import type { Stamp } from "@/types";
 
-// A little rotation per stamp so the grid reads like an inked passport page;
-// hovering straightens the stamp back out.
-const TILTS = ["-rotate-6", "rotate-3", "-rotate-3", "rotate-6"];
-
-function StampBadge({
+/** One stamp in a wall — the square tile plus its title; tappable when `onSelect` is set. */
+export function StampBadge({
   stamp,
-  tilt,
+  dateLabel,
   onSelect,
   featured,
   showToggle,
 }: {
   stamp: Stamp;
-  tilt: string;
+  dateLabel?: string;
   onSelect?: (stamp: Stamp) => void;
   featured?: boolean;
   showToggle?: boolean;
 }) {
-  const { Icon, soft, accent } = CATEGORY_META[stamp.category];
-
-  const disc = (
-    <div
+  const tile = (
+    <span
       className={cn(
-        "relative grid aspect-square w-full place-items-center rounded-full shadow-sm ring-1 ring-current/15 transition-transform duration-200",
-        soft,
-        accent,
-        tilt,
-        onSelect && "cursor-pointer hover:rotate-0",
+        "relative block w-full transition-transform duration-200",
+        onSelect && "hover:-translate-y-0.5",
       )}
     >
-      <Icon className="size-7" aria-hidden />
+      <AygoStamp stamp={stamp} dateLabel={dateLabel} />
       {showToggle && (
         <span
           className={cn(
-            "absolute -right-1 -top-1 grid size-5 place-items-center rounded-full ring-2 ring-background transition-colors",
+            "absolute -left-1 -top-1 grid size-5 place-items-center rounded-full ring-2 ring-background transition-colors",
             featured
-              ? "bg-amber-500 text-white"
+              ? "bg-gold text-navy"
               : "border border-dashed border-border bg-card text-transparent",
           )}
         >
-          <LuCheck className="size-3" aria-hidden />
+          <LuCheck className="size-3" strokeWidth={2.5} aria-hidden />
         </span>
       )}
-    </div>
+    </span>
   );
 
   return (
@@ -58,26 +50,27 @@ function StampBadge({
           aria-label={stamp.title}
           className="w-full"
         >
-          {disc}
+          {tile}
         </button>
       ) : (
-        disc
+        tile
       )}
-      <span className="line-clamp-2 text-center text-[10px] font-semibold leading-tight text-foreground">
+      <span className="line-clamp-2 text-center text-[11.5px] font-semibold leading-tight text-foreground">
         {stamp.title}
       </span>
     </div>
   );
 }
 
+/** A slot still to be earned — a dashed square where a stamp will go. */
 function EmptySlot() {
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="grid aspect-square w-full place-items-center rounded-full border-2 border-dashed border-border text-muted-foreground/30">
+      <div className="grid aspect-square w-full place-items-center rounded-md border-2 border-dashed border-border text-muted-foreground/30">
         <LuLock className="size-4" aria-hidden />
       </div>
       {/* Spacer keeps locked slots the same height as collected ones. */}
-      <span className="text-[10px] leading-tight">&nbsp;</span>
+      <span className="text-[11.5px] leading-tight">&nbsp;</span>
     </div>
   );
 }
@@ -85,7 +78,7 @@ function EmptySlot() {
 /** Grid of collected stamps + dashed locked slots so progress feels tangible. */
 export function StampGrid({
   stamps,
-  slots = 8,
+  slots = 6,
   onSelect,
   featuredIds,
   showToggle,
@@ -98,12 +91,11 @@ export function StampGrid({
 }) {
   const empties = Math.max(0, slots - stamps.length);
   return (
-    <div className="grid grid-cols-4 gap-x-3 gap-y-4">
-      {stamps.map((s, i) => (
+    <div className="grid grid-cols-3 gap-x-3 gap-y-4 sm:grid-cols-4 lg:grid-cols-6">
+      {stamps.map((s) => (
         <StampBadge
           key={s.eventId}
           stamp={s}
-          tilt={TILTS[i % TILTS.length]}
           onSelect={onSelect}
           featured={featuredIds?.includes(s.eventId)}
           showToggle={showToggle}

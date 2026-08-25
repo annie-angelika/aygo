@@ -49,6 +49,8 @@ function toInput(e: AygoEvent): AdminEventInput {
     cover: e.cover,
     hostName: e.host.name,
     hostPhone: e.host.phone,
+    payWhatsapp: e.payment?.whatsapp,
+    payLink: e.payment?.link,
     lat: e.lat,
     lng: e.lng,
   };
@@ -217,6 +219,24 @@ function FormBody({
               placeholder="+591…"
             />
           </Field>
+          {draft.price != null && draft.price > 0 && (
+            <div className="grid grid-cols-2 gap-2.5">
+              <Field label="Pay via WhatsApp (required if no link)">
+                <Input
+                  value={draft.payWhatsapp ?? ""}
+                  onChange={(e) => set({ payWhatsapp: e.target.value })}
+                  placeholder="+591 71234567"
+                />
+              </Field>
+              <Field label="Payment link (required if no WhatsApp)">
+                <Input
+                  value={draft.payLink ?? ""}
+                  onChange={(e) => set({ payLink: e.target.value })}
+                  placeholder="https://…"
+                />
+              </Field>
+            </div>
+          )}
           <Field label="Cover image URL (empty = auto)">
             <Input
               value={draft.cover ?? ""}

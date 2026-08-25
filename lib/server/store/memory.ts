@@ -299,17 +299,33 @@ export class MemoryStore implements Store {
   }
 
   async createEvent(sid: string, draft: EventDraft): Promise<void> {
-    // Re-creating the same id (a retried sync) replaces, not duplicates.
+    // Re-creating the same id (a retried sync / an edit) replaces, not
+    // duplicates — and keeps the original creation time.
+    const existing = this.createdEvents.find((c) => c.draft.id === draft.id);
     this.createdEvents = this.createdEvents.filter((c) => c.draft.id !== draft.id);
     this.createdEvents.unshift({
       sid,
       draft,
-      createdAt: new Date().toISOString(),
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
     });
   }
 
   async listMyEvents(sid: string): Promise<EventDraft[]> {
     return this.createdEvents.filter((c) => c.sid === sid).map((c) => c.draft);
+  }
+
+  async countRecentEvents(sid: string, windowMs: number): Promise<number> {
+    const since = Date.now() - windowMs;
+    return this.createdEvents.filter(
+      (c) => c.sid === sid && new Date(c.createdAt).getTime() >= since,
+    ).length;
+  }
+
+  async countRecentReports(sid: string, windowMs: number): Promise<number> {
+    const since = Date.now() - windowMs;
+    return this.reports.filter(
+      (r) => r.sid === sid && new Date(r.createdAt).getTime() >= since,
+    ).length;
   }
 
   // --- Host tools ---

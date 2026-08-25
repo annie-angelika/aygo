@@ -81,7 +81,7 @@ function Dashboard({ onExit }: { onExit: () => Promise<void> }) {
           <TabsTrigger value="inbox" className="flex-1 gap-1.5">
             Inbox
             {openCount > 0 && (
-              <span className="grid size-4 place-items-center rounded-full bg-amber-500 text-[9.5px] font-bold text-white">
+              <span className="grid size-4 place-items-center rounded-full bg-gold text-[9.5px] font-bold text-navy">
                 {openCount > 9 ? "9+" : openCount}
               </span>
             )}

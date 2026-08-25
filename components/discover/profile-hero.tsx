@@ -1,20 +1,19 @@
 import Link from "next/link";
 import { LuMap, LuPlus, LuCheck } from "react-icons/lu";
 
-import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
+import { IllimaniRidge } from "@/components/ui/brand-icons";
 import { cn } from "@/lib/utils";
 
 /**
- * Generic Luma-style header: a full-bleed cover banner with an overlaid back
- * button and logo tile sitting on it, then identity (badge · title · meta ·
- * blurb), a follow action, and social links below. The banner runs edge-to-edge
- * and the content below sits directly on the page. Callers supply the `logo`
- * node (an icon tile or an image) and `meta` row so the same shell serves both
- * city and community-calendar pages.
+ * Generic identity header on a navy sky, matching the city hero: back + Follow
+ * + map actions up top, the logo tile with a gold outline beside the name and
+ * meta, an optional badge, the blurb, and the Illimani ridge closing the block.
+ * Breaks out of the page padding to run full-bleed. Callers supply the `logo`
+ * node and `meta` row so the same shell serves community calendars and alike.
+ * `cover` is accepted for callers that carry one; the navy sky is the banner.
  */
 export function ProfileHero({
-  cover,
   logo,
   name,
   meta,
@@ -36,65 +35,63 @@ export function ProfileHero({
   mapHref?: string;
 }) {
   return (
-    // Break out of the page's px-4 / pt-3 so the banner runs full-bleed.
-    <div className="-mx-4 -mt-3">
-      <div className="relative h-36">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cover} alt="" className="size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/10" />
-        <BackButton className="absolute left-4 top-4 border-0 bg-white text-foreground shadow-md ring-1 ring-black/5 hover:bg-white" />
-        {/* The logo straddles the banner's bottom edge, dropping into the
-            content below so it reads as the page's identity tile. */}
-        <div className="absolute -bottom-8 left-4 z-10">{logo}</div>
-      </div>
+    <section className="relative -mx-4 -mt-3 flex flex-col gap-3.5 overflow-hidden rounded-b-3xl bg-navy px-4 pb-16 pt-2 text-cream lg:mt-1 lg:rounded-3xl lg:px-8 lg:pb-20 lg:pt-4">
+      <IllimaniRidge />
 
-      <div className="px-4 pb-1 pt-3">
-        {/* Actions sit on their own row up top so the title gets the full
-            width below and never gets squeezed/truncated by the buttons. */}
-        <div className="flex items-center justify-end gap-2">
-          <Button
+      <div className="relative flex items-center justify-between">
+        <BackButton className="bg-white/10 text-cream ring-1 ring-white/15 hover:bg-white/15" />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
             onClick={onToggleFollow}
-            variant={following ? "outline" : "default"}
-            className="shrink-0 rounded-full px-5"
+            aria-pressed={following}
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-full pl-3 pr-3.5 text-[13px] font-semibold transition-colors",
+              following
+                ? "bg-white/10 text-cream ring-1 ring-white/15 hover:bg-white/15"
+                : "bg-gold text-navy hover:bg-gold/90",
+            )}
           >
             {following ? (
-              <LuCheck aria-hidden />
+              <LuCheck className="size-4" aria-hidden />
             ) : (
-              <LuPlus aria-hidden />
+              <LuPlus className="size-4" aria-hidden />
             )}
             {following ? "Following" : "Follow"}
-          </Button>
+          </button>
           {mapHref && (
-            <Button
-              size="icon"
-              variant="outline"
+            <Link
+              href={mapHref}
               aria-label="View on map"
-              nativeButton={false}
-              render={<Link href={mapHref} />}
-              className="shrink-0 rounded-full"
+              className="grid size-9 place-items-center rounded-full bg-white/10 text-cream ring-1 ring-white/15 transition-colors hover:bg-white/15"
             >
-              <LuMap className="size-4" />
-            </Button>
+              <LuMap className="size-[18px]" aria-hidden />
+            </Link>
           )}
         </div>
-
-        {badge && <div className="mb-2 mt-3">{badge}</div>}
-        <h1
-          className={cn(
-            "truncate text-[27px] font-semibold leading-tight tracking-tight text-foreground",
-            !badge && "mt-3",
-          )}
-        >
-          {name}
-        </h1>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
-          {meta}
-        </div>
-
-        <p className="mt-3 text-[13px] leading-relaxed text-foreground/80">
-          {blurb}
-        </p>
       </div>
-    </div>
+
+      <div className="relative flex items-center gap-3.5">
+        <span
+          className="grid size-[72px] shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/10 outline outline-1 outline-offset-[3px] outline-gold/80"
+          aria-hidden
+        >
+          {logo}
+        </span>
+        <div className="min-w-0">
+          {badge && <div className="mb-1.5">{badge}</div>}
+          <h1 className="truncate text-[30px] font-bold leading-[1.1] tracking-[-0.03em] lg:text-[40px]">
+            {name}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-cream/70">
+            {meta}
+          </div>
+        </div>
+      </div>
+
+      <p className="relative max-w-2xl text-[13px] leading-relaxed text-cream/80 lg:text-[14px]">
+        {blurb}
+      </p>
+    </section>
   );
 }

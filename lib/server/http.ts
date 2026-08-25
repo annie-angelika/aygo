@@ -49,10 +49,29 @@ export function handler<A extends unknown[]>(
   };
 }
 
-/** Parse a JSON request body, or throw a 400 if it's malformed. */
-export async function readJson<T>(req: Request): Promise<T> {
+/** Default body cap for JSON routes (64 KB); image-carrying routes pass more. */
+export const DEFAULT_BODY_BYTES = 64 * 1024;
+
+/**
+ * Parse a JSON request body, or throw a 400 if it's malformed, and a 413 when
+ * it exceeds `maxBytes` — checked on Content-Length first (free) and again on
+ * the actual bytes (a lying client), so an oversized body is never parsed.
+ */
+export async function readJson<T>(req: Request, maxBytes = DEFAULT_BODY_BYTES): Promise<T> {
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (declared > maxBytes) throw new HttpError(413, "Request body is too large");
+  const type = req.headers.get("content-type") ?? "";
+  if (type && !type.toLowerCase().includes("application/json"))
+    throw new HttpError(415, "Content-Type must be application/json");
+  let text: string;
   try {
-    return (await req.json()) as T;
+    text = await req.text();
+  } catch {
+    throw new HttpError(400, "Unreadable request body");
+  }
+  if (text.length > maxBytes) throw new HttpError(413, "Request body is too large");
+  try {
+    return JSON.parse(text) as T;
   } catch {
     throw new HttpError(400, "Invalid JSON body");
   }

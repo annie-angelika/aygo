@@ -14,9 +14,9 @@ export function ThreadList() {
 
   if (loading && threads.length === 0) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-3">
         {[0, 1].map((i) => (
-          <Skeleton key={i} className="h-28 rounded-2xl" />
+          <Skeleton key={i} className="h-28 rounded-[18px]" />
         ))}
       </div>
     );
@@ -31,7 +31,7 @@ export function ThreadList() {
     );
   }
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 md:grid md:grid-cols-2 md:items-start md:gap-3">
       {threads.map((t) => (
         <ThreadCard
           key={t.id}

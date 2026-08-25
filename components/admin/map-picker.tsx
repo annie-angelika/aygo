@@ -49,7 +49,7 @@ export function MapPicker({
                 onChange({ lat: e.lngLat.lat, lng: e.lngLat.lng })
               }
             >
-              <span className="grid size-9 place-items-center rounded-full bg-white text-amber-600 shadow-[0_6px_16px_-6px_rgba(15,23,42,0.55)] ring-1 ring-black/5">
+              <span className="grid size-9 place-items-center rounded-full bg-navy text-gold shadow-[0_6px_16px_-6px_rgba(9,25,53,0.6)] ring-2 ring-cream">
                 <LuMapPin className="size-[18px]" aria-hidden />
               </span>
             </Marker>

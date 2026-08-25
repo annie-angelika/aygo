@@ -1,5 +1,6 @@
 "use client";
 
+import { AygoStar, IllimaniRidge } from "@/components/ui/brand-icons";
 import { cn } from "@/lib/utils";
 import type { Theme } from "@/lib/create-themes";
 
@@ -8,6 +9,7 @@ import type { Theme } from "@/lib/create-themes";
  * skeleton floating on top (image block + two text lines), so each option reads
  * as "this is what a card looks like in this theme" rather than a flat color.
  * `detailed={false}` renders the tiny pill version (just a placeholder bar).
+ * The brand theme shows its own art instead: the gold star over the ridge.
  */
 export function ThemeSwatch({
   theme,
@@ -18,6 +20,15 @@ export function ThemeSwatch({
   className?: string;
   detailed?: boolean;
 }) {
+  if (theme.id === "aygo") {
+    return (
+      <div className={cn("relative grid place-items-center overflow-hidden", theme.cover, className)}>
+        {detailed && <IllimaniRidge className="h-[28%]" />}
+        <AygoStar className={cn("relative text-gold", detailed ? "size-[40%]" : "size-1/2")} />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("relative overflow-hidden", theme.cover, className)}>
       {theme.id === "warp" && (
@@ -29,14 +40,14 @@ export function ThemeSwatch({
 
       {detailed ? (
         <div className="absolute inset-[9%] flex flex-col gap-[5%] rounded-lg bg-white/95 p-[7%] shadow-sm ring-1 ring-black/10">
-          <div className="w-full flex-1 rounded-[4px] bg-neutral-300" />
-          <div className="h-[5px] w-3/4 rounded-full bg-neutral-300" />
-          <div className="h-[5px] w-1/2 rounded-full bg-neutral-200" />
+          <div className="w-full flex-1 rounded-[4px] bg-navy-soft" />
+          <div className="h-[5px] w-3/4 rounded-full bg-navy-soft" />
+          <div className="h-[5px] w-1/2 rounded-full bg-border" />
         </div>
       ) : (
         <div className="absolute inset-[14%] flex flex-col justify-center gap-1 rounded bg-white/90 p-1 ring-1 ring-black/10">
-          <div className="h-1 w-full rounded-full bg-neutral-300" />
-          <div className="h-1 w-2/3 rounded-full bg-neutral-300" />
+          <div className="h-1 w-full rounded-full bg-navy-soft" />
+          <div className="h-1 w-2/3 rounded-full bg-navy-soft" />
         </div>
       )}
     </div>

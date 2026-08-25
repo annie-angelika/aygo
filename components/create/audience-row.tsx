@@ -8,7 +8,7 @@ import { CALENDARS, type Visibility } from "@/lib/create-event";
 import { cn, initials } from "@/lib/utils";
 
 const pill =
-  "flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-[13px] font-semibold text-foreground ring-1 ring-border outline-none transition-colors hover:bg-muted/70 data-popup-open:bg-muted/70";
+  "inline-flex h-[34px] items-center gap-1.5 rounded-full bg-card pl-2 pr-3 text-[12.5px] font-semibold text-foreground ring-1 ring-border outline-none transition-colors hover:bg-muted/50 data-popup-open:bg-muted/50";
 
 /** Calendar + visibility — the two Luma pills that sit above the event name. */
 export function AudienceRow({
@@ -43,12 +43,12 @@ function CalendarMenu({
       <MenuTrigger className={cn(pill, "min-w-0")}>
         <Avatar className="size-5">
           {current.avatar && <AvatarImage src={current.avatar} alt="" />}
-          <AvatarFallback className="text-[9px] font-semibold">
+          <AvatarFallback className="bg-secondary text-[9px] font-semibold text-foreground">
             {initials(current.name)}
           </AvatarFallback>
         </Avatar>
         <span className="truncate">{current.name}</span>
-        <LuChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </MenuTrigger>
       <MenuContent align="start" className="min-w-64 p-2">
         <p className="px-2 pt-1 pb-2 text-[11.5px] text-muted-foreground">
@@ -71,7 +71,7 @@ function CalendarMenu({
           </MenuItem>
         ))}
         <MenuItem className="gap-2.5 px-2 py-2 text-muted-foreground">
-          <span className="grid size-7 place-items-center rounded-full bg-muted">
+          <span className="grid size-7 place-items-center rounded-full bg-secondary">
             <LuPlus className="size-4" aria-hidden />
           </span>
           <span className="text-[14px] font-medium">Create Calendar</span>
@@ -105,10 +105,10 @@ function VisibilityMenu({
   const current = VISIBILITIES.find((v) => v.value === value) ?? VISIBILITIES[0];
   return (
     <Menu>
-      <MenuTrigger className={pill}>
-        <current.Icon className="size-4 text-muted-foreground" aria-hidden />
+      <MenuTrigger className={cn(pill, "pl-3")}>
+        <current.Icon className="size-3.5 text-muted-foreground" aria-hidden />
         <span>{current.label}</span>
-        <LuChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
       </MenuTrigger>
       <MenuContent className="min-w-72 p-2">
         {VISIBILITIES.map((v) => (

@@ -100,6 +100,7 @@ export function adminInputToEvent(
     attendees: existing?.attendees ?? 0,
     attendeeAvatars: existing?.attendeeAvatars ?? [],
     price: input.price,
+    ...paymentOf(input.payWhatsapp ?? existing?.payment?.whatsapp, input.payLink ?? existing?.payment?.link),
     blurb: input.blurb.trim(),
   };
 }
@@ -131,7 +132,18 @@ export function applyAdminInput(
       : null),
     ...(input.hostName?.trim() ? { hostName: input.hostName.trim() } : null),
     ...(input.hostPhone?.trim() ? { hostPhone: input.hostPhone.trim() } : null),
+    ...(input.payWhatsapp?.trim() ? { payWhatsapp: input.payWhatsapp.trim() } : null),
+    ...(input.payLink?.trim() ? { payLink: input.payLink.trim() } : null),
   };
+}
+
+/** The public `payment` block, only when there's something to show. */
+function paymentOf(whatsapp?: string | null, link?: string | null) {
+  const payment = {
+    ...(whatsapp ? { whatsapp } : null),
+    ...(link ? { link } : null),
+  };
+  return Object.keys(payment).length ? { payment } : null;
 }
 
 /**
@@ -161,13 +173,10 @@ export function draftToEvent(
     id: draft.id,
     title: draft.title.trim() || "Untitled event",
     category: draft.category ?? DEFAULT_CATEGORY,
-    // No cover picked → a stable image derived from the chosen THEME, so the
-    // same theme always shows the same photo (not a fresh random per event).
-    cover:
-      (light ? draft.thumb : undefined) ??
-      draft.images?.[0] ??
-      draft.cover ??
-      `https://picsum.photos/seed/aygo-theme-${draft.theme}/800/600`,
+    // No photo → an empty cover; the THEME is the cover then (see ThemeCover),
+    // so changing the theme changes what every list and page shows.
+    cover: (light ? draft.thumb : undefined) ?? draft.images?.[0] ?? draft.cover ?? "",
+    theme: draft.theme,
     ...(!light && draft.images && draft.images.length > 0 ? { images: draft.images } : null),
     ...(draft.coverPosition ? { coverPosition: draft.coverPosition } : null),
     ...eventTimeFields(draft.startsAt, draft.endsAt, draft.timezone),
@@ -187,6 +196,7 @@ export function draftToEvent(
     attendees: 0,
     attendeeAvatars: [],
     price: draft.price,
+    ...paymentOf(draft.payWhatsapp ?? draft.hostPhone?.replace(/\D/g, ""), draft.payLink),
     blurb: draft.description,
     requiresApproval: draft.requiresApproval,
   };

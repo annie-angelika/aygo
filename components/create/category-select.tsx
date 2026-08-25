@@ -5,10 +5,9 @@ import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 
 /**
- * Interest picker for the create flow — a scrollable row of category chips.
- * The event's category was previously never captured (every draft silently
- * became "Party"); choosing it here sets it deliberately. The selected chip
- * takes its category color, the rest stay muted.
+ * Interest picker for the create flow — a gold "Category" eyebrow over one
+ * scrollable row of interest tiles (the same tiles Discover browses by). The
+ * chosen one flips to navy with a gold icon; the rest stay navy-soft.
  */
 export function CategorySelect({
   value,
@@ -18,28 +17,37 @@ export function CategorySelect({
   onChange: (value: Category) => void;
 }) {
   return (
-    <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-      {CATEGORIES.map((c) => {
-        const { Icon, chip, accent } = CATEGORY_META[c];
-        const selected = c === value;
-        return (
-          <button
-            key={c}
-            type="button"
-            onClick={() => onChange(c)}
-            aria-pressed={selected}
-            className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition-colors",
-              selected
-                ? cn(chip, "ring-transparent")
-                : "bg-muted text-muted-foreground ring-border hover:bg-muted/70",
-            )}
-          >
-            <Icon className={cn("size-4", selected || accent)} />
-            {c}
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-2.5">
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gold-deep">
+        Category
+      </p>
+      <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 py-0.5">
+        {CATEGORIES.map((c) => {
+          const { Icon } = CATEGORY_META[c];
+          const selected = c === value;
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onChange(c)}
+              aria-pressed={selected}
+              className="group flex w-16 shrink-0 flex-col items-center gap-1.5"
+            >
+              <span
+                className={cn(
+                  "grid size-14 place-items-center rounded-[18px] transition-all group-hover:-translate-y-0.5",
+                  selected
+                    ? "bg-primary text-gold shadow-[0_10px_20px_-12px_rgba(9,25,53,0.6)]"
+                    : "bg-secondary text-foreground group-hover:bg-navy-soft/70",
+                )}
+              >
+                <Icon className="size-[26px]" aria-hidden />
+              </span>
+              <span className="text-[11.5px] font-semibold text-foreground">{c}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

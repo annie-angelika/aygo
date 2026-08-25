@@ -7,6 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-gold: var(--gold);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold-soft: var(--gold-soft);
+  --color-cream: var(--cream);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-geist-sans);
@@ -62,39 +68,46 @@ body {
 }
 
 :root {
-  /* Warm "cultural" theme — sand surfaces, slate ink, amber accent. */
-  --background: oklch(0.965 0.009 85);
-  --foreground: oklch(0.22 0.035 264);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.035 264);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.035 264);
-  --primary: oklch(0.24 0.03 264);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.955 0.013 85);
-  --secondary-foreground: oklch(0.3 0.03 264);
-  --muted: oklch(0.955 0.011 85);
-  --muted-foreground: oklch(0.55 0.022 264);
-  --accent: oklch(0.95 0.035 75);
-  --accent-foreground: oklch(0.34 0.07 60);
+  /* aygo brand — every value comes from the logo: navy ink, gold star, cream paper. */
+  --navy: #091935;
+  --navy-soft: #e6eaf2;
+  --gold: #f3a72f;
+  --gold-deep: #c8841a;
+  --gold-soft: #fdf0d9;
+  --cream: #f8f3ed;
+
+  --background: #f8f3ed;
+  --foreground: #091935;
+  --card: #ffffff;
+  --card-foreground: #091935;
+  --popover: #ffffff;
+  --popover-foreground: #091935;
+  --primary: #091935;
+  --primary-foreground: #f8f3ed;
+  --secondary: #e6eaf2;
+  --secondary-foreground: #091935;
+  --muted: #e6eaf2;
+  --muted-foreground: #5b667a;
+  --accent: #fdf0d9;
+  --accent-foreground: #7a4d0f;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.007 85);
-  --input: oklch(0.9 0.007 85);
-  --ring: oklch(0.78 0.12 70);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #e3e0d8;
+  --input: #e3e0d8;
+  --ring: #f3a72f;
+  --chart-1: #091935;
+  --chart-2: #f3a72f;
+  --chart-3: #5b667a;
+  --chart-4: #e6eaf2;
+  --chart-5: #c8841a;
   --radius: 0.8rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #091935;
+  --sidebar-primary: #091935;
+  --sidebar-primary-foreground: #f8f3ed;
+  --sidebar-accent: #e6eaf2;
+  --sidebar-accent-foreground: #091935;
+  --sidebar-border: #e3e0d8;
+  --sidebar-ring: #f3a72f;
 }
 
 .dark {
@@ -141,6 +154,12 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+
+/* The brand's paper — plain cream. (Contour lines were tried and dropped.) */
+@utility bg-contour {
+  background-color: var(--cream);
 }
 
 /* The line that sweeps a QR viewport while it "scans". */

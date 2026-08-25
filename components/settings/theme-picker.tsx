@@ -9,10 +9,10 @@ import type { ThemePref } from "@/types";
 function Preview({ theme }: { theme: ThemePref }) {
   if (theme === "system") {
     return (
-      <div className="relative h-16 overflow-hidden rounded-lg ring-1 ring-black/5">
-        <div className="absolute inset-0 bg-[#f6f4ef]" />
+      <div className="relative h-16 overflow-hidden rounded-lg ring-1 ring-foreground/8">
+        <div className="absolute inset-0 bg-cream" />
         <div className="absolute inset-y-0 right-0 w-1/2 bg-[#1c1c1f]" />
-        <div className="absolute left-2.5 top-2.5 text-[11px] font-semibold text-slate-900">
+        <div className="absolute left-2.5 top-2.5 text-[11px] font-semibold text-navy">
           Aa
         </div>
         <div className="absolute right-2.5 top-2.5 text-[11px] font-semibold text-white">
@@ -25,8 +25,8 @@ function Preview({ theme }: { theme: ThemePref }) {
   return (
     <div
       className={cn(
-        "relative h-16 overflow-hidden rounded-lg ring-1 ring-black/5",
-        dark ? "bg-[#1c1c1f]" : "bg-[#f6f4ef]",
+        "relative h-16 overflow-hidden rounded-lg ring-1 ring-foreground/8",
+        dark ? "bg-[#1c1c1f]" : "bg-cream",
       )}
     >
       <div className="absolute left-2.5 top-2.5 flex gap-1">
@@ -37,7 +37,7 @@ function Preview({ theme }: { theme: ThemePref }) {
       <div
         className={cn(
           "absolute bottom-2.5 right-2.5 text-[11px] font-semibold",
-          dark ? "text-white" : "text-slate-900",
+          dark ? "text-white" : "text-navy",
         )}
       >
         Aa
@@ -73,8 +73,8 @@ export function ThemePicker({
             className={cn(
               "flex flex-col gap-2 rounded-2xl bg-card p-2 text-left ring-1 transition-colors",
               active
-                ? "ring-2 ring-amber-400"
-                : "ring-border hover:ring-amber-200",
+                ? "ring-2 ring-gold"
+                : "ring-border hover:ring-gold/50",
             )}
           >
             <Preview theme={v} />
@@ -83,7 +83,7 @@ export function ThemePicker({
                 {label}
               </span>
               {active && (
-                <span className="grid size-4 place-items-center rounded-full bg-amber-400 text-white">
+                <span className="grid size-4 place-items-center rounded-full bg-gold text-navy">
                   <LuCheck className="size-3" aria-hidden />
                 </span>
               )}
