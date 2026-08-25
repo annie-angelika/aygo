@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { usePollar } from "@pollar/react";
 import type { AuthState } from "@pollar/core";
 import { LuArrowLeft, LuLoaderCircle, LuMail } from "react-icons/lu";
@@ -38,6 +39,16 @@ const EMPTY_CODE = ["", "", "", "", "", ""];
 
 export function LoginModal() {
   const open = useLoginOpen();
+  // Navigating away (a legal link, back button) closes the modal — it lives
+  // in the root layout, so it would otherwise ride along to the next page.
+  const pathname = usePathname();
+  const seen = useRef(pathname);
+  useEffect(() => {
+    if (seen.current !== pathname) {
+      seen.current = pathname;
+      closeLogin();
+    }
+  }, [pathname]);
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closeLogin()}>
       <DialogContent className="max-w-sm gap-0 overflow-hidden p-0">
