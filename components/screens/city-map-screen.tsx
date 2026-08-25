@@ -1,17 +1,20 @@
 import { MapScreen } from "@/components/discover/map-screen";
 import { CATEGORIES } from "@/lib/events-data";
-import { findCity } from "@/lib/cities-data";
-import type { Category } from "@/types";
+import { findCity, withCityMeta } from "@/lib/cities-data";
+import type { Category, CityInfo } from "@/types";
 
 /** Dedicated map view for a city, at /<city>/map. */
 export function CityMapScreen({
   slug,
   initialInterest,
+  initial,
 }: {
   slug: string;
   initialInterest?: string;
+  /** A city added on the fly (not in the seed), resolved by the server. */
+  initial?: CityInfo;
 }) {
-  const city = findCity(slug);
+  const city = findCity(slug) ?? (initial ? withCityMeta(initial) : undefined);
   if (!city) return null;
 
   const defaultInterest = (CATEGORIES as string[]).includes(initialInterest ?? "")

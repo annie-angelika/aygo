@@ -269,6 +269,12 @@ export class PostgresStore implements Store {
     return citiesWithCounts(merged, events);
   }
 
+  async upsertCity(city: Omit<CityInfo, "eventCount">): Promise<void> {
+    await this
+      .sql`INSERT INTO cities (slug, data) VALUES (${city.slug}, ${JSON.stringify(city)}::jsonb)
+           ON CONFLICT (slug) DO UPDATE SET data = EXCLUDED.data`;
+  }
+
   async listCalendars(): Promise<CalendarInfo[]> {
     const rows = await this.sql`SELECT data FROM calendars`;
     return rows.map((r) => r.data as CalendarInfo);

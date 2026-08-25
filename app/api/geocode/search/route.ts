@@ -4,7 +4,7 @@
 // usage policy. The search is Bolivia-first and city-box-first, so results
 // never come from another country.
 
-import { searchPlaces, scopeForCity } from "@/lib/server/geocode";
+import { searchPlaces, searchSettlements, scopeForCity } from "@/lib/server/geocode";
 import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
 import { cleanText } from "@/lib/server/validate";
 import { handler, json } from "@/lib/server/http";
@@ -14,6 +14,8 @@ export const GET = handler(async (req: Request) => {
   const params = new URL(req.url).searchParams;
   const q = cleanText(params.get("q") ?? "").slice(0, 120);
   const city = cleanText(params.get("city") ?? "").slice(0, 60);
+  // kind=city → towns and cities in Bolivia (the create flow's "other city").
+  if (params.get("kind") === "city") return json(q.length < 2 ? [] : await searchSettlements(q));
   if (q.length < 3) return json([]);
   // The device's position (when the host allowed it) is searched first.
   const lat = Number(params.get("lat"));

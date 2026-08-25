@@ -43,6 +43,11 @@ const findCalendarInStore = cache(async (id: string) =>
   (await getStore().listCalendars()).find((c) => c.id === id),
 );
 
+/** Cities hosts added on the fly live in the store; seeded ones resolve statically. */
+const findCityInStore = cache(async (slug: string) =>
+  findCity(slug) ? undefined : (await getStore().listCities()).find((c) => c.slug === slug),
+);
+
 export function generateStaticParams() {
   return [
     ...CITIES.map((c) => ({ slug: c.slug })),
@@ -59,6 +64,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const name =
     findCity(slug)?.name ??
+    (await findCityInStore(slug))?.name ??
     findCategory(slug) ??
     (await findCalendarInStore(slug))?.name ??
     findEventByCode(slug)?.title ??
@@ -75,11 +81,12 @@ export default async function SlugPage({
 }) {
   const { slug } = await params;
 
-  if (findCity(slug)) {
+  const storedCity = await findCityInStore(slug);
+  if (findCity(slug) || storedCity) {
     const { interest } = await searchParams;
     return (
       <AppShell>
-        <CityScreen slug={slug} initialInterest={interest} />
+        <CityScreen slug={slug} initialInterest={interest} initial={storedCity} />
       </AppShell>
     );
   }

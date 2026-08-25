@@ -26,7 +26,10 @@ function DialogContent({
           // child reports its full text as min-content and blows the popup past
           // the viewport instead of truncating. Letting children shrink to 0 lets
           // truncation/scroll actually take effect at narrow widths.
-          "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 rounded-3xl bg-card p-5 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] ring-1 ring-border duration-150 [&>*]:min-w-0 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // Phones: anchored near the top with a capped, scrollable height, so an
+          // on-screen keyboard shrinks the space below the dialog instead of
+          // hiding a vertically-centred one behind itself. From `sm` it centres.
+          "fixed left-1/2 top-[max(1rem,env(safe-area-inset-top))] z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 gap-4 overflow-y-auto rounded-3xl bg-card p-5 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)] ring-1 ring-border duration-150 [&>*]:min-w-0 sm:top-1/2 sm:-translate-y-1/2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className,
         )}
         {...props}

@@ -5,6 +5,7 @@ import { FONT_VARIABLES } from "@/lib/fonts";
 import { PollarAuthProvider } from "@/components/auth/pollar-provider";
 import { ServerSync } from "@/components/layout/server-sync";
 import { AccountSession } from "@/components/layout/account-session";
+import { LoginModal } from "@/components/auth/login-modal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,6 +24,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // Let the on-screen keyboard shrink the layout viewport (Chrome/Android), so
+  // fixed dialogs and bottom bars stay above it instead of underneath.
+  interactiveWidget: "resizes-content",
 };
 
 export const metadata: Metadata = {
@@ -61,6 +65,7 @@ export default function RootLayout({
         <PollarAuthProvider>
           <AccountSession />
           <ServerSync />
+          <LoginModal />
           {children}
         </PollarAuthProvider>
       </body>

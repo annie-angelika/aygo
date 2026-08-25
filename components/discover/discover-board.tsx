@@ -186,7 +186,7 @@ export function DiscoverBoard() {
                 </Link>
               }
             >
-              Explore Bolivia
+              Explore cities
             </SectionTitle>
             <CityExplorer />
           </section>

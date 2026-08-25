@@ -5,20 +5,23 @@ import { CityHero } from "@/components/city/city-hero";
 import { CATEGORIES } from "@/lib/events-data";
 import { findCity, withCityMeta } from "@/lib/cities-data";
 import { useCities } from "@/hooks/use-discover";
-import type { Category } from "@/types";
+import type { Category, CityInfo } from "@/types";
 
 export function CityScreen({
   slug,
   initialInterest,
+  initial,
 }: {
   slug: string;
   initialInterest?: string;
+  /** A city added on the fly (not in the seed), resolved by the server. */
+  initial?: CityInfo;
 }) {
   // Identity renders instantly from the seed; the live row (with the real,
   // backend-computed event count) replaces it as soon as it loads.
   const { cities } = useCities();
   const live = cities.find((c) => c.slug === slug);
-  const city = live ? withCityMeta(live) : findCity(slug);
+  const city = live ? withCityMeta(live) : initial ? withCityMeta(initial) : findCity(slug);
 
   if (!city) return null;
 

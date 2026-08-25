@@ -137,8 +137,12 @@ export function cleanQuery(query: string, scope?: SearchScope): string {
 /** Venue-type words that never identify a place on their own. */
 const GENERIC = new Set([
   "terraza", "cafe", "cafeteria", "restaurante", "restaurant", "salon", "discoteca",
-  "teatro", "galeria", "centro", "plaza", "parque", "mirador", "calle", "avenida",
-  "mercado", "hotel", "hostal", "club", "casa", "iglesia", "estadio", "coliseo",
+  "teatro", "theater", "galeria", "gallery", "centro", "center", "plaza", "square",
+  "parque", "park", "mirador", "calle", "street", "avenida", "avenue", "mercado",
+  "market", "hotel", "hostal", "hostel", "club", "casa", "house", "iglesia", "church",
+  "estadio", "stadium", "coliseo", "arena", "bar", "pub", "museo", "museum",
+  "universidad", "university", "colegio", "escuela", "school", "the", "el", "la",
+  "los", "las", "de", "del", "y", "and",
 ]);
 
 /**
@@ -158,6 +162,9 @@ function candidates(query: string, scope?: SearchScope): string[] {
   const cleaned = cleanQuery(query, scope);
   push(cleaned);
   if (cleaned === fold(query).trim()) push(query);
+  // The same without venue-type words — "stadium hernando siles" is the
+  // Estadio Hernando Siles in OSM; the type word only gets in the way.
+  push(cleaned.split(" ").filter((w) => !GENERIC.has(w)).join(" "));
   // Shorten from the end — the first words are usually the venue itself.
   const words = cleaned.split(" ");
   for (let n = words.length - 1; n >= 2; n--) push(words.slice(0, n).join(" "));
@@ -183,15 +190,18 @@ function dedupe(rows: Row[]): Row[] {
  * in another city (Uyuni while La Paz is selected) still shows up after it.
  */
 async function lookup(q: string, limit: number, scope?: SearchScope): Promise<Row[]> {
-  const rows: Row[] = [];
-  if (scope?.near) rows.push(...(await nominatim(q, limit, scope, true, boxAround(scope.near))));
-  if (rows.length < limit && scope?.bbox) rows.push(...(await nominatim(q, limit, scope, true)));
-  if (dedupe(rows).length < limit) rows.push(...(await nominatim(q, limit, scope, false)));
+  // The three passes run together (one round-trip, not three) and merge in
+  // priority order: near the device, the city's box, the whole country.
+  const passes = await Promise.all([
+    scope?.near ? nominatim(q, limit, scope, true, boxAround(scope.near)) : Promise.resolve([]),
+    scope?.bbox ? nominatim(q, limit, scope, true) : Promise.resolve([]),
+    nominatim(q, limit, scope, false),
+  ]);
+  const rows = dedupe(passes.flat()).filter((r) => mentions(r, q));
   // Venues whose own name matches outrank places that only match by address
   // (a plaza in "Provincia Villarroel" vs. Plaza Villarroel itself).
-  const kept = dedupe(rows).filter((r) => mentions(r, q));
   const byName = (r: Row) => (mentions({ ...r, display_name: r.name ?? "" }, q) ? 0 : 1);
-  return kept.sort((a, b) => byName(a) - byName(b)).slice(0, limit);
+  return rows.sort((a, b) => byName(a) - byName(b)).slice(0, limit);
 }
 
 /**
@@ -237,4 +247,63 @@ export async function geocode(
     if (hit) return { lat: hit.lat, lng: hit.lng };
   }
   return null;
+}
+
+/** A town or city (Nominatim "settlement"), with the box the place search uses. */
+export type SettlementHit = {
+  name: string;
+  /** Department (state) it belongs to, when known. */
+  state: string;
+  lat: number;
+  lng: number;
+  bbox: [number, number, number, number];
+};
+
+/**
+ * Cities and towns in Bolivia matching a name — the "other city" search of the
+ * create flow, and what the server uses to add a city the seed doesn't have.
+ */
+export async function searchSettlements(query: string, limit = 6): Promise<SettlementHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const params = new URLSearchParams({
+    format: "json",
+    addressdetails: "1",
+    "accept-language": "es",
+    featureType: "settlement",
+    countrycodes: DEFAULT_SCOPE.countryCode ?? "bo",
+    limit: String(limit),
+    q,
+  });
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return [];
+    const rows = (await res.json()) as (Row & { boundingbox?: string[] })[];
+    const seen = new Set<string>();
+    const out: SettlementHit[] = [];
+    for (const r of rows) {
+      const name = (r.name ?? r.display_name.split(",")[0]).trim();
+      const lat = Number(r.lat);
+      const lng = Number(r.lon);
+      if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const key = fold(name);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const bb = (r.boundingbox ?? []).map(Number);
+      // Nominatim's box is [south, north, west, east]; ours is [west, south, east, north].
+      // Pad it so a venue on the edge of town still counts as "in" the city.
+      const pad = 0.05;
+      const bbox: [number, number, number, number] =
+        bb.length === 4 && bb.every(Number.isFinite)
+          ? [bb[2] - pad, bb[0] - pad, bb[3] + pad, bb[1] + pad]
+          : [lng - 0.2, lat - 0.2, lng + 0.2, lat + 0.2];
+      out.push({ name, state: r.address?.state ?? "", lat, lng, bbox });
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }

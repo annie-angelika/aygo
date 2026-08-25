@@ -72,6 +72,7 @@ export class MemoryStore implements Store {
   private events = new Map<string, AygoEvent>();
   private users = new Map<string, TravelerProfile>();
   private calendars = new Map<string, CalendarInfo>();
+  private cities = new Map<string, Omit<CityInfo, "eventCount">>();
   private guests = new Map<string, GuestState>();
   private reports: (Omit<EventReport, "eventTitle" | "from"> & {
     sid: string;
@@ -161,7 +162,13 @@ export class MemoryStore implements Store {
   // --- Discover ---
 
   async listCities(): Promise<CityInfo[]> {
-    return citiesWithCounts(CATALOG_CITIES, await this.listEvents());
+    const seeded = new Set(CATALOG_CITIES.map((c) => c.slug));
+    const extra = [...this.cities.values()].filter((c) => !seeded.has(c.slug));
+    return citiesWithCounts([...CATALOG_CITIES, ...extra], await this.listEvents());
+  }
+
+  async upsertCity(city: Omit<CityInfo, "eventCount">): Promise<void> {
+    this.cities.set(city.slug, city);
   }
 
   async listCalendars(): Promise<CalendarInfo[]> {

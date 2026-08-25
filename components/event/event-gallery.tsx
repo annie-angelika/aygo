@@ -38,8 +38,11 @@ export function EventGallery({
         wide && "lg:aspect-auto lg:h-[420px] lg:overflow-hidden lg:rounded-3xl lg:ring-1 lg:ring-border",
       )}
     >
+      {/* No photo → the theme card fills the frame. It must be absolutely
+          positioned: stacked in flow next to the (empty) strip it doubled the
+          banner's height on phones, leaving a blank band under the cover. */}
       {images.length === 0 && (
-        <ThemeCover theme={event.theme} className="aspect-auto size-full" />
+        <ThemeCover theme={event.theme} className="absolute inset-0 aspect-auto size-full" />
       )}
       <div
         className="no-scrollbar flex size-full snap-x snap-mandatory overflow-x-auto"
