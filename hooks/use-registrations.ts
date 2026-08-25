@@ -1,7 +1,7 @@
 "use client";
 
 import { useStorageValue, useHydrated } from "@/hooks/use-storage";
-import { STORAGE_KEYS, writeStorage } from "@/lib/storage";
+import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
 import { LEVELS } from "@/lib/events-data";
 import {
   rsvp,
@@ -45,21 +45,40 @@ export function useRegistrations() {
   };
 
   const isApplied = (id: string) => applied.includes(id);
-  // Submitting a request: drops a pending marker, never touches "going".
-  const apply = (id: string, message?: string) => {
+  // Submitting a request: the server must accept it (the host is notified
+  // from there), so this one AWAITS the write — the marker is optimistic and
+  // rolled back if the request is refused, and the error surfaces to the caller.
+  const apply = async (id: string, message?: string) => {
     if (isApplied(id)) return;
     writeStorage(STORAGE_KEYS.applied, [...applied, id]);
-    sync(applyToEvent(id, message));
+    try {
+      await applyToEvent(id, message);
+    } catch (e) {
+      writeStorage(
+        STORAGE_KEYS.applied,
+        readStorage<string[]>(STORAGE_KEYS.applied, NO_APPLIED).filter((a) => a !== id),
+      );
+      throw e;
+    }
   };
   const withdraw = (id: string) => {
     writeStorage(STORAGE_KEYS.applied, applied.filter((a) => a !== id));
     sync(withdrawApplication(id));
   };
-  // Instant join (no approval needed): straight into "going".
-  const join = (id: string) => {
+  // Instant join (no approval needed): straight into "going" — awaited and
+  // rolled back on refusal (sold out, event over) just like `apply`.
+  const join = async (id: string) => {
     if (isGoing(id)) return;
     writeStorage(STORAGE_KEYS.going, [...going, id]);
-    sync(rsvp(id));
+    try {
+      await rsvp(id);
+    } catch (e) {
+      writeStorage(
+        STORAGE_KEYS.going,
+        readStorage<string[]>(STORAGE_KEYS.going, NO_GOING).filter((g) => g !== id),
+      );
+      throw e;
+    }
   };
 
   const hasStamp = (id: string) => stamps.some((s) => s.eventId === id);

@@ -9,10 +9,10 @@ import type { ApplyConfig } from "@/lib/apply";
 import type { AygoEvent } from "@/types";
 
 /**
- * The confirmation that stays on screen after you submit: a gold aygo star
- * for a saved spot (or a clock while the host reviews), and your ticket — a
- * navy stub with the event, a white body with your status. No attendee QR:
- * the host confirms you from their guest list.
+ * The confirmation after you submit — kept to a glance: a gold aygo star for
+ * a saved spot (a clock while the host reviews), a one-line title, your
+ * ticket stub, and Done. Paid events show the host's pay button only once
+ * you're actually in; while a request is pending there's nothing to pay yet.
  */
 export function RegisterTicket({
   event,
@@ -25,6 +25,7 @@ export function RegisterTicket({
 }) {
   const pending = cfg.requiresApproval;
   const paid = event.price != null && event.price > 0;
+  const canPay = paid && !pending && !!(event.payment?.whatsapp || event.payment?.link);
   return (
     <div className="flex flex-col items-center gap-4 px-5 pb-6 pt-7 text-center">
       <span
@@ -44,10 +45,8 @@ export function RegisterTicket({
         <DialogTitle className="text-[22px] font-bold leading-[1.15] tracking-[-0.03em]">
           {pending ? "Request sent" : "You're going!"}
         </DialogTitle>
-        <DialogDescription className="mx-auto max-w-[18rem] text-[13px] leading-snug">
-          {pending
-            ? `${event.host.name} will review your request for "${event.title}". We'll let you know the moment you're approved.`
-            : `Your spot for "${event.title}" is saved. See you there!`}
+        <DialogDescription className="text-[13px] leading-snug">
+          {pending ? `${event.host.name} will confirm you soon.` : "See you there!"}
         </DialogDescription>
       </div>
 
@@ -70,7 +69,7 @@ export function RegisterTicket({
           {pending ? (
             <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-secondary pl-1.5 pr-2 text-[11.5px] font-semibold text-foreground">
               <LuClock className="size-3" aria-hidden />
-              Pending {event.host.name}&apos;s approval
+              Pending
             </span>
           ) : (
             <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-gold pl-1.5 pr-2 text-[11.5px] font-bold text-navy">
@@ -80,23 +79,13 @@ export function RegisterTicket({
           )}
           {paid && (
             <span className="inline-flex h-[22px] items-center rounded-full bg-secondary px-2 text-[11.5px] font-semibold text-foreground">
-              Pay Bs {event.price} at the door
+              Bs {event.price} · at the door
             </span>
           )}
         </div>
       </div>
 
-      {paid && (event.payment?.whatsapp || event.payment?.link) && (
-        <div className="flex w-full flex-col gap-2">
-          <p className="text-[12px] font-semibold text-foreground">
-            Next step: pay {event.host.name} Bs {event.price}
-          </p>
-          <PayHostButtons event={event} prominent />
-          <p className="text-[11px] text-muted-foreground">
-            You pay the host directly · in-app payments coming soon
-          </p>
-        </div>
-      )}
+      {canPay && <PayHostButtons event={event} prominent className="w-full" />}
 
       <Button
         size="lg"

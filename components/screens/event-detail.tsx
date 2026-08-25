@@ -5,7 +5,6 @@ import { ShareButton } from "@/components/ui/share-button";
 import { EventDetailBody } from "@/components/event/event-detail-body";
 import { EventDetailMeta } from "@/components/event/event-detail-meta";
 import { EventActions } from "@/components/event/event-actions";
-import { SiteFooter } from "@/components/layout/site-footer";
 import type { AygoEvent } from "@/types";
 
 const PILL =
@@ -48,10 +47,6 @@ export function EventDetail({ event }: { event: AygoEvent }) {
             <EventActions event={event} />
           </div>
         </aside>
-      </div>
-
-      <div className="mt-auto lg:mx-auto lg:mt-12 lg:w-full lg:max-w-6xl lg:px-4">
-        <SiteFooter compact />
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 px-5 pb-6 pt-3 backdrop-blur lg:hidden">

@@ -6,6 +6,7 @@ import {
   LuMapPin,
   LuCheck,
   LuDoorOpen,
+  LuLoaderCircle,
   LuShieldCheck,
 } from "react-icons/lu";
 
@@ -16,7 +17,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogTitle,
   DialogDescription,
@@ -32,24 +32,29 @@ const EYEBROW =
   "text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground";
 
 /**
- * The in-app registration sheet — replaces the WhatsApp handoff. You apply
- * directly: your profile is already loaded (so the host sees who you are), you
- * skim the host's requirements, and either get an instant spot or send a request
- * that waits on the host's approval. The write happens when the sheet closes
- * (Done, X, backdrop or Escape all route through `handleOpenChange`).
+ * The in-app registration sheet. You apply directly: your profile is already
+ * loaded (so the host sees who you are), you skim the host's requirements, and
+ * either get an instant spot or send a request that waits on the host's
+ * approval. The write happens ON SUBMIT and is awaited — the confirmation only
+ * shows once the server has it, so "Request sent" is never a promise. The
+ * sheet is controlled by its parent so it stays mounted while your status
+ * flips underneath it.
  */
 export function RegisterDialog({
   event,
-  children,
+  open,
+  onOpenChange,
 }: {
   event: AygoEvent;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const { apply, join } = useRegistrations();
   const { edits } = useProfileEdits();
   const auth = useAuth();
-  const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   const cfg = applyConfigFor(event);
@@ -65,28 +70,35 @@ export function RegisterDialog({
   };
 
   function handleOpenChange(next: boolean) {
-    // Commit on close (Done, X, or backdrop) — deferring the write keeps the
-    // confirmation on screen, since writing flips the parent out of this sheet.
-    if (!next && submitted) {
-      if (cfg.requiresApproval) apply(event.id, message.trim() || undefined);
-      else join(event.id);
-    }
-    setOpen(next);
-    // Reset the sheet once it has fully closed so it reopens clean.
+    if (busy && !next) return;
+    onOpenChange(next);
+    // Reset the sheet once it has closed so it reopens clean.
     if (!next) {
       setSubmitted(false);
+      setError(null);
       setMessage("");
     }
   }
 
-  function handleSubmit() {
-    setSubmitted(true);
+  async function handleSubmit() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (cfg.requiresApproval) await apply(event.id, message.trim() || undefined);
+      else await join(event.id);
+      setSubmitted(true);
+    } catch (e) {
+      setError(
+        e instanceof Error && e.message ? e.message : "Something went wrong — try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* The trigger is the caller's CTA, rendered as the dialog opener. */}
-      <DialogTrigger render={children as React.ReactElement} />
       <DialogContent className="gap-0 bg-background p-0">
         {submitted ? (
           <RegisterTicket event={event} cfg={cfg} onDone={() => handleOpenChange(false)} />
@@ -118,18 +130,34 @@ export function RegisterDialog({
             </div>
 
             <div className="px-5 pb-6 pt-5">
-              {cfg.requiresApproval && (
-                <p className="mb-2.5 flex items-center justify-center gap-1.5 text-[11.5px] text-muted-foreground">
-                  <LuShieldCheck className="size-3.5" aria-hidden />
-                  You&apos;ll be notified once {event.host.name} responds.
+              {error ? (
+                <p
+                  role="alert"
+                  className="mb-2.5 rounded-xl bg-destructive/10 px-3 py-2 text-center text-[12.5px] font-medium text-destructive"
+                >
+                  {error}
                 </p>
+              ) : (
+                cfg.requiresApproval && (
+                  <p className="mb-2.5 flex items-center justify-center gap-1.5 text-[11.5px] text-muted-foreground">
+                    <LuShieldCheck className="size-3.5" aria-hidden />
+                    You&apos;ll be notified once {event.host.name} responds.
+                  </p>
+                )
               )}
               <Button
                 size="lg"
-                onClick={handleSubmit}
+                disabled={busy}
+                onClick={() => void handleSubmit()}
                 className="h-12 w-full rounded-full text-[14px] font-semibold shadow-[0_12px_24px_-12px_rgba(9,25,53,0.6)]"
               >
-                {cfg.requiresApproval ? "Send request" : "Confirm spot"}
+                {busy ? (
+                  <LuLoaderCircle className="size-4 animate-spin" aria-hidden />
+                ) : cfg.requiresApproval ? (
+                  "Send request"
+                ) : (
+                  "Confirm spot"
+                )}
               </Button>
             </div>
           </div>
