@@ -5,7 +5,7 @@ import { Logo } from "@/components/layout/logo";
 
 const LINKS = [
   { href: "/discover", label: "Discover" },
-  { href: "/home", label: "Your events" },
+  { href: "/home", label: "Tickets" },
   { href: "/settings", label: "Settings" },
 ];
 
@@ -30,7 +30,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
       className={
         compact
           ? "border-t border-border/70 px-4 pb-5 pt-5 lg:flex lg:items-center lg:justify-between lg:gap-8"
-          : "mt-10 border-t border-border/70 px-4 pb-10 pt-6 lg:flex lg:items-center lg:justify-between lg:gap-8"
+          : "mt-8 border-t border-border/70 px-4 pb-6 pt-5 lg:flex lg:items-center lg:justify-between lg:gap-8"
       }
     >
       <div className="flex items-center justify-between lg:contents">
@@ -53,7 +53,7 @@ export function SiteFooter({ compact = false }: { compact?: boolean }) {
       </div>
 
       <nav
-        className={`flex flex-wrap items-center gap-x-5 gap-y-2 lg:order-2 lg:mt-0 ${compact ? "mt-3" : "mt-4"}`}
+        className={`flex flex-wrap items-center gap-x-5 gap-y-2 lg:order-2 lg:mt-0 mt-3`}
       >
         {LINKS.map(({ href, label }) => (
           <Link

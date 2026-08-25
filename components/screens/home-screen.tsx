@@ -17,7 +17,7 @@ import type { AygoEvent } from "@/types";
 
 export type Period = "upcoming" | "past";
 
-/** Your events — registered ones (Upcoming) and attended ones (Past). */
+/** Your tickets — events you're going to (Upcoming) and attended (Past). */
 export function HomeScreen({ period }: { period: Period }) {
   const router = useRouter();
   const { data, loading } = useEvents();
@@ -34,10 +34,10 @@ export function HomeScreen({ period }: { period: Period }) {
   const list = period === "past" ? past : upcoming;
 
   return (
-    <div className="flex min-h-[calc(100svh-3.5rem)] -mb-16 flex-col gap-4 px-4 pt-4 lg:-mb-24 lg:min-h-[calc(100svh-4rem)] lg:pt-8">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] -mb-16 flex-col gap-4 px-4 pt-4 lg:-mb-24 lg:min-h-[calc(100dvh-4rem)] lg:pt-8">
       <ScreenHeader
-        eyebrow="Your events"
-        title="Events"
+        eyebrow="Going & attended"
+        title="Tickets"
         className="lg:[&_h1]:text-[36px]"
         trailing={
           <Tabs
