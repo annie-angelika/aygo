@@ -57,6 +57,8 @@ export type AygoEvent = {
   blurb: string;
   /** Host reviews each join request before granting a spot. Absent → instant. */
   requiresApproval?: boolean;
+  /** Max guests; registration closes at this many `attendees`. Absent/null → unlimited. */
+  capacity?: number | null;
 };
 
 /** The identity fields you can change from "Edit profile" (stored locally). */

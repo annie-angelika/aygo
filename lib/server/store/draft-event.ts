@@ -196,6 +196,7 @@ export function draftToEvent(
     attendees: 0,
     attendeeAvatars: [],
     price: draft.price,
+    ...(draft.capacity != null ? { capacity: draft.capacity } : null),
     ...paymentOf(draft.payWhatsapp ?? draft.hostPhone?.replace(/\D/g, ""), draft.payLink),
     blurb: draft.description,
     requiresApproval: draft.requiresApproval,

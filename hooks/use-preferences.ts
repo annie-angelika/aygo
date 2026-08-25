@@ -3,7 +3,7 @@
 import { useStorageValue } from "@/hooks/use-storage";
 import { STORAGE_KEYS, writeStorage } from "@/lib/storage";
 import { savePreferences } from "@/lib/api";
-import type { Category, NotificationChannel, Preferences } from "@/types";
+import type { Category, Preferences } from "@/types";
 
 // Stable module-level default (required by useSyncExternalStore).
 const DEFAULT_PREFERENCES: Preferences = {
@@ -37,10 +37,6 @@ export function usePreferences() {
     );
   };
 
-  /** Replace the channels a notification type is delivered on. */
-  const setChannels = (typeId: string, channels: NotificationChannel[]) =>
-    update({ notifications: { ...prefs.notifications, [typeId]: channels } });
-
   /** Toggle one interest in the "For you" set. */
   const toggleInterest = (c: Category) => {
     const current = prefs.interests ?? [];
@@ -51,5 +47,5 @@ export function usePreferences() {
     });
   };
 
-  return { prefs, update, setChannels, toggleInterest };
+  return { prefs, update, toggleInterest };
 }

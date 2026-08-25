@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LuArrowRight, LuCalendarX, LuChevronDown, LuSearch, LuX } from "react-icons/lu";
+import { LuArrowRight, LuCalendarX, LuSearch, LuX } from "react-icons/lu";
 
 import { useEventFilter } from "@/hooks/use-event-filter";
 import { useRegistrations } from "@/hooks/use-registrations";
@@ -67,8 +67,8 @@ export function DiscoverBoard() {
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-2.5 text-[13px] font-semibold ring-1 ring-white/15 transition-colors hover:bg-white/15"
           >
             <MarkLaPaz className="size-5 text-gold" aria-hidden />
-            La Paz
-            <LuChevronDown className="size-3.5 text-cream/60" aria-hidden />
+            Explore La Paz
+            <LuArrowRight className="size-3.5 text-cream/60" aria-hidden />
           </Link>
         </div>
 

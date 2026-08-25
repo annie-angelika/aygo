@@ -172,6 +172,8 @@ export class PostgresStore implements Store {
     // the creator's saved profile as the host. Attendance is overlaid live from
     // real RSVPs — never from stored numbers.
     //
+    // Private (unlisted) events stay out of every list — they're reachable by
+    // link only (getEvent / getEventByCode still resolve them).
     // The projection is done IN SQL: a hosted event's draft carries its photos
     // as base64 (a megabyte each), and lists only need the small `thumb`.
     // Stripping `images` and any base64 `cover` before the rows leave Postgres
@@ -185,6 +187,7 @@ export class PostgresStore implements Store {
                       p.data AS profile
                FROM created_events ce
                LEFT JOIN profiles p ON p.session_id = ce.session_id
+               WHERE coalesce(ce.data->>'visibility', 'public') <> 'private'
                ORDER BY ce.created_at DESC`,
       this.sql`SELECT data FROM events`,
       this.goingByEvent(),

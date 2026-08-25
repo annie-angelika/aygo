@@ -2,8 +2,9 @@
 // DELETE /api/me/registrations/:eventId → cancel RSVP
 //
 // Rules: the event must exist and not be over, hosts can't register for their
-// own event, approval-only events go through /me/applications instead, and
-// there's a per-session rate limit against RSVP spam.
+// own event, approval-only events go through /me/applications instead, a full
+// event (capacity reached) is sold out, and there's a per-session rate limit
+// against RSVP spam.
 
 import { getStore } from "@/lib/server/store";
 import { getSessionId } from "@/lib/server/session";
@@ -27,6 +28,8 @@ export const POST = handler(async (req: Request, ctx: Ctx) => {
   if (event.requiresApproval)
     throw new HttpError(400, "This event needs the host's approval — send a request instead.");
   const already = (await store.getRegistrations(sid)).going.includes(eventId);
+  if (!already && event.capacity != null && event.attendees >= event.capacity)
+    throw new HttpError(400, "This event is sold out.");
   await store.setGoing(sid, eventId, true);
   if (!already) {
     await notifyHost(eventId, {

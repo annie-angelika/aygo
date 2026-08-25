@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LuCheck, LuClock, LuArrowUpRight } from "react-icons/lu";
+import { LuCheck, LuClock, LuArrowUpRight, LuQrCode } from "react-icons/lu";
 
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,7 +24,7 @@ const CTA =
  * approval (navy-soft). Smallest client island.
  */
 export function EventActions({ event }: { event: AygoEvent }) {
-  const { isGoing, isApplied, toggleGoing, withdraw, addStamp, hydrated } =
+  const { isGoing, isApplied, toggleGoing, withdraw, hasStamp, hydrated } =
     useRegistrations();
   const { isAuthenticated, openLoginModal } = useAuth();
   const mounted = useHydrated();
@@ -39,6 +39,8 @@ export function EventActions({ event }: { event: AygoEvent }) {
   const pending = hydrated && isApplied(event.id);
   const cfg = applyConfigFor(event);
   const paid = event.price != null && event.price > 0;
+  const soldOut = event.capacity != null && event.attendees >= event.capacity;
+  const collected = hydrated && hasStamp(event.id);
   const cta = cfg.requiresApproval
     ? "Request to join"
     : paid
@@ -79,17 +81,22 @@ export function EventActions({ event }: { event: AygoEvent }) {
           You&apos;re going to this event!
         </p>
         <div className="flex items-center gap-4">
-          {started ? (
-            <button
-              type="button"
-              onClick={() => addStamp(event)}
-              className="text-[12px] font-semibold text-foreground"
+          {collected ? (
+            <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-gold-deep">
+              <LuCheck className="size-3.5" aria-hidden />
+              aygo collected
+            </span>
+          ) : started ? (
+            <Link
+              href="/user/you/collection"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-foreground"
             >
-              Mark as attended
-            </button>
+              <LuQrCode className="size-3.5" aria-hidden />
+              Scan the host&apos;s QR to check in
+            </Link>
           ) : (
             <span className="text-[12px] font-medium text-muted-foreground">
-              Check in once it starts
+              Check in with the host&apos;s QR once it starts
             </span>
           )}
           <button
@@ -118,6 +125,17 @@ export function EventActions({ event }: { event: AygoEvent }) {
         >
           Withdraw request
         </button>
+      </div>
+    );
+  }
+
+  if (soldOut) {
+    return (
+      <div className="flex flex-col gap-2.5">
+        <Button size="lg" disabled className={CTA}>
+          Sold out
+        </Button>
+        <TicketContact event={event} />
       </div>
     );
   }

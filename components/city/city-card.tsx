@@ -8,7 +8,7 @@ import type { City } from "@/lib/cities-data";
  * name and event count beneath. Cities with nothing on yet read as outlines.
  */
 export function CityCard({ city }: { city: City }) {
-  const empty = city.eventCount === 0 && !city.subscribed;
+  const empty = city.eventCount === 0;
   return (
     <Link
       href={`/${city.slug}`}
@@ -35,16 +35,9 @@ export function CityCard({ city }: { city: City }) {
           {city.name}
         </p>
         <p className="text-[11px] text-muted-foreground">
-          {city.subscribed ? (
-            <span className="inline-flex items-center gap-1">
-              <span className="size-1.5 rounded-full bg-gold" aria-hidden />
-              Subscribed
-            </span>
-          ) : city.eventCount > 0 ? (
-            `${city.eventCount} ${city.eventCount === 1 ? "event" : "events"}`
-          ) : (
-            "Coming soon"
-          )}
+          {empty
+            ? "Coming soon"
+            : `${city.eventCount} ${city.eventCount === 1 ? "event" : "events"}`}
         </p>
       </div>
     </Link>

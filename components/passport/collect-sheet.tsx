@@ -1,15 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import {
-  LuMapPin,
-  LuWifi,
-  LuKeyRound,
-  LuQrCode,
-  LuHash,
-  LuLoaderCircle,
-} from "react-icons/lu";
-import type { IconType } from "react-icons";
+import { useState } from "react";
+import { LuLoaderCircle, LuQrCode, LuTriangleAlert } from "react-icons/lu";
 
 import {
   Dialog,
@@ -18,267 +10,158 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { QrScanner } from "@/components/passport/qr-scanner";
+import { AygoStamp } from "@/components/passport/aygo-stamp";
 import { AygoStar } from "@/components/ui/brand-icons";
+import { useRegistrations } from "@/hooks/use-registrations";
+import { fetchEventByCode, collectStamp } from "@/lib/api";
+import type { AygoEvent, Stamp } from "@/types";
 
 /**
- * The screen behind each "collect" method. The way you pick a method is the
- * speed-dial in CollectFab; this just opens to the matching little step (secret
- * word, code, scanning…) and lands on a shared success state. Self-contained —
- * it celebrates the claim without touching real collection state, since there's
- * no real event behind a typed code.
+ * Collect an aygo by scanning the event's QR at the door — the only method,
+ * and a real one: the QR carries the event's share link, the code resolves the
+ * event, and the server grants the stamp only to a registered guest once the
+ * event has started (POST /me/stamps). Anything else — a random QR, an event
+ * you're not registered for, one that hasn't begun — is refused with the
+ * server's reason.
  */
-export type Method = "nearby" | "nfc" | "secret" | "qr" | "code";
-
-export const METHODS: { id: Method; Icon: IconType; label: string }[] = [
-  { id: "nearby", Icon: LuMapPin, label: "Find nearby" },
-  { id: "nfc", Icon: LuWifi, label: "Tap an NFC tag" },
-  { id: "secret", Icon: LuKeyRound, label: "Secret word" },
-  { id: "qr", Icon: LuQrCode, label: "Scan a QR code" },
-  { id: "code", Icon: LuHash, label: "Enter a code" },
-];
-
-const EMPTY_CODE = ["", "", "", "", "", ""];
+type Step =
+  | { kind: "scan" }
+  | { kind: "checking" }
+  | { kind: "done"; event: AygoEvent; stamp: Stamp }
+  | { kind: "error"; message: string };
 
 export function CollectSheet({
-  method,
+  open,
   onClose,
 }: {
-  method: Method | null;
+  open: boolean;
   onClose: () => void;
 }) {
   return (
-    <Dialog open={method !== null} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="gap-0 p-5">
-        {/* Keyed by method so each open mounts a fresh flow (inputs reset). */}
-        {method && <CollectFlow key={method} method={method} onClose={onClose} />}
+        {/* Keyed on `open` so every open starts at the scanner. */}
+        {open && <CollectFlow onClose={onClose} />}
       </DialogContent>
     </Dialog>
   );
 }
 
-/** One open of the collect flow: a method's step, then the shared success. */
-function CollectFlow({
-  method,
-  onClose,
-}: {
-  method: Method;
-  onClose: () => void;
-}) {
-  const [done, setDone] = useState(false);
-  const [secret, setSecret] = useState("");
-  const [code, setCode] = useState<string[]>(EMPTY_CODE);
+/** The event's share code from whatever the QR held: our URL, or the bare code. */
+function codeFromScan(value: string): string | null {
+  const text = value.trim();
+  try {
+    const url = new URL(text);
+    const last = url.pathname.split("/").filter(Boolean).pop() ?? "";
+    return /^[a-z0-9]{6,12}$/i.test(last) ? last : null;
+  } catch {
+    return /^[a-z0-9]{6,12}$/i.test(text) ? text : null;
+  }
+}
 
-  // The hands-off methods feel real: they "look" for a beat, then land on
-  // success. QR is excluded — it lands on a real camera scan, not a timer.
-  useEffect(() => {
-    if (method !== "nearby" && method !== "nfc") return;
-    const t = setTimeout(() => setDone(true), 2200);
-    return () => clearTimeout(t);
-  }, [method]);
+function CollectFlow({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<Step>({ kind: "scan" });
+  const { addStamp } = useRegistrations();
 
-  if (done) {
+  async function onScan(value: string) {
+    if (step.kind !== "scan") return;
+    const code = codeFromScan(value);
+    if (!code) {
+      setStep({ kind: "error", message: "That QR isn't an aygo event. Ask the host for theirs." });
+      return;
+    }
+    setStep({ kind: "checking" });
+    try {
+      const event = await fetchEventByCode(code);
+      if (!event) throw new Error("That event doesn't exist any more.");
+      // The server decides: registered guest + event started, or a clear no.
+      await collectStamp(event.id);
+      addStamp(event);
+      setStep({
+        kind: "done",
+        event,
+        stamp: { eventId: event.id, title: event.title, category: event.category, image: event.cover },
+      });
+    } catch (err) {
+      setStep({
+        kind: "error",
+        message:
+          err instanceof Error && err.message
+            ? err.message
+            : "Couldn't check you in — try again.",
+      });
+    }
+  }
+
+  if (step.kind === "done") {
     return (
       <div className="flex flex-col items-center gap-3 py-2 text-center">
         <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-gold-deep">
           Checked in · new aygo
         </p>
-        <span className="grid size-16 place-items-center rounded-full bg-gold text-navy">
-          <AygoStar className="size-8" />
-        </span>
-        <DialogTitle className="text-[20px] font-bold tracking-[-0.03em]">
-          You collected a new aygo!
+        <AygoStamp stamp={step.stamp} size="lg" />
+        <DialogTitle className="mt-1 text-[18px] font-bold tracking-[-0.03em]">
+          {step.event.title}
         </DialogTitle>
-        <DialogDescription className="max-w-[30ch] text-[13px] leading-snug">
-          Nice — it&apos;s in your collection now. Keep showing up to earn more.
+        <DialogDescription className="max-w-[30ch]">
+          It&apos;s in your collection now. Keep showing up to earn more.
         </DialogDescription>
-        <Button
-          size="lg"
-          onClick={onClose}
-          className="mt-1 h-12 w-full rounded-full text-[14px] font-semibold"
-        >
+        <Button size="lg" onClick={onClose} className="h-12 w-full rounded-full text-[14px]">
           Done
         </Button>
       </div>
     );
   }
 
-  const onFinish = () => setDone(true);
-
-  if (method === "secret") {
+  if (step.kind === "error") {
     return (
-      <StepShell
-        icon={<LuKeyRound className="size-6" aria-hidden />}
-        title="Secret word"
-        desc="Enter the secret word the host shared at the event."
-      >
-        <Input
-          autoFocus
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
-          placeholder="Your secret word"
-          className="h-10 text-center text-[14px]"
-        />
+      <div className="flex flex-col items-center gap-3 py-2 text-center">
+        <span className="grid size-14 place-items-center rounded-full bg-secondary text-foreground">
+          <LuTriangleAlert className="size-6" aria-hidden />
+        </span>
+        <DialogTitle className="text-[18px] font-bold tracking-[-0.03em]">
+          Not this time
+        </DialogTitle>
+        <DialogDescription className="max-w-[32ch]">{step.message}</DialogDescription>
         <Button
           size="lg"
-          disabled={!secret.trim()}
-          onClick={onFinish}
-          className="h-12 w-full rounded-full text-[14px] font-semibold"
+          onClick={() => setStep({ kind: "scan" })}
+          className="h-12 w-full rounded-full text-[14px]"
         >
-          Continue
+          Scan again
         </Button>
-      </StepShell>
+      </div>
     );
   }
 
-  if (method === "code") {
-    return (
-      <StepShell
-        icon={<LuHash className="size-6" aria-hidden />}
-        title="Enter a code"
-        desc="Type the last six characters of your collect link."
-      >
-        <CodeBoxes value={code} onChange={setCode} />
-        <Button
-          size="lg"
-          disabled={code.some((c) => !c)}
-          onClick={onFinish}
-          className="h-12 w-full rounded-full text-[14px] font-semibold"
-        >
-          Continue
-        </Button>
-      </StepShell>
-    );
-  }
-
-  if (method === "nearby") {
-    return (
-      <StepShell
-        icon={<LuMapPin className="size-6" aria-hidden />}
-        title="Looking around you"
-        desc="Hang tight — we're scanning the area for aygos nearby."
-      >
-        <Searching label="Scanning nearby…" />
-      </StepShell>
-    );
-  }
-
-  if (method === "nfc") {
-    return (
-      <StepShell
-        icon={
-          <LuWifi
-            className="size-6 animate-pulse motion-reduce:animate-none"
-            aria-hidden
-          />
-        }
-        title="Hold near the tag"
-        desc="Keep the top of your phone against the NFC tag."
-      >
-        <Searching label="Waiting for a tag…" />
-      </StepShell>
-    );
-  }
-
-  return (
-    <StepShell
-      icon={<LuQrCode className="size-6" aria-hidden />}
-      title="Point at the event's QR"
-      desc="The host shows it at the door or on screen. One scan drops the aygo in your collection."
-    >
-      <QrScanner onScan={onFinish} />
-    </StepShell>
-  );
-}
-
-/** Shared layout for a single collect step: icon, title, copy, body. */
-function StepShell({
-  icon,
-  title,
-  desc,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  children: React.ReactNode;
-}) {
   return (
     <div className="flex flex-col items-center gap-2.5 pt-1 text-center">
       <span className="grid size-12 place-items-center rounded-full bg-secondary text-foreground">
-        {icon}
+        <LuQrCode className="size-6" aria-hidden />
       </span>
-      <DialogTitle className="text-[18px] font-bold tracking-[-0.03em]">
-        {title}
+      <DialogTitle className="text-[16px] font-bold tracking-[-0.03em]">
+        Point at the event&apos;s QR
       </DialogTitle>
       <DialogDescription className="max-w-[30ch] leading-snug">
-        {desc}
+        The host shows it at the door. One scan checks you in and drops the aygo
+        in your collection.
       </DialogDescription>
-      <div className="mt-1.5 flex w-full flex-col items-center gap-3">
-        {children}
+      <div className="relative mt-1.5 w-full">
+        <QrScanner onScan={onScan} />
+        {step.kind === "checking" && (
+          <div className="absolute inset-0 grid place-items-center rounded-2xl bg-navy/70 text-cream">
+            <span className="inline-flex items-center gap-2 text-[13px] font-semibold">
+              <LuLoaderCircle className="size-4 animate-spin text-gold" aria-hidden />
+              Checking you in…
+            </span>
+          </div>
+        )}
       </div>
-    </div>
-  );
-}
-
-/** A spinner + label, for the methods that look for a beat before landing. */
-function Searching({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 text-[12.5px] font-medium text-muted-foreground">
-      <LuLoaderCircle
-        className="size-4 animate-spin text-gold motion-reduce:animate-none"
-        aria-hidden
-      />
-      {label}
-    </div>
-  );
-}
-
-/**
- * Six single-character boxes that advance focus as you type. They flex to fit
- * the dialog width (grid, not fixed sizes) so they never overflow on narrow phones.
- */
-function CodeBoxes({
-  value,
-  onChange,
-}: {
-  value: string[];
-  onChange: (next: string[]) => void;
-}) {
-  const refs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const setAt = (i: number, ch: string) => {
-    const next = [...value];
-    next[i] = ch;
-    onChange(next);
-  };
-
-  return (
-    <div className="grid w-full grid-cols-6 gap-1.5">
-      {value.map((ch, i) => (
-        <input
-          key={i}
-          ref={(el) => {
-            refs.current[i] = el;
-          }}
-          value={ch}
-          maxLength={1}
-          autoFocus={i === 0}
-          inputMode="text"
-          aria-label={`Character ${i + 1}`}
-          onChange={(e) => {
-            const c = e.target.value.slice(-1).toUpperCase();
-            setAt(i, c);
-            if (c && i < value.length - 1) refs.current[i + 1]?.focus();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Backspace" && !value[i] && i > 0)
-              refs.current[i - 1]?.focus();
-          }}
-          className="aspect-square w-full min-w-0 rounded-xl bg-background text-center text-[18px] font-bold uppercase text-foreground ring-1 ring-border outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring"
-        />
-      ))}
+      <p className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+        <AygoStar className="size-3 text-gold" />
+        Only registered guests can collect, once the event has started.
+      </p>
     </div>
   );
 }

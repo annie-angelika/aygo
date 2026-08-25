@@ -5,15 +5,7 @@ import { ProfileHero } from "@/components/discover/profile-hero";
 import type { Calendar } from "@/lib/discover-data";
 
 /** Community-calendar header — a calendar identity on the shared ProfileHero. */
-export function CalendarHero({
-  calendar,
-  following,
-  onToggleFollow,
-}: {
-  calendar: Calendar;
-  following: boolean;
-  onToggleFollow: () => void;
-}) {
+export function CalendarHero({ calendar }: { calendar: Calendar }) {
   return (
     <ProfileHero
       cover={calendar.cover}
@@ -31,27 +23,14 @@ export function CalendarHero({
         )
       }
       meta={
-        <>
-          {calendar.location && (
-            <span className="inline-flex items-center gap-1.5">
-              <LuMapPin className="size-3.5 shrink-0" aria-hidden />
-              {calendar.location}
-            </span>
-          )}
-          {calendar.location && calendar.subscribers && (
-            <span aria-hidden>·</span>
-          )}
-          {calendar.subscribers && (
-            <span className="inline-flex items-center gap-1.5">
-              <AygoStar className="size-3.5 shrink-0 text-gold" />
-              {calendar.subscribers} subscribers
-            </span>
-          )}
-        </>
+        calendar.location && (
+          <span className="inline-flex items-center gap-1.5">
+            <LuMapPin className="size-3.5 shrink-0" aria-hidden />
+            {calendar.location}
+          </span>
+        )
       }
       blurb={calendar.description}
-      following={following}
-      onToggleFollow={onToggleFollow}
       mapHref={`/${calendar.id}/map`}
     />
   );

@@ -1,17 +1,13 @@
 "use client";
 
-import { LuShare2, LuMapPinned } from "react-icons/lu";
+import { LuUserX } from "react-icons/lu";
 
 import { useTraveler } from "@/hooks/use-traveler";
-import { ShareButton } from "@/components/ui/share-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProfileHeader } from "@/components/profile/profile-header";
-import { FollowButton } from "@/components/profile/follow-button";
-import { RouteList } from "@/components/profile/route-list";
 import { HostingList } from "@/components/profile/hosting-list";
 import { PassportCard } from "@/components/passport/passport-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LuUserX } from "react-icons/lu";
 
 export function ProfileScreen({ username }: { username?: string }) {
   const { user, isSelf, displayStamps, loading } = useTraveler(username);
@@ -46,23 +42,7 @@ export function ProfileScreen({ username }: { username?: string }) {
           location={user.location}
           joined={user.joined}
           socials={user.socials}
-          followers={user.followers}
-          following={user.following}
-          visited={user.visits.length}
-          action={
-            isSelf ? (
-              <ShareButton
-                title={`${user.name} on aygo`}
-                text={`Follow @${user.username} on aygo.`}
-                className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-card text-[13px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted"
-              >
-                <LuShare2 className="size-4" aria-hidden />
-                Share profile
-              </ShareButton>
-            ) : (
-              <FollowButton />
-            )
-          }
+          aygos={aygoCount}
         />
 
         <section className="flex flex-col gap-3">
@@ -76,31 +56,16 @@ export function ProfileScreen({ username }: { username?: string }) {
         </section>
       </div>
 
-      <div className="flex flex-col gap-5">
-        {isSelf ? (
+      {isSelf && (
+        <div className="flex flex-col gap-5">
           <section className="flex flex-col gap-3">
             <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
               Hosting
             </h2>
             <HostingList />
           </section>
-        ) : (
-          <section className="flex flex-col gap-3">
-            <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-              Past Events
-            </h2>
-            {user.visits.length ? (
-              <RouteList visits={user.visits} />
-            ) : (
-              <EmptyState
-                icon={LuMapPinned}
-                title="Nothing shared yet"
-                subtitle="When they check in somewhere, it shows up here."
-              />
-            )}
-          </section>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

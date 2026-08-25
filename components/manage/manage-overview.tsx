@@ -11,6 +11,7 @@ import { GuestRow } from "@/components/manage/guest-row";
 import { eventCode } from "@/lib/events-data";
 import type { ManageData } from "@/lib/api/manage";
 import { ThemeCover } from "@/components/event/theme-cover";
+import { EventQr } from "@/components/event/event-qr";
 
 export function ManageOverview({
   data,
@@ -96,6 +97,16 @@ export function ManageOverview({
         >
           Share event link
         </ShareButton>
+
+        <section className="flex flex-col items-center gap-2 rounded-[18px] bg-card p-4 ring-1 ring-foreground/8">
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gold-deep">
+            Door QR
+          </p>
+          <EventQr eventId={event.id} />
+          <p className="max-w-[30ch] text-center text-[12px] leading-snug text-muted-foreground">
+            Show this at the door. Guests scan it with Collect to check in and earn their aygo.
+          </p>
+        </section>
 
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
