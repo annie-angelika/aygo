@@ -54,7 +54,11 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
 
   // What it costs, up front.
   if (event.price != null && event.price > 0) {
-    requirements.push(`Cover is Bs ${event.price}, paid to ${event.host.name} at the door.`);
+    requirements.push(
+      event.payment?.whatsapp || event.payment?.link
+        ? `Cover is Bs ${event.price} — you pay ${event.host.name} directly after reserving (WhatsApp or payment link on the next step).`
+        : `Cover is Bs ${event.price}, paid to ${event.host.name} at the door.`,
+    );
   } else {
     requirements.push("Free to join, no cover.");
   }

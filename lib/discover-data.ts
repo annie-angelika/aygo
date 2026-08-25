@@ -74,53 +74,12 @@ export function findCategoryPage(
 }
 
 /**
- * Featured community calendars — curated collections of events. `category`
- * scopes each calendar's events board to its interest.
+ * Featured community calendars are REAL content, curated by the admin
+ * (Admin → Calendars) and stored in the backend's `calendars` table. Nothing is
+ * seeded here on purpose: a fresh install shows no calendars until an operator
+ * adds one, and Discover hides the section while the list is empty.
  */
-export const FEATURED_CALENDARS: CalendarInfo[] = [
-  {
-    id: "andes-outdoors",
-    name: "Andes Outdoors",
-    logo: pic("cal-andes", 120, 120),
-    cover: pic("muela-diablo"),
-    location: "La Paz",
-    featured: "Featured calendar",
-    category: "Outdoors",
-    description:
-      "Hikes, summits, and bike descents across the Bolivian Andes. We meet weekly and welcome every level — bring water and a warm layer for the altitude.",
-  },
-  {
-    id: "pacena-nights",
-    name: "Paceña Nightlife",
-    logo: pic("cal-nights", 120, 120),
-    cover: pic("after-prado"),
-    location: "La Paz",
-    category: "Party",
-    description:
-      "Cumbia, house, and afters around the city. Find your next night out and the crew to share it with.",
-  },
-  {
-    id: "cultura-viva",
-    name: "Cultura Viva",
-    logo: pic("cal-cultura", 120, 120),
-    cover: pic("pena-folk"),
-    location: "La Paz",
-    featured: "Featured calendar",
-    category: "Culture",
-    description:
-      "Fairs, workshops, and gallery openings from local artists and makers. Meet the people behind the scene.",
-  },
-  {
-    id: "mercados-food",
-    name: "Mercados & Food",
-    logo: pic("cal-food", 120, 120),
-    cover: pic("ceramica-taller"),
-    location: "La Paz",
-    category: "Food",
-    description:
-      "Street-food crawls and market tastings, a new spot every week. Come hungry.",
-  },
-];
+export const FEATURED_CALENDARS: CalendarInfo[] = [];
 
 /** Static resolution over the seed (slug routing + instant hero identity). */
 export function findCalendar(id: string): CalendarInfo | undefined {

@@ -84,7 +84,7 @@ export function QrScanner({ onScan }: { onScan: (value: string) => void }) {
   };
 
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-900">
+    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-navy [background-image:radial-gradient(80%_60%_at_50%_45%,#1c2a4a_0%,transparent_100%)]">
       <video
         ref={videoRef}
         muted
@@ -94,21 +94,21 @@ export function QrScanner({ onScan }: { onScan: (value: string) => void }) {
       <canvas ref={canvasRef} className="hidden" />
 
       {status === "loading" && (
-        <div className="absolute inset-0 grid place-items-center text-white/80">
+        <div className="absolute inset-0 grid place-items-center text-cream/80">
           <LuLoaderCircle className="size-6 animate-spin" aria-hidden />
         </div>
       )}
 
       {status === "error" && (
         <div className="absolute inset-0 grid place-items-center gap-2 p-4 text-center">
-          <LuCameraOff className="size-7 text-white/80" aria-hidden />
-          <p className="text-[12.5px] font-medium text-white/90">
+          <LuCameraOff className="size-7 text-cream/80" aria-hidden />
+          <p className="text-[12.5px] font-medium text-cream/90">
             Can&apos;t reach the camera
           </p>
           <button
             type="button"
             onClick={retry}
-            className="rounded-full bg-white/15 px-3.5 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-white/25"
+            className="rounded-full bg-white/10 px-3.5 py-1.5 text-[12.5px] font-semibold text-cream ring-1 ring-white/15 transition-colors hover:bg-white/20"
           >
             Try again
           </button>
@@ -119,20 +119,20 @@ export function QrScanner({ onScan }: { onScan: (value: string) => void }) {
         <>
           {/* Corner brackets framing the scan area. */}
           {[
-            "left-3 top-3 border-l-2 border-t-2",
-            "right-3 top-3 border-r-2 border-t-2",
-            "left-3 bottom-3 border-l-2 border-b-2",
-            "right-3 bottom-3 border-r-2 border-b-2",
+            "left-4 top-4 rounded-tl-[14px] border-l-4 border-t-4",
+            "right-4 top-4 rounded-tr-[14px] border-r-4 border-t-4",
+            "left-4 bottom-4 rounded-bl-[14px] border-l-4 border-b-4",
+            "right-4 bottom-4 rounded-br-[14px] border-r-4 border-b-4",
           ].map((pos) => (
             <span
               key={pos}
               aria-hidden
-              className={`absolute size-7 rounded-[3px] border-amber-400 ${pos}`}
+              className={`absolute size-9 border-gold ${pos}`}
             />
           ))}
           <span
             aria-hidden
-            className="absolute inset-x-6 h-0.5 rounded bg-amber-400 shadow-[0_0_12px_2px_rgba(251,191,36,0.6)] animate-[aygo-scan_1.8s_ease-in-out_infinite] motion-reduce:hidden"
+            className="absolute inset-x-10 h-0.5 rounded bg-gold shadow-[0_0_14px_3px_rgba(243,167,47,0.6)] animate-[aygo-scan_1.8s_ease-in-out_infinite] motion-reduce:hidden"
           />
         </>
       )}

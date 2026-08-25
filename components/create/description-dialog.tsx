@@ -49,7 +49,7 @@ export function DescriptionDialog({
               onClick={() => onChange(SUGGESTION)}
               className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              <LuSparkles className="size-4 text-amber-500" aria-hidden />
+              <LuSparkles className="size-4 text-gold-deep" aria-hidden />
               Suggest with AI
             </button>
             <Button onClick={() => onOpenChange(false)} className="rounded-full px-6">

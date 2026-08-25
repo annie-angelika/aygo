@@ -27,6 +27,29 @@ function applyCors(res: NextResponse, origin: string): void {
   );
 }
 
+const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * CSRF guard for cookie-authenticated writes. Browsers always attach `Origin`
+ * (and `Sec-Fetch-Site`) to cross-site POSTs, so a write whose Origin is
+ * neither this host nor an allowlisted one is refused before any handler
+ * runs. Requests without an Origin (curl, server-to-server) carry no browser
+ * cookies to abuse and pass through.
+ */
+function crossSite(req: NextRequest): boolean {
+  if (!MUTATING.has(req.method)) return false;
+  const site = req.headers.get("sec-fetch-site");
+  if (site === "cross-site") return true;
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  if (ALLOWED.includes(origin)) return false;
+  try {
+    return new URL(origin).host !== req.nextUrl.host;
+  } catch {
+    return true;
+  }
+}
+
 export function proxy(req: NextRequest): NextResponse {
   const origin = req.headers.get("origin");
   const allowed = origin !== null && ALLOWED.includes(origin);
@@ -38,7 +61,18 @@ export function proxy(req: NextRequest): NextResponse {
     return res;
   }
 
+  if (crossSite(req)) {
+    return NextResponse.json(
+      { message: "Cross-site request refused" },
+      { status: 403 },
+    );
+  }
+
   const res = NextResponse.next();
   if (allowed) applyCors(res, origin);
+  // API responses are data, never documents: no sniffing, no caching of
+  // per-user payloads by shared proxies.
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Cache-Control", "private, no-store");
   return res;
 }

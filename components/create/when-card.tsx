@@ -63,7 +63,7 @@ export function WhenCard({
   }
   return (
     <div className="space-y-2">
-      <div className="rounded-2xl bg-muted ring-1 ring-border">
+      <div className="rounded-2xl bg-card ring-1 ring-border">
         <WhenRow label="Start" dot="ring" value={start} min={today} onChange={changeStart} />
         <div className="mx-3 h-px bg-border" />
         <WhenRow label="End" dot="hollow" value={end} min={startDay > today ? startDay : today} onChange={onEnd} />
@@ -73,7 +73,7 @@ export function WhenCard({
       )}
 
       <Select value={timezone} onValueChange={(v) => onTimezone(v ?? TIMEZONES[0])}>
-        <SelectTrigger className="h-11 w-full rounded-2xl bg-muted px-3.5 text-[13px] font-medium">
+        <SelectTrigger className="h-11 w-full rounded-2xl bg-card px-3.5 text-[13px] font-medium">
           <span className="flex items-center gap-2">
             <LuGlobe className="size-4 text-muted-foreground" aria-hidden />
             <SelectValue>{(v) => (v as string) ?? TIMEZONES[0]}</SelectValue>
@@ -92,7 +92,7 @@ export function WhenCard({
 }
 
 const pill =
-  "rounded-lg bg-background px-3 py-1.5 text-[12.5px] font-medium text-foreground ring-1 ring-border outline-none transition-colors hover:bg-muted data-popup-open:ring-2 data-popup-open:ring-ring";
+  "inline-flex h-[30px] items-center rounded-[10px] bg-background px-3 text-[12.5px] font-medium text-foreground ring-1 ring-border outline-none transition-colors hover:bg-secondary/60 data-popup-open:ring-2 data-popup-open:ring-ring";
 
 /** One row: a Start/End label with a timeline dot, plus date and time pickers. */
 function WhenRow({

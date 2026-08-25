@@ -92,6 +92,7 @@ export class PostgresStore implements Store {
   }
 
   async seed(): Promise<{ events: number; users: number }> {
+    this.bustEvents();
     await this.init();
     await this.sql.transaction([
       ...anchoredCatalogEvents().map(
@@ -140,12 +141,48 @@ export class PostgresStore implements Store {
 
   // --- Catalog ---
 
+  /**
+   * The event list is read by several endpoints at once (events, cities,
+   * categories all need it for one Discover load), so one fresh copy is shared
+   * for a few seconds and dropped on every write. Concurrent callers await the
+   * same in-flight query.
+   */
+  private eventsMemo: { at: number; value: Promise<AygoEvent[]> } | null = null;
+  private static readonly EVENTS_TTL_MS = 5_000;
+
+  private bustEvents(): void {
+    this.eventsMemo = null;
+  }
+
   async listEvents(): Promise<AygoEvent[]> {
+    const now = Date.now();
+    if (this.eventsMemo && now - this.eventsMemo.at < PostgresStore.EVENTS_TTL_MS) {
+      return this.eventsMemo.value;
+    }
+    const value = this.loadEvents().catch((e) => {
+      this.bustEvents();
+      throw e;
+    });
+    this.eventsMemo = { at: now, value };
+    return value;
+  }
+
+  private async loadEvents(): Promise<AygoEvent[]> {
     // Created events lead (newest first), projected into the catalog shape with
     // the creator's saved profile as the host. Attendance is overlaid live from
     // real RSVPs — never from stored numbers.
+    //
+    // The projection is done IN SQL: a hosted event's draft carries its photos
+    // as base64 (a megabyte each), and lists only need the small `thumb`.
+    // Stripping `images` and any base64 `cover` before the rows leave Postgres
+    // is what keeps this call at a few KB instead of the whole gallery. (An
+    // older draft with a base64 cover and no thumb shows the default cover in
+    // lists until it is saved again; its page still shows the real photo.)
     const [created, catalog, going] = await Promise.all([
-      this.sql`SELECT ce.data AS draft, p.data AS profile
+      this.sql`SELECT (ce.data - 'images')
+                      || CASE WHEN ce.data->>'cover' LIKE 'data:%'
+                              THEN '{"cover": null}'::jsonb ELSE '{}'::jsonb END AS draft,
+                      p.data AS profile
                FROM created_events ce
                LEFT JOIN profiles p ON p.session_id = ce.session_id
                ORDER BY ce.created_at DESC`,
@@ -191,10 +228,11 @@ export class PostgresStore implements Store {
   }
 
   async getEventByCode(code: string): Promise<AygoEvent | null> {
-    // Codes are a deterministic hash of the id; resolve in JS over the catalog
-    // (small, single round-trip) rather than storing a separate column.
-    const events = await this.listEvents();
-    return events.find((e) => eventCode(e.id) === code) ?? null;
+    // Codes are a deterministic hash of the id; resolve over the ids alone
+    // (one tiny round-trip) and then read that single event in full.
+    const rows = await this.sql`SELECT id FROM events UNION ALL SELECT id FROM created_events`;
+    const match = rows.find((r) => eventCode(r.id as string) === code);
+    return match ? this.getEvent(match.id as string) : null;
   }
 
   async getAttendees(eventId: string): Promise<Attendee[]> {
@@ -295,6 +333,7 @@ export class PostgresStore implements Store {
   }
 
   async upsertEvent(input: AdminEventInput): Promise<AygoEvent> {
+    this.bustEvents();
     const id = input.id || slugify(input.title);
     // A guest-created event's draft is its single source of truth (lists read
     // it directly), so an admin edit updates the draft in place — and drops any
@@ -324,6 +363,7 @@ export class PostgresStore implements Store {
   }
 
   async deleteEvent(id: string): Promise<boolean> {
+    this.bustEvents();
     const [fromCatalog, fromCreated] = await this.sql.transaction([
       this.sql`DELETE FROM events WHERE id = ${id} RETURNING id`,
       this.sql`DELETE FROM created_events WHERE id = ${id} RETURNING id`,
@@ -369,6 +409,7 @@ export class PostgresStore implements Store {
   }
 
   async setGoing(sid: string, eventId: string, on: boolean): Promise<void> {
+    this.bustEvents();
     if (on) {
       await this
         .sql`INSERT INTO going (session_id, event_id) VALUES (${sid}, ${eventId})
@@ -414,6 +455,7 @@ export class PostgresStore implements Store {
   }
 
   async saveProfile(sid: string, edits: ProfileEdits): Promise<void> {
+    this.bustEvents();
     await this
       .sql`INSERT INTO profiles (session_id, data) VALUES (${sid}, ${JSON.stringify(edits)}::jsonb)
            ON CONFLICT (session_id) DO UPDATE SET data = EXCLUDED.data`;
@@ -432,15 +474,35 @@ export class PostgresStore implements Store {
   }
 
   async createEvent(sid: string, draft: EventDraft): Promise<void> {
+    this.bustEvents();
     await this
       .sql`INSERT INTO created_events (id, session_id, data) VALUES (${draft.id}, ${sid}, ${JSON.stringify(draft)}::jsonb)
            ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`;
   }
 
   async listMyEvents(sid: string): Promise<EventDraft[]> {
+    // Same list projection as `listEvents`: the API strips base64 media from
+    // these drafts anyway (`stripDraftMedia`), so never ship it out of Postgres.
     const rows = await this
-      .sql`SELECT data FROM created_events WHERE session_id = ${sid} ORDER BY created_at DESC`;
+      .sql`SELECT (data - 'images')
+                  || CASE WHEN data->>'cover' LIKE 'data:%'
+                          THEN '{"cover": null}'::jsonb ELSE '{}'::jsonb END AS data
+           FROM created_events WHERE session_id = ${sid} ORDER BY created_at DESC`;
     return rows.map((r) => r.data as EventDraft);
+  }
+
+  async countRecentEvents(sid: string, windowMs: number): Promise<number> {
+    const since = new Date(Date.now() - windowMs).toISOString();
+    const rows = await this
+      .sql`SELECT count(*) AS n FROM created_events WHERE session_id = ${sid} AND created_at >= ${since}::timestamptz`;
+    return Number(rows[0].n);
+  }
+
+  async countRecentReports(sid: string, windowMs: number): Promise<number> {
+    const since = new Date(Date.now() - windowMs).toISOString();
+    const rows = await this
+      .sql`SELECT count(*) AS n FROM reports WHERE session_id = ${sid} AND created_at >= ${since}::timestamptz`;
+    return Number(rows[0].n);
   }
 
   // --- Host tools ---
@@ -593,9 +655,15 @@ export class PostgresStore implements Store {
   // --- Notifications ---
 
   async addNotification(sid: string, input: NotificationInput): Promise<void> {
-    await this
-      .sql`INSERT INTO notifications (id, session_id, kind, title, body, href, event_id)
-           VALUES (${randomUUID()}, ${sid}, ${input.kind}, ${input.title}, ${input.body}, ${input.href}, ${input.eventId ?? null})`;
+    await this.sql.transaction([
+      this
+        .sql`INSERT INTO notifications (id, session_id, kind, title, body, href, event_id)
+             VALUES (${randomUUID()}, ${sid}, ${input.kind}, ${input.title}, ${input.body}, ${input.href}, ${input.eventId ?? null})`,
+      // Keep the inbox bounded per session — nobody needs more than the last 200.
+      this.sql`DELETE FROM notifications WHERE session_id = ${sid} AND id IN (
+                 SELECT id FROM notifications WHERE session_id = ${sid}
+                 ORDER BY created_at DESC OFFSET 200)`,
+    ]);
   }
 
   async listNotifications(sid: string): Promise<AppNotification[]> {

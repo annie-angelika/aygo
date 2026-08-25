@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { LuCheck } from "react-icons/lu";
+import { LuCheck, LuSend } from "react-icons/lu";
 
 import {
   Dialog,
@@ -81,7 +81,7 @@ export function ActionDialog({
       setSent(true);
     } catch (err) {
       setError(
-        err instanceof ApiError && err.status === 400
+        err instanceof ApiError && err.status >= 400 && err.status < 500
           ? err.message
           : "Couldn't send it — check your connection and try again.",
       );
@@ -100,15 +100,17 @@ export function ActionDialog({
         </DialogTrigger>
       )}
 
-      <DialogContent className="gap-4">
+      <DialogContent className="gap-4 bg-background">
         {sent ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center">
-            <span className="grid size-12 place-items-center rounded-full bg-emerald-100 text-emerald-700">
-              <LuCheck className="size-6" aria-hidden />
+            <span className="grid size-14 place-items-center rounded-full bg-gold text-navy">
+              <LuCheck className="size-7" strokeWidth={2.5} aria-hidden />
             </span>
             <div>
-              <DialogTitle>{successTitle}</DialogTitle>
-              <DialogDescription className="mt-1 leading-snug">
+              <DialogTitle className="text-[18px] font-bold tracking-[-0.03em]">
+                {successTitle}
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-[13px] leading-snug">
                 {successBody}
               </DialogDescription>
             </div>
@@ -116,25 +118,27 @@ export function ActionDialog({
               nativeButton={false}
               render={<Link href="/inbox" />}
               variant="outline"
-              className="h-10 rounded-full px-5 text-[13px]"
+              className="h-10 rounded-full bg-card px-5 text-[13px] font-semibold ring-1 ring-border"
             >
               Open my inbox
             </Button>
           </div>
         ) : (
           <>
-            <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3 pr-10">
               <span
                 className={cn(
-                  "grid size-11 place-items-center rounded-full",
-                  iconClassName ?? "bg-muted text-muted-foreground",
+                  "grid size-11 shrink-0 place-items-center rounded-full",
+                  iconClassName ?? "bg-secondary text-foreground",
                 )}
               >
                 {icon}
               </span>
-              <div>
-                <DialogTitle>{title}</DialogTitle>
-                <DialogDescription className="mt-1 leading-snug">
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="text-[18px] font-bold leading-[1.15] tracking-[-0.03em]">
+                  {title}
+                </DialogTitle>
+                <DialogDescription className="mt-0.5 text-[12px] leading-snug">
                   {description}
                 </DialogDescription>
               </div>
@@ -146,6 +150,7 @@ export function ActionDialog({
                 rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                className="rounded-[14px] bg-card"
               />
 
               {helper && (
@@ -163,9 +168,10 @@ export function ActionDialog({
                 type="submit"
                 disabled={!message.trim() || busy}
                 variant={destructive ? "destructive" : "default"}
-                className="h-11 w-full rounded-xl text-[13.5px]"
+                className="h-12 w-full rounded-full text-[14px] font-semibold"
               >
                 {busy ? "Sending…" : submitLabel}
+                {!destructive && <LuSend className="size-4 text-gold" aria-hidden />}
               </Button>
             </form>
           </>

@@ -17,6 +17,7 @@ import {
   removeGuest,
   type ManageData,
 } from "@/lib/api/manage";
+import { cn } from "@/lib/utils";
 
 export function ManageGuests({
   data,
@@ -129,9 +130,15 @@ export function ManageGuests({
             }
           />
         ) : (
-          <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
+          <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:rounded-none md:bg-transparent md:ring-0">
             {guests.map((g, i) => (
-              <div key={g.requestId} className={i > 0 ? "border-t border-border" : ""}>
+              <div
+                key={g.requestId}
+                className={cn(
+                  "md:rounded-2xl md:border-t-0 md:bg-card md:ring-1 md:ring-border",
+                  i > 0 && "border-t border-border",
+                )}
+              >
                 <GuestRow
                   guest={g}
                   action={

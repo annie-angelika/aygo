@@ -117,7 +117,7 @@ function GateCard({
   return (
     <div className="flex flex-col items-center gap-1 px-4 pt-16">
       <div className="flex w-full flex-col items-center gap-1 rounded-2xl bg-card px-6 py-10 text-center ring-1 ring-border">
-        <div className="mb-1 grid size-12 place-items-center rounded-full bg-amber-50 text-amber-600">
+        <div className="mb-1 grid size-12 place-items-center rounded-full bg-gold-soft text-gold-deep">
           {icon}
         </div>
         <p className="text-[16px] font-semibold tracking-tight text-foreground">

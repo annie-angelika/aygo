@@ -1,7 +1,6 @@
 import { MapScreen } from "@/components/discover/map-screen";
 import { CATEGORIES } from "@/lib/events-data";
 import { findCity } from "@/lib/cities-data";
-import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 
 /** Dedicated map view for a city, at /<city>/map. */
@@ -27,13 +26,10 @@ export function CityMapScreen({
       defaultInterest={defaultInterest}
       logo={
         <span
-          className={cn(
-            "grid size-9 shrink-0 place-items-center rounded-lg text-white",
-            city.tint,
-          )}
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-cream outline outline-1 outline-offset-2 outline-gold/80"
           aria-hidden
         >
-          <city.Icon className="size-[18px]" />
+          <city.Icon className="size-5" />
         </span>
       }
     />

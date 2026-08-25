@@ -1,9 +1,8 @@
-import { Badge } from "@/components/ui/badge";
 import { CATEGORY_META } from "@/lib/events-data";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 
-/** Category badge with its react-icon + color, resolved from CATEGORY_META. */
+/** Category chip: navy pill, gold icon, the interest's name. Resolved from CATEGORY_META. */
 export function CategoryChip({
   category,
   className,
@@ -11,11 +10,16 @@ export function CategoryChip({
   category: Category;
   className?: string;
 }) {
-  const { Icon, chip } = CATEGORY_META[category];
+  const { Icon } = CATEGORY_META[category];
   return (
-    <Badge className={cn("gap-1 border-transparent", chip, className)}>
-      <Icon className="size-3" />
+    <span
+      className={cn(
+        "inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-primary pl-1.5 pr-2 text-[11.5px] font-bold text-primary-foreground",
+        className,
+      )}
+    >
+      <Icon className="size-3 text-gold" aria-hidden />
       {category}
-    </Badge>
+    </span>
   );
 }

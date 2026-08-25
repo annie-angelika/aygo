@@ -6,8 +6,8 @@
 
 import { Map, Marker } from "@vis.gl/react-maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { LuMapPin } from "react-icons/lu";
 
+import { AygoStar } from "@/components/ui/brand-icons";
 import { cn } from "@/lib/utils";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
@@ -26,7 +26,7 @@ export function EventMiniMap({
   return (
     <div
       className={cn(
-        "h-44 w-full overflow-hidden rounded-2xl ring-1 ring-border",
+        "h-[140px] w-full overflow-hidden rounded-[18px] bg-secondary ring-1 ring-foreground/8",
         className,
       )}
     >
@@ -39,11 +39,12 @@ export function EventMiniMap({
         style={{ width: "100%", height: "100%" }}
       >
         <Marker longitude={lng} latitude={lat} anchor="bottom">
+          {/* The aygo mark as the pin: a navy teardrop with the gold star. */}
           <span
             aria-label={label}
-            className="grid size-9 place-items-center rounded-full bg-white text-amber-600 shadow-[0_6px_16px_-6px_rgba(15,23,42,0.55)] ring-1 ring-black/5"
+            className="grid size-9 -rotate-45 place-items-center rounded-[9999px_9999px_9999px_0] bg-navy shadow-[0_8px_16px_-8px_rgba(9,25,53,0.6)]"
           >
-            <LuMapPin className="size-[18px]" aria-hidden />
+            <AygoStar className="size-4 rotate-45 text-gold" />
           </span>
         </Marker>
       </Map>

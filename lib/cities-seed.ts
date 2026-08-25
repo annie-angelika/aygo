@@ -89,3 +89,28 @@ export function findCityByName(name: string): Omit<CityInfo, "eventCount"> | und
     (c) => normalize(c.name) === key || c.aliases?.some((a) => normalize(a) === key),
   );
 }
+
+/**
+ * The seeded city closest to a point (the device's location), when it is
+ * within `maxKm`. Lets the create flow pre-pick the host's city without a
+ * network call — the seed already carries every city centre.
+ */
+export function nearestCity(
+  lat: number,
+  lng: number,
+  maxKm = 80,
+): Omit<CityInfo, "eventCount"> | undefined {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  let best: { city: Omit<CityInfo, "eventCount">; km: number } | undefined;
+  for (const c of CITY_DATA) {
+    if (c.lat == null || c.lng == null) continue;
+    const dLat = rad(c.lat - lat);
+    const dLng = rad(c.lng - lng);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(rad(lat)) * Math.cos(rad(c.lat)) * Math.sin(dLng / 2) ** 2;
+    const km = 2 * 6371 * Math.asin(Math.sqrt(a));
+    if (!best || km < best.km) best = { city: c, km };
+  }
+  return best && best.km <= maxKm ? best.city : undefined;
+}

@@ -41,6 +41,9 @@ export type AdminEventInput = {
   cover?: string;
   hostName?: string;
   hostPhone?: string;
+  /** How guests pay (paid events). */
+  payWhatsapp?: string;
+  payLink?: string;
 };
 
 /** What the admin form submits to create or update a featured calendar. */
@@ -177,6 +180,10 @@ export interface Store {
   createEvent(sid: string, draft: EventDraft): Promise<void>;
   /** The drafts this session created (newest first) — hydrates a new browser. */
   listMyEvents(sid: string): Promise<EventDraft[]>;
+  /** Events this session created in the last `windowMs` (anti-spam quota). */
+  countRecentEvents(sid: string, windowMs: number): Promise<number>;
+  /** Questions/reports this session filed in the last `windowMs`. */
+  countRecentReports(sid: string, windowMs: number): Promise<number>;
 
   // --- Host tools (the creator managing their own event) ---
   /** Creator's session id for a user-created event; null for catalog events. */

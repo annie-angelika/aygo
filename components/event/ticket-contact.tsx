@@ -1,37 +1,84 @@
 "use client";
 
-// Paid events: tickets aren't sold in-app yet (you pay the host directly), so
-// the secondary action under the CTA opens a message to the host about buying
-// one — prefilled, so it's one tap — and, when the host shared a phone, a
-// WhatsApp deep link as the faster alternative.
+// Paid events: aygo doesn't move money yet — the host told us where to be
+// paid, so under the CTA the guest gets that in one tap: a WhatsApp chat with
+// a prefilled message and/or the host's payment link. When the host left no
+// channel, fall back to an in-app question. Also used by the confirmation
+// sheet right after reserving.
 
-import { LuTicket } from "react-icons/lu";
+import { LuTicket, LuExternalLink } from "react-icons/lu";
 import { FaWhatsapp } from "react-icons/fa6";
 
 import { ActionDialog } from "@/components/event/action-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { sendEventFeedback } from "@/lib/api";
+import { whatsappLink, payMessage } from "@/lib/payment";
+import { cn } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
+
+const LINK =
+  "inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground transition-colors hover:text-amber-700";
+const PILL =
+  "inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full text-[13.5px] font-semibold transition-colors";
+
+/** The host's payment channels as buttons (`prominent`) or text links. */
+export function PayHostButtons({
+  event,
+  prominent = false,
+  className,
+}: {
+  event: AygoEvent;
+  prominent?: boolean;
+  className?: string;
+}) {
+  const price = event.price ?? 0;
+  const wa = event.payment?.whatsapp;
+  const link = event.payment?.link;
+  if (price <= 0 || (!wa && !link)) return null;
+  const waHref = wa ? whatsappLink(wa, payMessage(event.host.name, event.title, price)) : null;
+
+  return (
+    <div className={cn(prominent ? "flex gap-2" : "flex items-center justify-center gap-4", className)}>
+      {waHref && (
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noreferrer"
+          className={prominent ? cn(PILL, "bg-emerald-600 text-white hover:bg-emerald-700") : LINK}
+        >
+          <FaWhatsapp className="size-4" aria-hidden />
+          Pay via WhatsApp
+        </a>
+      )}
+      {link && (
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer"
+          className={prominent ? cn(PILL, "bg-card text-foreground ring-1 ring-border hover:bg-muted") : LINK}
+        >
+          <LuExternalLink className="size-4" aria-hidden />
+          Payment link
+        </a>
+      )}
+    </div>
+  );
+}
 
 export function TicketContact({ event }: { event: AygoEvent }) {
   const { isAuthenticated, openLoginModal } = useAuth();
   if (event.price == null || event.price <= 0) return null;
-
-  const wa = event.host.phone
-    ? `https://wa.me/${event.host.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-        `Hi ${event.host.name}! I'd like to buy a ticket for "${event.title}" (Bs ${event.price}). How do I pay?`,
-      )}`
-    : null;
-  const linkClass =
-    "inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground transition-colors hover:text-amber-700";
+  const hasChannel = !!(event.payment?.whatsapp || event.payment?.link);
 
   return (
-    <div className="flex items-center justify-center gap-4">
-      {isAuthenticated ? (
+    <div className="flex flex-col items-center gap-1.5">
+      {hasChannel ? (
+        <PayHostButtons event={event} />
+      ) : isAuthenticated ? (
         <ActionDialog
           label="Ask about tickets"
           trigger={
-            <button type="button" className={linkClass}>
+            <button type="button" className={LINK}>
               <LuTicket className="size-4" aria-hidden />
               Ask about tickets
             </button>
@@ -47,17 +94,14 @@ export function TicketContact({ event }: { event: AygoEvent }) {
           onSubmit={(m) => sendEventFeedback(event.id, "question", m)}
         />
       ) : (
-        <button type="button" onClick={openLoginModal} className={linkClass}>
+        <button type="button" onClick={openLoginModal} className={LINK}>
           <LuTicket className="size-4" aria-hidden />
           Ask about tickets
         </button>
       )}
-      {wa && (
-        <a href={wa} target="_blank" rel="noreferrer" className={linkClass}>
-          <FaWhatsapp className="size-4" aria-hidden />
-          WhatsApp
-        </a>
-      )}
+      <p className="text-[11px] text-muted-foreground">
+        You pay the host directly · in-app payments coming soon
+      </p>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
 
   if (forbidden) {
     return (
-      <div className="px-4 pt-16">
+      <div className="px-4 pt-16 lg:mx-auto lg:w-full lg:max-w-xl lg:py-24">
         <EmptyState
           icon={LuLock}
           title="This isn't your event"
@@ -45,7 +45,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
 
   if (loading && !data) {
     return (
-      <div className="flex flex-col gap-3 px-4 pt-6">
+      <div className="flex flex-col gap-3 px-4 pt-6 lg:mx-auto lg:w-full lg:max-w-4xl lg:pt-8">
         <Skeleton className="h-10 rounded-full" />
         <Skeleton className="h-40 rounded-2xl" />
         <Skeleton className="h-40 rounded-2xl" />
@@ -55,7 +55,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
 
   if (!data) {
     return (
-      <div className="px-4 pt-16">
+      <div className="px-4 pt-16 lg:mx-auto lg:w-full lg:max-w-xl lg:py-24">
         <EmptyState
           icon={LuLock}
           title="Event not found"
@@ -68,7 +68,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
   const openFeedback = data.feedback.filter((f) => f.status === "open").length;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pb-10 pt-4">
+    <div className="flex flex-col gap-4 px-4 pb-10 pt-4 lg:mx-auto lg:w-full lg:max-w-4xl lg:pt-8">
       <header className="flex items-center gap-3">
         <BackButton className="shrink-0 ring-1 ring-border" />
         <h1 className="min-w-0 flex-1 truncate text-[16px] font-semibold tracking-tight text-foreground">
@@ -91,7 +91,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
           <TabsTrigger value="guests" className="flex-1 gap-1.5">
             Guests
             {data.requests.length > 0 && (
-              <span className="grid size-4 place-items-center rounded-full bg-amber-500 text-[9.5px] font-bold text-white">
+              <span className="grid size-4 place-items-center rounded-full bg-gold text-[9.5px] font-bold text-navy">
                 {data.requests.length > 9 ? "9+" : data.requests.length}
               </span>
             )}
@@ -102,7 +102,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
           <TabsTrigger value="inbox" className="flex-1 gap-1.5">
             Inbox
             {openFeedback > 0 && (
-              <span className="grid size-4 place-items-center rounded-full bg-amber-500 text-[9.5px] font-bold text-white">
+              <span className="grid size-4 place-items-center rounded-full bg-gold text-[9.5px] font-bold text-navy">
                 {openFeedback > 9 ? "9+" : openFeedback}
               </span>
             )}

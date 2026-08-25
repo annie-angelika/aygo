@@ -26,7 +26,7 @@ export function HostingList() {
         action={
           <Link
             href="/create"
-            className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-[13px] font-semibold text-background transition-opacity hover:opacity-90"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Create an event
           </Link>

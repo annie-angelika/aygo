@@ -4,11 +4,13 @@
 
 import { getStore } from "@/lib/server/store";
 import { requireEventOwner } from "@/lib/server/manage";
+import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
+import { pathId } from "@/lib/server/validate";
 import { handler, json, noContent, HttpError } from "@/lib/server/http";
 
 export const GET = handler(
   async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const { id } = await ctx.params;
+    const id = pathId((await ctx.params).id);
     const event = await getStore().getEvent(id);
     if (!event) throw new HttpError(404, "Event not found");
     return json(event);
@@ -16,9 +18,10 @@ export const GET = handler(
 );
 
 export const DELETE = handler(
-  async (_req: Request, ctx: { params: Promise<{ id: string }> }) => {
-    const { id } = await ctx.params;
-    await requireEventOwner(id);
+  async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
+    const id = pathId((await ctx.params).id);
+    const sid = await requireEventOwner(id);
+    rateLimit(req, "host:action", sid, LIMITS.hostAction);
     const existed = await getStore().deleteEvent(id);
     if (!existed) throw new HttpError(404, "Event not found");
     return noContent();

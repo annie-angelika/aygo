@@ -7,7 +7,6 @@ import {
   LuKeyRound,
   LuQrCode,
   LuHash,
-  LuCheck,
   LuLoaderCircle,
 } from "react-icons/lu";
 import type { IconType } from "react-icons";
@@ -21,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { QrScanner } from "@/components/passport/qr-scanner";
+import { AygoStar } from "@/components/ui/brand-icons";
 
 /**
  * The screen behind each "collect" method. The way you pick a method is the
@@ -81,16 +81,23 @@ function CollectFlow({
   if (done) {
     return (
       <div className="flex flex-col items-center gap-3 py-2 text-center">
-        <span className="grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-600 ring-1 ring-emerald-200">
-          <LuCheck className="size-8" aria-hidden />
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-gold-deep">
+          Checked in · new aygo
+        </p>
+        <span className="grid size-16 place-items-center rounded-full bg-gold text-navy">
+          <AygoStar className="size-8" />
         </span>
-        <DialogTitle className="text-[18px]">
+        <DialogTitle className="text-[20px] font-bold tracking-[-0.03em]">
           You collected a new aygo!
         </DialogTitle>
-        <DialogDescription className="max-w-[30ch]">
+        <DialogDescription className="max-w-[30ch] text-[13px] leading-snug">
           Nice — it&apos;s in your collection now. Keep showing up to earn more.
         </DialogDescription>
-        <Button size="lg" onClick={onClose} className="h-10 w-full rounded-full text-[14px]">
+        <Button
+          size="lg"
+          onClick={onClose}
+          className="mt-1 h-12 w-full rounded-full text-[14px] font-semibold"
+        >
           Done
         </Button>
       </div>
@@ -117,7 +124,7 @@ function CollectFlow({
           size="lg"
           disabled={!secret.trim()}
           onClick={onFinish}
-          className="h-10 w-full rounded-full text-[14px]"
+          className="h-12 w-full rounded-full text-[14px] font-semibold"
         >
           Continue
         </Button>
@@ -137,7 +144,7 @@ function CollectFlow({
           size="lg"
           disabled={code.some((c) => !c)}
           onClick={onFinish}
-          className="h-10 w-full rounded-full text-[14px]"
+          className="h-12 w-full rounded-full text-[14px] font-semibold"
         >
           Continue
         </Button>
@@ -177,8 +184,8 @@ function CollectFlow({
   return (
     <StepShell
       icon={<LuQrCode className="size-6" aria-hidden />}
-      title="Scan the QR code"
-      desc="Point your camera at the event's QR code."
+      title="Point at the event's QR"
+      desc="The host shows it at the door or on screen. One scan drops the aygo in your collection."
     >
       <QrScanner onScan={onFinish} />
     </StepShell>
@@ -199,10 +206,12 @@ function StepShell({
 }) {
   return (
     <div className="flex flex-col items-center gap-2.5 pt-1 text-center">
-      <span className="grid size-12 place-items-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+      <span className="grid size-12 place-items-center rounded-full bg-secondary text-foreground">
         {icon}
       </span>
-      <DialogTitle className="text-[16px]">{title}</DialogTitle>
+      <DialogTitle className="text-[18px] font-bold tracking-[-0.03em]">
+        {title}
+      </DialogTitle>
       <DialogDescription className="max-w-[30ch] leading-snug">
         {desc}
       </DialogDescription>
@@ -218,7 +227,7 @@ function Searching({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 text-[12.5px] font-medium text-muted-foreground">
       <LuLoaderCircle
-        className="size-4 animate-spin text-amber-500 motion-reduce:animate-none"
+        className="size-4 animate-spin text-gold motion-reduce:animate-none"
         aria-hidden
       />
       {label}

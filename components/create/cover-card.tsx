@@ -1,15 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LuImage, LuMove } from "react-icons/lu";
+import { LuImage, LuMove, LuX } from "react-icons/lu";
 
-import { getTheme, getStyle } from "@/lib/create-themes";
-import { getFont } from "@/lib/fonts";
+import { ThemeCover } from "@/components/event/theme-cover";
+import { getTheme } from "@/lib/create-themes";
 import { cn } from "@/lib/utils";
 
 /**
- * The invite cover. With no photo it's the theme's square "You Are Invited"
- * card; with one it's the photo at the same 4:3 frame the event page uses, so
+ * The invite cover — one square image, like a Luma invite. With no photo it's
+ * the theme's "You Are Invited" card; with one it's the photo in that frame, so
  * what you see here is what guests see. Drag the photo to choose its focal
  * point (stored as a CSS object-position) — nothing is ever cropped away in
  * data, only framed.
@@ -20,56 +20,64 @@ export function CoverCard({
   position = "50% 50%",
   onPickImage,
   onPosition,
+  onRemove,
+  className,
 }: {
   themeId: string;
   cover: string | null;
   position?: string;
   onPickImage: () => void;
   onPosition?: (position: string) => void;
+  /** Drop the photo — the theme becomes the cover again. */
+  onRemove?: () => void;
+  className?: string;
 }) {
   const theme = getTheme(themeId);
+  const aygo = theme.id === "aygo";
 
   return (
     <div
       className={cn(
-        "relative mx-auto w-full overflow-hidden rounded-3xl ring-1 ring-black/10 dark:ring-white/15",
-        cover ? "aspect-[4/3]" : "aspect-square max-w-[300px]",
+        "relative mx-auto w-full overflow-hidden rounded-3xl ring-1 ring-foreground/10",
+        "aspect-square",
+        className,
       )}
     >
       {cover ? (
         <Positioner src={cover} position={position} onPosition={onPosition} />
       ) : (
-        <div className={cn("absolute inset-0 grid place-items-center px-6", theme.cover)}>
-          {theme.id === "warp" && (
-            <div
-              aria-hidden
-              className="absolute inset-0 opacity-60 [background:repeating-radial-gradient(circle_at_50%_120%,transparent_0,transparent_14px,rgba(139,92,246,0.5)_15px,transparent_16px)]"
-            />
-          )}
-          <p
-            className={cn("relative text-center", theme.title, getStyle(theme.style).className)}
-            style={{ fontFamily: getFont(theme.font).family }}
-          >
-            You
-            <br />
-            Are
-            <br />
-            Invited
-          </p>
-        </div>
+        <ThemeCover theme={theme.id} className="absolute inset-0 aspect-auto h-full" />
       )}
 
-      <button
-        type="button"
-        onClick={onPickImage}
-        aria-label="Choose cover image"
-        className="absolute bottom-3 right-3 grid size-9 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/70"
-      >
-        <LuImage className="size-4" aria-hidden />
-      </button>
+      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+        {cover && onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Remove photo"
+            className="grid size-9 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/70"
+          >
+            <LuX className="size-4" aria-hidden />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onPickImage}
+          aria-label={cover ? "Change photo" : "Add a photo"}
+          className={cn(
+            "grid size-9 place-items-center rounded-full backdrop-blur transition-colors",
+            aygo && !cover
+              ? "bg-cream/15 text-cream hover:bg-cream/25"
+              : "bg-black/55 text-white hover:bg-black/70",
+          )}
+        >
+          <LuImage className="size-4" aria-hidden />
+        </button>
+      </div>
     </div>
   );
 }
+
 
 /** The photo, draggable to set its focal point. */
 function Positioner({

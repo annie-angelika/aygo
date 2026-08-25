@@ -24,7 +24,7 @@ export function NotificationBell({
         "relative grid size-9 place-items-center rounded-full ring-1 transition-colors",
         active
           ? dark
-            ? "bg-white text-zinc-900 ring-transparent"
+            ? "bg-cream text-navy ring-transparent"
             : "bg-foreground text-background ring-transparent"
           : dark
             ? "bg-white/10 text-white/70 ring-white/15 hover:text-white"
@@ -35,8 +35,8 @@ export function NotificationBell({
       {unread > 0 && (
         <span
           className={cn(
-            "absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[9.5px] font-bold text-white ring-2",
-            dark ? "ring-[#0c0b11]" : "ring-background",
+            "absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[9.5px] font-bold text-navy ring-2",
+            dark ? "ring-navy" : "ring-background",
           )}
         >
           {unread > 9 ? "9+" : unread}

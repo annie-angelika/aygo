@@ -1,33 +1,36 @@
-import { bannerForCount } from "@/lib/passport-banner";
+import { AygoStar, IllimaniRidge } from "@/components/ui/brand-icons";
 import { cn } from "@/lib/utils";
 
+// A small constellation of gold stars over the navy sky, plus one bright one.
+const SKY = [
+  "left-9 top-[22px] size-3.5 opacity-35",
+  "left-[120px] top-[60px] size-2.5 opacity-25",
+  "left-[210px] top-[30px] size-[18px] opacity-50",
+  "left-[300px] top-[70px] size-3 opacity-30",
+  "right-6 top-3.5 size-10",
+];
+
 /**
- * The looping banner at the top of your collection. The gif is chosen by how
- * many aygos you've collected (see `lib/passport-banner`), so higher levels
- * unlock new art. The backdrop matches the gif so any uncovered edge blends in,
- * and the upscaled pixel art is kept crisp rather than blurred.
+ * The banner at the top of your collection: a navy night sky scattered with
+ * aygo stars, grounded by the Illimani ridge. Takes the same props as before
+ * (`count` is accepted so callers don't change) but the sky is the same for every
+ * level — the stamps below are what grow.
  */
 export function CollectionBanner({
-  count = 0,
   className,
 }: {
   count?: number;
   className?: string;
 }) {
-  const tier = bannerForCount(count);
-
   return (
     <div
-      className={cn("relative h-32 overflow-hidden", className)}
-      style={{ backgroundColor: tier.backdrop }}
+      className={cn("relative h-[150px] overflow-hidden bg-navy", className)}
+      aria-hidden
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={tier.src}
-        alt=""
-        aria-hidden
-        className="size-full object-cover object-center [image-rendering:pixelated]"
-      />
+      {SKY.map((pos) => (
+        <AygoStar key={pos} className={cn("absolute text-gold", pos)} />
+      ))}
+      <IllimaniRidge />
     </div>
   );
 }

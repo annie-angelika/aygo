@@ -30,7 +30,7 @@ export function CityScreen({
     : undefined;
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-3">
+    <div className="flex flex-col gap-4 px-4 pt-3 lg:gap-8 lg:pt-4">
       <CityHero
         city={city}
         subscribed={subscribed}

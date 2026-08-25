@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { CITIES, findCity } from "@/lib/cities-data";
 import { getStore } from "@/lib/server/store";
-import { FEATURED_CALENDARS, findCalendar } from "@/lib/discover-data";
 import {
   CATEGORIES,
   findCategory,
@@ -36,10 +35,17 @@ const findEventByCodeInStore = cache((code: string) =>
   getStore().getEventByCode(code),
 );
 
+/**
+ * Community calendars are curated in the admin and live in the store, so a
+ * calendar the operator added five minutes ago gets its page right away.
+ */
+const findCalendarInStore = cache(async (id: string) =>
+  (await getStore().listCalendars()).find((c) => c.id === id),
+);
+
 export function generateStaticParams() {
   return [
     ...CITIES.map((c) => ({ slug: c.slug })),
-    ...FEATURED_CALENDARS.map((c) => ({ slug: c.id })),
     ...CATEGORIES.map((c) => ({ slug: categorySlug(c) })),
     ...events.map((e) => ({ slug: eventCode(e.id) })),
   ];
@@ -53,8 +59,8 @@ export async function generateMetadata({
   const { slug } = await params;
   const name =
     findCity(slug)?.name ??
-    findCalendar(slug)?.name ??
     findCategory(slug) ??
+    (await findCalendarInStore(slug))?.name ??
     findEventByCode(slug)?.title ??
     (await findEventByCodeInStore(slug))?.title;
   return name ? { title: name } : { title: { absolute: "aygo" } };
@@ -78,14 +84,6 @@ export default async function SlugPage({
     );
   }
 
-  if (findCalendar(slug)) {
-    return (
-      <AppShell>
-        <CalendarScreen id={slug} />
-      </AppShell>
-    );
-  }
-
   const category = findCategory(slug);
   if (category) {
     return (
@@ -95,12 +93,21 @@ export default async function SlugPage({
     );
   }
 
+  const calendar = await findCalendarInStore(slug);
+  if (calendar) {
+    return (
+      <AppShell>
+        <CalendarScreen id={slug} initial={calendar} />
+      </AppShell>
+    );
+  }
+
   // Every event — seeded or guest-created — resolves from the store, so the
   // detail always matches the lists (same rows, same dates).
   const event = await findEventByCodeInStore(slug);
   if (event) {
     return (
-      <main className="mx-auto min-h-svh w-full max-w-md bg-[#f6f4ef]">
+      <main className="mx-auto min-h-svh w-full max-w-md bg-[#f6f4ef] lg:max-w-none">
         <EventDetail event={event} />
       </main>
     );

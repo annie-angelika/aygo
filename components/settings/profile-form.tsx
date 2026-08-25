@@ -65,7 +65,7 @@ export function ProfileForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4 lg:max-w-2xl">
       <h2 className="text-[15px] font-semibold text-foreground">Your Profile</h2>
 
       <AvatarUpload
@@ -83,6 +83,7 @@ export function ProfileForm() {
             value={first}
             onChange={(e) => setName(e.target.value, last)}
             placeholder="First"
+            className="h-10 bg-card"
           />
         </Field>
         <Field label="Last Name">
@@ -90,20 +91,21 @@ export function ProfileForm() {
             value={last}
             onChange={(e) => setName(first, e.target.value)}
             placeholder="Last"
+            className="h-10 bg-card"
           />
         </Field>
       </div>
 
       <Field label="Username">
-        <div className="flex items-center rounded-xl ring-1 ring-border">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-l-xl bg-muted text-[13px] text-muted-foreground">
+        <div className="flex items-center overflow-hidden rounded-xl bg-card ring-1 ring-border">
+          <span className="grid h-10 w-10 shrink-0 place-items-center bg-secondary text-[13px] text-muted-foreground">
             @
           </span>
           <input
             value={CURRENT_USERNAME}
             readOnly
             aria-label="Username"
-            className="h-9 w-full cursor-not-allowed rounded-r-xl bg-background px-3 text-[13px] text-muted-foreground outline-none"
+            className="h-10 w-full cursor-not-allowed bg-transparent px-3 text-[13px] text-muted-foreground outline-none"
           />
         </div>
       </Field>
@@ -113,6 +115,7 @@ export function ProfileForm() {
           value={draft.bio}
           onChange={(e) => set({ bio: e.target.value.slice(0, BIO_MAX) })}
           placeholder="Share a little about your background and interests."
+          className="bg-card"
         />
         <span className="self-end text-[10.5px] text-muted-foreground">
           {draft.bio.length}/{BIO_MAX}
@@ -124,19 +127,19 @@ export function ProfileForm() {
         onChange={(socials) => set({ socials })}
       />
 
-      <div className="flex items-center justify-end gap-2 pt-1">
-        {saved && (
-          <span className="inline-flex items-center gap-1 text-[12px] text-emerald-600">
-            <LuCheck className="size-3.5" /> Saved
-          </span>
-        )}
+      <div className="flex flex-col items-center gap-2 pt-1">
         <Button
           type="submit"
           disabled={!draft.name.trim()}
-          className="rounded-full"
+          className="h-11 w-full rounded-full text-[14px] font-semibold"
         >
           Save changes
         </Button>
+        {saved && (
+          <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-gold-deep">
+            <LuCheck className="size-3.5" aria-hidden /> Saved
+          </span>
+        )}
       </div>
     </form>
   );

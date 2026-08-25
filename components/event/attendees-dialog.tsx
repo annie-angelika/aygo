@@ -45,7 +45,7 @@ export function AttendeesDialog({
       <DialogContent className="gap-0 p-0">
         {joined ? (
           <>
-            <div className="flex items-center gap-3 border-b border-border p-5">
+            <div className="flex items-center gap-3 border-b border-border p-5 pr-14">
               <AvatarStack
                 srcs={people
                   .map((p) => p.avatar)
@@ -55,8 +55,10 @@ export function AttendeesDialog({
                 size="default"
               />
               <div className="min-w-0">
-                <DialogTitle>Who&apos;s going</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-[18px] font-bold tracking-[-0.03em]">
+                  Who&apos;s going
+                </DialogTitle>
+                <DialogDescription className="truncate">
                   {total} going to {event.title}
                 </DialogDescription>
               </div>
@@ -81,10 +83,10 @@ function GuestGate() {
         <div className="flex flex-col gap-3 opacity-50" aria-hidden>
           {[0, 1].map((i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="size-10 shrink-0 rounded-full bg-muted" />
+              <div className="size-10 shrink-0 rounded-full bg-secondary" />
               <div className="flex flex-1 flex-col gap-2">
-                <div className="h-3 w-2/3 rounded-full bg-muted" />
-                <div className="h-3 w-2/5 rounded-full bg-muted/70" />
+                <div className="h-3 w-2/3 rounded-full bg-secondary" />
+                <div className="h-3 w-2/5 rounded-full bg-secondary/70" />
               </div>
             </div>
           ))}
@@ -92,18 +94,24 @@ function GuestGate() {
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-card" />
       </div>
 
-      <span className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground">
+      <span className="grid size-11 place-items-center rounded-full bg-secondary text-foreground">
         <LuLock className="size-5" aria-hidden />
       </span>
       <div>
-        <DialogTitle>Join to see the guest list</DialogTitle>
-        <DialogDescription className="mt-1 leading-snug">
+        <DialogTitle className="text-[18px] font-bold tracking-[-0.03em]">
+          Join to see the guest list
+        </DialogTitle>
+        <DialogDescription className="mt-1 text-[13px] leading-snug">
           The full guest list is only for travelers going to this event.
         </DialogDescription>
       </div>
 
       <DialogClose
-        render={<Button className="h-11 w-full rounded-xl text-[13.5px]">Got it</Button>}
+        render={
+          <Button className="h-12 w-full rounded-full text-[14px] font-semibold">
+            Got it
+          </Button>
+        }
       />
     </div>
   );

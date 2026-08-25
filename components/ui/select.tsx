@@ -131,7 +131,7 @@ function SelectItem({
       className={cn(
         "relative flex w-full cursor-default items-center gap-2.5 rounded-xl py-2 pr-8 pl-2.5 text-[13px] font-medium outline-none transition-colors select-none",
         "data-highlighted:bg-muted",
-        "data-selected:bg-amber-50 data-selected:text-amber-700",
+        "data-selected:bg-gold-soft data-selected:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:size-4 [&_svg]:shrink-0",
         className,
@@ -143,7 +143,7 @@ function SelectItem({
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute right-2.5 flex items-center justify-center text-amber-600" />
+          <span className="pointer-events-none absolute right-2.5 flex items-center justify-center text-gold-deep" />
         }
       >
         <LuCheck className="size-4" />

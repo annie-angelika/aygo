@@ -8,15 +8,16 @@ import { AudienceRow } from "@/components/create/audience-row";
 import { CoverCard } from "@/components/create/cover-card";
 import { CreateSuccess } from "@/components/create/create-success";
 import { EventOptions } from "@/components/create/event-options";
+import type { PriceSettings } from "@/components/create/price-dialog";
+import { hasPaymentChannel } from "@/lib/payment";
 import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
-import { PhotosStrip } from "@/components/create/photos-strip";
 import { ThemeSheet } from "@/components/create/theme-sheet";
 import { WhenCard, whenProblem } from "@/components/create/when-card";
 import { WhereWhat } from "@/components/create/where-what";
 import { CategorySelect } from "@/components/create/category-select";
 import type { LocationMeta } from "@/components/create/location-field";
-import { CALENDARS, TIMEZONES, MAX_IMAGES, type Visibility } from "@/lib/create-event";
-import { CITY_DATA, findCityByName } from "@/lib/cities-data";
+import { CALENDARS, TIMEZONES, type Visibility } from "@/lib/create-event";
+import { CITY_DATA, findCityByName, nearestCity } from "@/lib/cities-data";
 import type { Category } from "@/types";
 import { DEFAULT_THEME_ID, getTheme, type ThemeTone } from "@/lib/create-themes";
 import { createEvent, ApiError } from "@/lib/api";
@@ -44,11 +45,13 @@ export function CreateEventScreen() {
   const [start, setStart] = useState(() => defaultStart());
   const [end, setEnd] = useState(() => defaultEnd());
   const [timezone, setTimezone] = useState(TIMEZONES[0]);
-  const [city, setCity] = useState(CITY_DATA[0].name); // La Paz — now visible & changeable
+  const [city, setCity] = useState(CITY_DATA[0].name); // La Paz until we know better
+  // Once the host picks a city by hand, the device's position no longer moves it.
+  const [cityTouched, setCityTouched] = useState(false);
   const [location, setLocation] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState<number | null>(null);
+  const [pricing, setPricing] = useState<PriceSettings>({ price: null });
   const [requiresApproval, setRequiresApproval] = useState(false);
   const [capacity, setCapacity] = useState<number | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
@@ -66,6 +69,14 @@ export function CreateEventScreen() {
     );
     const known = meta?.city ? findCityByName(meta.city) : undefined;
     if (known) setCity(known.name);
+  }
+
+  // The device's position (shared from the location picker) pre-picks the
+  // nearest seeded city, so a host in Cochabamba isn't filing under La Paz.
+  function handleNear(coords: { lat: number; lng: number }) {
+    if (cityTouched) return;
+    const nearby = nearestCity(coords.lat, coords.lng);
+    if (nearby) setCity(nearby.name);
   }
 
   // Reactively match the document's token mode to the active tone. Split from the
@@ -97,7 +108,10 @@ export function CreateEventScreen() {
     ? "Name your event"
     : !location.trim()
       ? "Add a location"
-      : whenProblem(start, end);
+      : (whenProblem(start, end) ??
+        (pricing.price && pricing.price > 0 && !hasPaymentChannel(pricing)
+          ? "Add how guests pay you"
+          : null));
 
   async function create() {
     if (missing) return;
@@ -120,7 +134,9 @@ export function CreateEventScreen() {
         location: location.trim(),
         ...(coords ? { lat: coords.lat, lng: coords.lng } : null),
         description: description.trim(),
-        price,
+        price: pricing.price,
+        ...(pricing.price && pricing.payWhatsapp ? { payWhatsapp: pricing.payWhatsapp } : null),
+        ...(pricing.price && pricing.payLink ? { payLink: pricing.payLink } : null),
         requiresApproval,
         capacity,
         createdAt: new Date().toISOString(),
@@ -133,107 +149,123 @@ export function CreateEventScreen() {
 
   if (createdId) return <CreateSuccess title={title.trim()} id={createdId} />;
 
+  // The submit block: the fixed bottom bar on phones, inline at the end of the
+  // form on desktop. Same button, same handler and disabled state in both.
+  const submitBlock = (
+    <>
+      {error && (
+        <p className="mb-2 rounded-xl bg-destructive/10 px-3.5 py-2 text-center text-[12.5px] font-medium text-destructive">
+          {error instanceof ApiError && error.status >= 400 && error.status < 500
+            ? error.message
+            : "Couldn't create the event — check your connection and try again."}
+        </p>
+      )}
+      <Button
+        size="lg"
+        onClick={create}
+        disabled={pending || !!missing}
+        className="h-12 w-full rounded-full bg-foreground text-[15px] font-semibold text-background shadow-[0_12px_24px_-12px_rgba(9,25,53,0.6)] hover:bg-foreground/90 disabled:opacity-60"
+      >
+        {pending ? "Creating…" : (missing ?? "Create Event")}
+      </Button>
+    </>
+  );
+
   return (
-    <div className={cn("min-h-svh overflow-x-hidden pb-32 text-foreground", theme.page)}>
+    <div className={cn("min-h-svh overflow-x-hidden pb-32 text-foreground lg:pb-16", theme.page)}>
       <TopBar />
 
-      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-3">
-        <CoverCard
-          themeId={themeId}
-          cover={cover}
-          position={coverPosition}
-          onPosition={setCoverPosition}
-          onPickImage={() => setPickerOpen(true)}
-        />
-        {images.length > 0 && (
-          <PhotosStrip images={images} onChange={setImages} onAdd={() => setPickerOpen(true)} />
-        )}
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-3 lg:grid lg:max-w-6xl lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-12 lg:pt-8">
+        <div className="flex flex-col gap-4 lg:sticky lg:top-24">
+          <CoverCard
+            themeId={themeId}
+            cover={cover}
+            position={coverPosition}
+            onPosition={setCoverPosition}
+            onPickImage={() => setPickerOpen(true)}
+            onRemove={() => setImages([])}
+            className="lg:max-w-none"
+          />
 
-        <ThemeSheet
-          themeId={themeId}
-          onThemeChange={changeTheme}
-          fontId={fontId}
-          onFontChange={setFontId}
-          styleId={styleId}
-          onStyleChange={setStyleId}
-          display={tone}
-          onToggleDisplay={() => setDisplayOverride(tone === "dark" ? "light" : "dark")}
-        />
+          <ThemeSheet
+            themeId={themeId}
+            onThemeChange={changeTheme}
+            fontId={fontId}
+            onFontChange={setFontId}
+            styleId={styleId}
+            onStyleChange={setStyleId}
+            display={tone}
+            onToggleDisplay={() => setDisplayOverride(tone === "dark" ? "light" : "dark")}
+          />
 
-        <AudienceRow
-          calendarId={calendarId}
-          onCalendarChange={setCalendarId}
-          visibility={visibility}
-          onVisibilityChange={setVisibility}
-        />
+          <AudienceRow
+            calendarId={calendarId}
+            onCalendarChange={setCalendarId}
+            visibility={visibility}
+            onVisibilityChange={setVisibility}
+          />
+        </div>
 
-        <input
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            reset();
-          }}
-          placeholder="Event Name"
-          aria-label="Event name"
-          className="w-full bg-transparent text-[30px] font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/50"
-        />
+        <div className="flex flex-col gap-4">
+          <input
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              reset();
+            }}
+            placeholder="Event Name"
+            aria-label="Event name"
+            className="w-full bg-transparent text-[32px] font-bold leading-[1.15] tracking-[-0.03em] text-foreground outline-none placeholder:text-foreground/35 lg:text-[36px]"
+          />
 
-        <CategorySelect value={category} onChange={setCategory} />
+          <CategorySelect value={category} onChange={setCategory} />
 
-        <WhenCard
-          start={start}
-          end={end}
-          timezone={timezone}
-          onStart={setStart}
-          onEnd={setEnd}
-          onTimezone={setTimezone}
-        />
+          <WhenCard
+            start={start}
+            end={end}
+            timezone={timezone}
+            onStart={setStart}
+            onEnd={setEnd}
+            onTimezone={setTimezone}
+          />
 
-        <WhereWhat
-          city={city}
-          onCity={setCity}
-          location={location}
-          onLocationSelect={handleLocation}
-          description={description}
-          onDescription={(v) => {
-            setDescription(v);
-            reset();
-          }}
-        />
+          <WhereWhat
+            city={city}
+            onCity={(v) => {
+              setCity(v);
+              setCityTouched(true);
+            }}
+            onNear={handleNear}
+            location={location}
+            onLocationSelect={handleLocation}
+            description={description}
+            onDescription={(v) => {
+              setDescription(v);
+              reset();
+            }}
+          />
 
-        <EventOptions
-          price={price}
-          onPrice={setPrice}
-          requiresApproval={requiresApproval}
-          onApproval={setRequiresApproval}
-          capacity={capacity}
-          onCapacity={setCapacity}
-        />
+          <EventOptions
+            pricing={pricing}
+            onPricing={setPricing}
+            requiresApproval={requiresApproval}
+            onApproval={setRequiresApproval}
+            capacity={capacity}
+            onCapacity={setCapacity}
+          />
+
+          <div className="hidden pt-2 lg:block">{submitBlock}</div>
+        </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md px-4 pb-5 pt-4">
-        {error && (
-          <p className="mb-2 rounded-xl bg-destructive/10 px-3.5 py-2 text-center text-[12.5px] font-medium text-destructive">
-            {error instanceof ApiError && error.status === 400
-              ? error.message
-              : "Couldn't create the event — check your connection and try again."}
-          </p>
-        )}
-        <Button
-          size="lg"
-          onClick={create}
-          disabled={pending || !!missing}
-          className="h-12 w-full rounded-full bg-foreground text-[15px] font-semibold text-background shadow-[0_12px_24px_-12px_rgba(0,0,0,0.5)] hover:bg-foreground/90 disabled:opacity-60"
-        >
-          {pending ? "Creating…" : (missing ?? "Create Event")}
-        </Button>
+      <div className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md px-4 pb-5 pt-4 lg:hidden">
+        {submitBlock}
       </div>
 
       <ImagePickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        remaining={MAX_IMAGES - images.length}
-        onSelect={(srcs) => setImages((prev) => [...prev, ...srcs].slice(0, MAX_IMAGES))}
+        onSelect={(srcs) => setImages(srcs.slice(0, 1))}
       />
     </div>
   );

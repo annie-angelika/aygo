@@ -11,8 +11,9 @@ import { EventsFilters } from "@/components/discover/events-filters";
 import type { Category } from "@/types";
 
 /**
- * The "Events" block shared by city, calendar, and category pages: Upcoming/Past
- * + interest filters and the date-grouped timeline with its three states.
+ * The "Events" block shared by city, calendar, and category pages: interest
+ * chips, a "Food · 3 events" heading with Upcoming/Past at its right, and the
+ * date-grouped timeline with its three states.
  * Pass `category` to lock the board to one interest and hide the filter (used by
  * category pages); pass `defaultInterest` to preselect a still-changeable filter.
  *
@@ -35,15 +36,24 @@ export function EventsBoard({
   const { loading, when, setWhen, interest, setInterest, past, active, filtered } =
     useEventFilter({ category, defaultInterest, upcomingOnly, city });
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="pt-1">
-        <h2 className="text-[17px] font-semibold tracking-tight text-foreground">
-          {upcomingOnly ? "Upcoming events" : "Events"}
-        </h2>
-      </div>
+  const heading = (
+    <h2 className="inline-flex min-w-0 items-center gap-2 text-[17px] font-semibold tracking-[-0.01em] text-foreground lg:text-[20px]">
+      <span className="truncate">
+        {upcomingOnly ? "Upcoming events" : active === "all" ? "All" : active}
+      </span>
+      {!loading && (
+        <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "event" : "events"}
+        </span>
+      )}
+    </h2>
+  );
 
-      {!upcomingOnly && (
+  return (
+    <div className="@container flex flex-col gap-4">
+      {upcomingOnly ? (
+        <div className="pt-1">{heading}</div>
+      ) : (
         <EventsFilters
           variant="tabs"
           when={when}
@@ -51,13 +61,14 @@ export function EventsBoard({
           interest={interest}
           onInterestChange={setInterest}
           showInterest={!category}
+          leading={heading}
         />
       )}
 
       {loading ? (
-        <div className="flex flex-col gap-3 pt-2">
+        <div className="grid gap-3 pt-2 @2xl:grid-cols-2">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+            <Skeleton key={i} className="h-28 rounded-[18px]" />
           ))}
         </div>
       ) : filtered.length === 0 ? (

@@ -50,11 +50,11 @@ export function ThemeSheet({
           render={
             <button
               type="button"
-              className="flex flex-1 items-center gap-3 rounded-2xl bg-muted px-3 py-2.5 text-left ring-1 ring-border transition-colors hover:bg-muted/70"
+              className="flex flex-1 items-center gap-3 rounded-2xl bg-card px-3 py-2.5 text-left ring-1 ring-border transition-colors hover:bg-muted/40"
             >
-              <ThemeSwatch theme={current} detailed={false} className="size-9 shrink-0 rounded-lg ring-1 ring-border" />
+              <ThemeSwatch theme={current} detailed={false} className="size-9 shrink-0 rounded-[10px] ring-1 ring-border" />
               <span className="min-w-0 flex-1">
-                <span className="block text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
+                <span className="block text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   Theme
                 </span>
                 <span className="block truncate text-[14px] font-semibold text-foreground">
@@ -81,10 +81,10 @@ export function ThemeSheet({
                 <span
                   className={cn(
                     "rounded-2xl p-1 ring-2 transition-colors",
-                    t.id === themeId ? "ring-foreground" : "ring-transparent",
+                    t.id === themeId ? "ring-gold" : "ring-transparent",
                   )}
                 >
-                  <ThemeSwatch theme={t} className="size-[72px] rounded-xl" />
+                  <ThemeSwatch theme={t} className="size-[72px] rounded-xl ring-1 ring-foreground/8" />
                 </span>
                 <span className="w-[80px] truncate text-center text-[11.5px] font-medium text-foreground">
                   {t.name}
@@ -106,7 +106,7 @@ export function ThemeSheet({
         type="button"
         onClick={() => cycleTheme(1)}
         aria-label="Shuffle theme"
-        className="grid size-[52px] shrink-0 place-items-center rounded-2xl bg-muted text-muted-foreground ring-1 ring-border transition-colors hover:text-foreground"
+        className="grid size-[52px] shrink-0 place-items-center rounded-2xl bg-card text-muted-foreground ring-1 ring-border transition-colors hover:text-foreground"
       >
         <LuShuffle className="size-4" aria-hidden />
       </button>
@@ -130,14 +130,14 @@ const TileButton = React.forwardRef<
       ref={ref}
       type="button"
       className={cn(
-        "flex w-full items-center gap-2 rounded-xl bg-muted px-3 py-2.5 text-left transition-colors hover:bg-muted/70 data-popup-open:bg-muted/70",
+        "flex w-full items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 text-left transition-colors hover:bg-navy-soft/70 data-popup-open:bg-navy-soft/70",
         className,
       )}
       {...props}
     >
       {leading && <span className="grid size-7 shrink-0 place-items-center">{leading}</span>}
       <span className="min-w-0 flex-1">
-        <span className="block text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="block text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
           {label}
         </span>
         <span className="block truncate text-[13px] font-semibold text-foreground">{value}</span>
@@ -172,7 +172,7 @@ function ColorTile({
                   className={cn(
                     "size-8 rounded-full ring-2 ring-offset-2 ring-offset-card transition-transform active:scale-95",
                     t.swatch,
-                    t.id === themeId ? "ring-foreground" : "ring-transparent",
+                    t.id === themeId ? "ring-gold" : "ring-transparent",
                   )}
                 />
               }
@@ -249,7 +249,7 @@ function FontTile({
                   onClick={() => onFontChange(f.id)}
                   className={cn(
                     "flex flex-col items-center gap-1 rounded-xl py-3 ring-2 transition-colors",
-                    f.id === fontId ? "bg-muted ring-foreground" : "bg-muted/50 ring-transparent hover:bg-muted",
+                    f.id === fontId ? "bg-secondary ring-gold" : "bg-secondary/50 ring-transparent hover:bg-secondary",
                   )}
                 >
                   <span className="text-[22px] leading-none text-foreground" style={{ fontFamily: f.family }}>
@@ -277,17 +277,17 @@ function DisplayTile({
     <button
       type="button"
       onClick={onToggle}
-      className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2.5 text-left transition-colors hover:bg-muted/70"
+      className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 text-left transition-colors hover:bg-navy-soft/70"
     >
       <span className="grid size-7 shrink-0 place-items-center">
         {display === "dark" ? (
-          <LuMoon className="size-4 text-indigo-300" aria-hidden />
+          <LuMoon className="size-4 text-foreground" aria-hidden />
         ) : (
-          <LuSun className="size-4 text-amber-500" aria-hidden />
+          <LuSun className="size-4 text-gold" aria-hidden />
         )}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[10.5px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="block text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
           Display
         </span>
         <span className="block truncate text-[13px] font-semibold text-foreground">

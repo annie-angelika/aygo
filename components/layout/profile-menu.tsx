@@ -55,19 +55,24 @@ export function ProfileMenu({
         <Avatar
           className={cn(
             "size-9 ring-2",
-            active ? "ring-amber-400" : dark ? "ring-white/15" : "ring-background",
+            active ? "ring-gold" : dark ? "ring-white/15" : "ring-background",
           )}
         >
           {avatar && <AvatarImage src={avatar} alt="Your profile" />}
-          <AvatarFallback className="text-[12px] font-semibold">
+          <AvatarFallback
+            className={cn(
+              "text-[12px] font-semibold",
+              dark && "bg-cream text-navy",
+            )}
+          >
             {initials(name)}
           </AvatarFallback>
         </Avatar>
         {hydrated && count > 0 && (
           <span
             className={cn(
-              "absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2",
-              dark ? "ring-[#0c0b11]" : "ring-background",
+              "absolute -right-0.5 -bottom-0.5 grid size-4 place-items-center rounded-full bg-gold text-[9px] font-bold text-navy ring-2",
+              dark ? "ring-navy" : "ring-background",
             )}
           >
             {count}

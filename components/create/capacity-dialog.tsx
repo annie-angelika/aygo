@@ -37,7 +37,7 @@ export function CapacityDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
-        <span className="grid size-12 place-items-center rounded-full bg-muted text-foreground">
+        <span className="grid size-12 place-items-center rounded-full bg-primary text-gold">
           <LuArrowUpFromLine className="size-5" aria-hidden />
         </span>
         <div>
@@ -66,7 +66,7 @@ export function CapacityDialog({
           />
         )}
 
-        <Button size="lg" onClick={confirm} className="h-12 w-full rounded-full text-[14px]">
+        <Button size="lg" onClick={confirm} className="h-12 w-full rounded-full text-[14px] font-semibold">
           Confirm
         </Button>
       </DialogContent>

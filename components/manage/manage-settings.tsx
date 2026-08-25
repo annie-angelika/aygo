@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/select";
 import { WhenCard, whenProblem } from "@/components/create/when-card";
 import { CoverCard } from "@/components/create/cover-card";
-import { PhotosStrip } from "@/components/create/photos-strip";
 import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { DeleteEvent } from "@/components/manage/delete-event";
 import { createEvent, ApiError } from "@/lib/api";
-import { MAX_IMAGES, type EventDraft, type Visibility } from "@/lib/create-event";
+import { type EventDraft, type Visibility } from "@/lib/create-event";
+import { hasPaymentChannel, normalizeWhatsapp, formatWhatsapp } from "@/lib/payment";
 
 export function ManageSettings({
   draft,
@@ -59,6 +59,8 @@ function SettingsForm({
   // Older drafts only have `cover`; treat it as a one-photo gallery.
   const [draft, setDraft] = useState<EventDraft>({
     ...initial,
+    // Stored as international digits; show it the way people type it.
+    ...(initial.payWhatsapp ? { payWhatsapp: formatWhatsapp(initial.payWhatsapp) } : null),
     images: initial.images ?? (initial.cover ? [initial.cover] : []),
   });
   const [busy, setBusy] = useState(false);
@@ -83,7 +85,7 @@ function SettingsForm({
     } catch (err) {
       setNote({
         text:
-          err instanceof ApiError && err.status === 400
+          err instanceof ApiError && err.status >= 400 && err.status < 500
             ? err.message
             : "Couldn't save — try again.",
         error: true,
@@ -96,18 +98,14 @@ function SettingsForm({
   return (
     <form onSubmit={save} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold text-foreground">Photos</span>
+        <span className="text-[12px] font-semibold text-foreground">Cover</span>
         <CoverCard
           themeId={draft.theme}
           cover={images[0] ?? null}
           position={draft.coverPosition ?? "50% 50%"}
           onPosition={(p) => set({ coverPosition: p })}
           onPickImage={() => setPickerOpen(true)}
-        />
-        <PhotosStrip
-          images={images}
-          onChange={(next) => set({ images: next })}
-          onAdd={() => setPickerOpen(true)}
+          onRemove={() => set({ images: [] })}
         />
       </div>
       <Field label="Title">
@@ -172,8 +170,45 @@ function SettingsForm({
         </Field>
       </div>
       <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">
-        Paid events are settled directly with you — aygo doesn&apos;t process payments yet.
+        Paid events are settled directly with you — in-app payments are coming later.
       </p>
+      {draft.price != null && draft.price > 0 && (
+        <div className="flex flex-col gap-2.5 rounded-xl bg-muted/40 p-3">
+          <p className="text-[12px] font-semibold text-foreground">
+            How guests pay you{" "}
+            <span className="font-medium text-muted-foreground">(WhatsApp and/or a link)</span>
+          </p>
+          <div className="grid grid-cols-2 gap-2.5">
+            <Field label="WhatsApp">
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={draft.payWhatsapp ?? ""}
+                onChange={(e) => set({ payWhatsapp: e.target.value })}
+                placeholder="+591 71234567"
+              />
+            </Field>
+            <Field label="Payment link">
+              <Input
+                type="url"
+                inputMode="url"
+                value={draft.payLink ?? ""}
+                onChange={(e) => set({ payLink: e.target.value })}
+                placeholder="https://…"
+              />
+            </Field>
+          </div>
+          {!hasPaymentChannel(draft) ? (
+            <p className="text-[11.5px] font-medium text-amber-700">
+              Add at least one, or guests won&apos;t know how to pay.
+            </p>
+          ) : draft.payWhatsapp && !normalizeWhatsapp(draft.payWhatsapp) ? (
+            <p className="text-[11.5px] font-medium text-amber-700">
+              That WhatsApp number doesn&apos;t look right.
+            </p>
+          ) : null}
+        </div>
+      )}
       <label className="flex items-center justify-between rounded-xl bg-muted/40 px-3.5 py-2.5">
         <span className="text-[12.5px] font-semibold text-foreground">
           Require approval to join
@@ -211,7 +246,11 @@ function SettingsForm({
       )}
       <Button
         type="submit"
-        disabled={busy || (!datesUnchanged && !!dateProblem)}
+        disabled={
+          busy ||
+          (!datesUnchanged && !!dateProblem) ||
+          (draft.price != null && draft.price > 0 && !hasPaymentChannel(draft))
+        }
         className="h-11 rounded-full text-[14px]"
       >
         {busy ? "Saving…" : "Save changes"}
@@ -220,8 +259,7 @@ function SettingsForm({
       <ImagePickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        remaining={MAX_IMAGES - images.length}
-        onSelect={(srcs) => set({ images: [...images, ...srcs].slice(0, MAX_IMAGES) })}
+        onSelect={(srcs) => set({ images: srcs.slice(0, 1) })}
       />
     </form>
   );

@@ -23,7 +23,10 @@ export type AygoEvent = {
   id: string;
   title: string;
   category: Category;
+  /** The photo, or "" when the host uploaded none — then `theme` is the cover. */
   cover: string;
+  /** The create-flow theme; drawn as the cover (ThemeCover) when there is no photo. */
+  theme?: string;
   /** Every photo the host added (the cover is the first). Absent → just `cover`. */
   images?: string[];
   /** CSS object-position for the cover ("50% 30%") — the host's chosen focal point. */
@@ -49,6 +52,8 @@ export type AygoEvent = {
   attendeeAvatars: string[];
   // what
   price: number | null; // null/0 → free (BOB otherwise)
+  /** Where guests pay a paid event (aygo doesn't process payments yet). */
+  payment?: { whatsapp?: string; link?: string };
   blurb: string;
   /** Host reviews each join request before granting a spot. Absent → instant. */
   requiresApproval?: boolean;

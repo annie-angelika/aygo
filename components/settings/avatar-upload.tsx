@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { LuArrowUp, LuUser } from "react-icons/lu";
+import { LuCamera, LuUser } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-/** Avatar with a corner upload button — picks a REAL photo from the device. */
+/** Avatar with a gold camera badge — picks a REAL photo from the device. */
 export function AvatarUpload({
   src,
   onSelect,
@@ -16,14 +16,11 @@ export function AvatarUpload({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[12px] font-semibold text-foreground">
-        Profile Picture
-      </span>
-      <div className="relative w-fit">
-        <Avatar className="size-20 ring-1 ring-border">
+    <div className="flex items-center gap-3.5">
+      <div className="relative w-fit shrink-0">
+        <Avatar className="size-[72px] bg-primary text-cream">
           {src && <AvatarImage src={src} alt="" />}
-          <AvatarFallback>
+          <AvatarFallback className="bg-primary text-cream">
             <LuUser className="size-8" aria-hidden />
           </AvatarFallback>
         </Avatar>
@@ -42,10 +39,14 @@ export function AvatarUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           aria-label="Upload photo"
-          className="absolute -bottom-1 -right-1 grid size-8 place-items-center rounded-full bg-foreground text-background ring-2 ring-background transition-transform hover:scale-105"
+          className="absolute -bottom-0.5 -right-0.5 grid size-[26px] place-items-center rounded-full bg-gold text-navy ring-2 ring-background transition-transform hover:scale-105"
         >
-          <LuArrowUp className="size-4" aria-hidden />
+          <LuCamera className="size-3.5" aria-hidden />
         </button>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[13px] font-semibold text-foreground">Profile photo</span>
+        <span className="text-[12px] text-muted-foreground">Square, at least 400×400</span>
       </div>
     </div>
   );

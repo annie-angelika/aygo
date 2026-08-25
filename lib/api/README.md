@@ -121,6 +121,56 @@ server-side for anyone with the link.
 | `linkAccountSession({ account, name, avatar })` | `POST /me/session` | → `{ changed }` | wired |
 | `endAccountSession()` | `DELETE /me/session` | → `{ changed }` | wired |
 
+### Databases per environment
+
+One Neon project (`aygo`, id `aged-glade-61821907`), one **branch per
+environment** — branches are copy-on-write forks with their own compute, so
+dev can't touch production rows:
+
+| Environment | Neon branch | Where `DATABASE_URL` lives |
+| --- | --- | --- |
+| Production (aygo.app) | `production` (`br-wispy-shape-aiiegkit`) — mark it *protected* in the Neon console | Vercel → Settings → Environment Variables → **Production** only |
+| Preview (PR deploys) | `dev` (`br-fragrant-mode-aiqyk6p6`), or a per-PR branch from the Neon↔Vercel integration | Vercel → **Preview** |
+| Local development | `dev` | `.env.local` (`AYGO_DB_BRANCH=dev`) |
+
+`lib/server/env.ts` refuses to boot when the labels disagree: production with
+`AYGO_DB_BRANCH≠production` or the memory store, and any other environment
+with `AYGO_DB_BRANCH=production` (override with `AYGO_ALLOW_PROD_DB=1` on
+purpose). The schema is created lazily on first use (`CREATE TABLE IF NOT
+EXISTS`), so a fresh branch needs no migration step; to refresh dev with
+production data, "reset from parent" the `dev` branch in the Neon console.
+
+### Security model (every write goes through it)
+
+- **Shape & limits** — `lib/server/validate.ts`: every body is parsed into an
+  exact shape (extra fields dropped), strings are cleaned (control/invisible
+  characters removed) and length-capped, enums are checked against the app's
+  own lists (themes, calendars, categories, cities, timezones), ids must be
+  UUIDs/slugs. Bodies are capped (`readJson(req, maxBytes)`: 64 KB default,
+  10 MB for events with photos) and must be `application/json`.
+- **Images** — `lib/server/images.ts`: only JPEG/PNG/WebP data URLs whose
+  bytes really start with that format's magic number, with decoded size and
+  pixel dimensions capped (read from the header, no decoder); https URLs only
+  from known hosts. No SVG/GIF/HEIC, no other schemes.
+- **Content** — `lib/server/moderation.ts` + `banned-terms.ts`: invisible
+  chars, NFKC, Cyrillic/Greek look-alikes, leetspeak, spaced/dotted letters
+  and stretched letters are all folded before whole-word matching; plus spam
+  rules per field (no links/phones in titles, ≤3 links in bodies, no
+  shorteners, no floods, no markup).
+- **Rate limits** — `lib/server/rate-limit.ts`: sliding windows per session
+  AND per IP on every write (create/edit events, RSVPs, messages, profile,
+  session, admin login, geocode). Durable caps in the store: 10 events/day and
+  60 total per session, 20 messages/day, 3 open threads per event, no
+  duplicate titles per day / repeated messages.
+- **Authorization** — owner checks on every host action; new event ids must
+  be client-generated UUID v4 (no slug squatting); hosts can't register for,
+  request, or message their own event; approvals/removals only for real
+  pending requests/guests; stamps only for registered guests once the event
+  started; `hostName`/`hostPhone` are admin-only and ignored from clients.
+- **Transport** — `proxy.ts` refuses cross-site mutating requests (Origin /
+  Sec-Fetch-Site), API responses are `no-store`/`nosniff`; `next.config.ts`
+  sets X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS.
+
 Notifications are emitted server-side by the routes that cause them
 (`lib/server/notify.ts`): a registration or join request notifies the host,
 a decision notifies the guest, a question/reply notifies the other side, and

@@ -3,34 +3,47 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { City } from "@/lib/cities-data";
 
-/** Explorer tile: round landmark icon + city name and event/subscription hint. */
+/**
+ * Explorer tile: the city's landmark mark as a navy stamp (thin gold ring),
+ * name and event count beneath. Cities with nothing on yet read as outlines.
+ */
 export function CityCard({ city }: { city: City }) {
+  const empty = city.eventCount === 0 && !city.subscribed;
   return (
     <Link
       href={`/${city.slug}`}
-      className="flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-accent/40"
+      className="group flex flex-col items-center gap-2 py-1.5"
     >
       <span
         className={cn(
-          "grid size-12 shrink-0 place-items-center rounded-full text-white",
-          city.tint,
+          "grid size-[60px] place-items-center rounded-full outline outline-1 outline-offset-[3px] transition-transform group-hover:-translate-y-0.5",
+          empty
+            ? "bg-card text-foreground/45 outline-border"
+            : "bg-primary text-cream outline-gold/80",
         )}
         aria-hidden
       >
-        <city.Icon className="size-6" />
+        <city.Icon className="size-8" />
       </span>
-      <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold text-foreground">
+      <div className="flex flex-col items-center gap-px">
+        <p
+          className={cn(
+            "text-[12.5px] font-semibold",
+            empty ? "text-muted-foreground" : "text-foreground",
+          )}
+        >
           {city.name}
         </p>
-        <p className="truncate text-[12.5px] text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           {city.subscribed ? (
             <span className="inline-flex items-center gap-1">
-              <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
+              <span className="size-1.5 rounded-full bg-gold" aria-hidden />
               Subscribed
             </span>
+          ) : city.eventCount > 0 ? (
+            `${city.eventCount} ${city.eventCount === 1 ? "event" : "events"}`
           ) : (
-            `${city.eventCount} events`
+            "Coming soon"
           )}
         </p>
       </div>

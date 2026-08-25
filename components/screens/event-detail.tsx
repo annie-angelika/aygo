@@ -3,38 +3,58 @@ import { LuShare2 } from "react-icons/lu";
 import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
 import { EventDetailBody } from "@/components/event/event-detail-body";
+import { EventDetailMeta } from "@/components/event/event-detail-meta";
 import { EventActions } from "@/components/event/event-actions";
 import { SiteFooter } from "@/components/layout/site-footer";
 import type { AygoEvent } from "@/types";
+
+const PILL =
+  "bg-background/85 text-foreground ring-1 ring-border backdrop-blur hover:bg-background";
 
 export function EventDetail({ event }: { event: AygoEvent }) {
   return (
     // overflow-x-hidden: this is a full-bleed immersive screen (like /create) —
     // guard against any child nudging past the viewport and scrolling the whole
-    // page sideways, which clips every row on the left at mobile widths.
-    <div className="flex min-h-svh flex-col overflow-x-hidden pb-32">
-      {/* Always-on-top controls — stay pinned as the page scrolls. */}
-      <div className="fixed inset-x-0 top-0 z-40 px-4 pt-4">
-        <div className="mx-auto flex w-full max-w-md items-center justify-between">
-          <BackButton className="ring-1 ring-border" />
-          <ShareButton
-            title={event.title}
-            text={`Check out "${event.title}" on aygo`}
-            copiedLabel="✓"
-            className="grid size-9 place-items-center rounded-full bg-background/80 text-foreground ring-1 ring-border backdrop-blur active:scale-95"
-          >
-            <LuShare2 className="size-4" aria-hidden />
-          </ShareButton>
+    // page sideways, which clips every row on the left at mobile widths. From
+    // `lg` the page is a centred two-column grid, so the guard lifts (it would
+    // also defeat the side card's sticky positioning).
+    <div className="flex min-h-svh flex-col overflow-x-hidden pb-32 lg:overflow-x-visible lg:pb-0">
+      <div className="lg:mx-auto lg:grid lg:w-full lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-10 lg:px-4 lg:pt-6">
+        <div className="lg:min-w-0">
+          {/* Always-on-top controls — cream pills that stay pinned as the page
+              scrolls. On desktop they sit statically above the cover card. */}
+          <div className="fixed inset-x-0 top-0 z-40 px-4 pt-4 lg:static lg:mb-4 lg:px-0 lg:pt-0">
+            <div className="mx-auto flex w-full max-w-md items-center justify-between lg:max-w-none">
+              <BackButton className={PILL} />
+              <ShareButton
+                title={event.title}
+                text={`Check out "${event.title}" on aygo`}
+                copiedLabel="✓"
+                className={`grid size-9 place-items-center rounded-full transition-colors active:scale-95 ${PILL}`}
+              >
+                <LuShare2 className="size-4" aria-hidden />
+              </ShareButton>
+            </div>
+          </div>
+
+          <EventDetailBody event={event} wide />
         </div>
+
+        {/* Desktop side card: when/where + the primary action, sticky beside the
+            copy. Replaces the phone's fixed bottom bar from `lg`. */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-6 flex flex-col gap-5 rounded-[22px] bg-card p-5 ring-1 ring-foreground/8">
+            <EventDetailMeta event={event} />
+            <EventActions event={event} />
+          </div>
+        </aside>
       </div>
 
-      <EventDetailBody event={event} />
-
-      <div className="mt-auto">
+      <div className="mt-auto lg:mx-auto lg:mt-12 lg:w-full lg:max-w-6xl lg:px-4">
         <SiteFooter compact />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 px-5 pb-6 pt-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/90 px-5 pb-6 pt-3 backdrop-blur lg:hidden">
         <div className="mx-auto w-full max-w-md">
           <EventActions event={event} />
         </div>
