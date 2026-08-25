@@ -40,9 +40,9 @@ export function EventRow({
             </h3>
             <div className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
               <LuMapPin className="size-[13px] shrink-0" aria-hidden />
-              <span className="truncate">{event.place}</span>
+              <span className="min-w-0 truncate">{event.place}</span>
               <span aria-hidden>·</span>
-              <span className="whitespace-nowrap">By {event.host.name}</span>
+              <span className="min-w-0 shrink-[2] truncate">By {event.host.name}</span>
             </div>
             <div className="mt-0.5 flex items-center gap-2">
               {going ? (

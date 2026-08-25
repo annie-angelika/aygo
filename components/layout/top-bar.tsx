@@ -66,7 +66,7 @@ export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
                 <span>Create</span>
               </Link>
 
-              <NavIcon href="/home" label="Your events" active={onHome} dark={dark}>
+              <NavIcon href="/home" label="Tickets" active={onHome} dark={dark}>
                 <LuTicket className="size-[18px]" />
               </NavIcon>
 

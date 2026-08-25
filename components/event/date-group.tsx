@@ -45,7 +45,7 @@ export function DateGroup({
           </span>
         )}
       </div>
-      <div className="grid gap-3 @2xl:grid-cols-2">{children}</div>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 @2xl:grid-cols-2">{children}</div>
     </section>
   );
 }

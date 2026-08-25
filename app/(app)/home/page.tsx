@@ -1,7 +1,7 @@
 import { HomeScreen, type Period } from "@/components/screens/home-screen";
 import { AuthGate } from "@/components/auth/auth-gate";
 
-export const metadata = { title: "Your events" };
+export const metadata = { title: "Tickets" };
 
 export default async function HomePage({
   searchParams,
