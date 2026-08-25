@@ -3,7 +3,6 @@
 // changes *where* the data lives, not the data itself. Only the serializable
 // domain objects are taken (no icons / class strings — those stay client config).
 
-import { events } from "@/lib/events-data";
 import { CITY_DATA } from "@/lib/cities-data";
 import {
   FEATURED_CALENDARS,
@@ -14,7 +13,9 @@ import {
 import { eventTimeFields } from "@/lib/server/store/draft-event";
 import type { AygoEvent, TravelerProfile, Stamp, Attendee } from "@/types";
 
-export const CATALOG_EVENTS: AygoEvent[] = events;
+// No demo events: everything guests see is created in the app. The static
+// `events` array in lib/events-data only backs the client's mock mode.
+export const CATALOG_EVENTS: AygoEvent[] = [];
 /** No seeded travelers — real accounts only. Empty is empty. */
 export const CATALOG_USERS: TravelerProfile[] = [];
 export const CATALOG_CITIES = CITY_DATA;

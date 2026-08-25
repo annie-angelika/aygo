@@ -19,26 +19,22 @@ import type { LocationMeta } from "@/components/create/location-field";
 import { CALENDARS, TIMEZONES, type Visibility } from "@/lib/create-event";
 import { CITY_DATA, findCityByName, nearestCity } from "@/lib/cities-data";
 import type { Category } from "@/types";
-import { DEFAULT_THEME_ID, getTheme, type ThemeTone } from "@/lib/create-themes";
+import { DEFAULT_THEME_ID, getTheme } from "@/lib/create-themes";
 import { createEvent, ApiError } from "@/lib/api";
 import { useMutation } from "@/hooks/use-mutation";
 import { cn } from "@/lib/utils";
 
 /**
- * The Luma-style "Create Event" flow. The whole canvas takes on the selected
- * cover theme's ambient color; the shared top nav stays on top and flips light/
- * dark with the active display tone (via the `.dark` token toggle), so it always
- * reads against the background. Portalled menus/sheets/popovers inherit it too.
+ * The "Create Event" flow. The whole canvas takes on the selected cover theme's
+ * ambient color; the shared top nav stays on top and flips light/dark with the
+ * theme's tone (via the `.dark` token toggle), so it always reads against the
+ * background. Portalled menus/sheets/popovers inherit it too.
  */
 export function CreateEventScreen() {
   const [themeId, setThemeId] = useState<string>(DEFAULT_THEME_ID);
-  const [fontId, setFontId] = useState(getTheme(DEFAULT_THEME_ID).font);
-  const [styleId, setStyleId] = useState(getTheme(DEFAULT_THEME_ID).style);
-  const [displayOverride, setDisplayOverride] = useState<ThemeTone | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [coverPosition, setCoverPosition] = useState("50% 50%");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [calendarId, setCalendarId] = useState(CALENDARS[0].id);
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("Party");
@@ -57,7 +53,7 @@ export function CreateEventScreen() {
   const [createdId, setCreatedId] = useState<string | null>(null);
 
   const theme = getTheme(themeId);
-  const tone: ThemeTone = displayOverride ?? theme.tone;
+  const tone = theme.tone;
   const cover = images[0] ?? null;
 
   // Picking a real search result carries its coordinates (for the pin) and, when
@@ -88,15 +84,6 @@ export function CreateEventScreen() {
     return () => document.documentElement.classList.remove("dark");
   }, []);
 
-  // Picking a theme adopts its coordinated font/style/tone; each stays overridable.
-  function changeTheme(id: string) {
-    const t = getTheme(id);
-    setThemeId(id);
-    setFontId(t.font);
-    setStyleId(t.style);
-    setDisplayOverride(null);
-  }
-
   // Local-first: `createEvent` persists the draft instantly, then syncs to the
   // backend. `useMutation` tracks pending/error so the button can disable while
   // the sync is in flight, and the server's reason shows under it if it refuses.
@@ -124,7 +111,8 @@ export function CreateEventScreen() {
         cover,
         images,
         coverPosition,
-        calendarId,
+        // Drafts still carry a calendar id for the validator; there's one calendar.
+        calendarId: CALENDARS[0].id,
         visibility,
         category,
         startsAt: start,
@@ -187,20 +175,9 @@ export function CreateEventScreen() {
             className="lg:max-w-none"
           />
 
-          <ThemeSheet
-            themeId={themeId}
-            onThemeChange={changeTheme}
-            fontId={fontId}
-            onFontChange={setFontId}
-            styleId={styleId}
-            onStyleChange={setStyleId}
-            display={tone}
-            onToggleDisplay={() => setDisplayOverride(tone === "dark" ? "light" : "dark")}
-          />
+          <ThemeSheet themeId={themeId} onThemeChange={setThemeId} />
 
           <AudienceRow
-            calendarId={calendarId}
-            onCalendarChange={setCalendarId}
             visibility={visibility}
             onVisibilityChange={setVisibility}
           />

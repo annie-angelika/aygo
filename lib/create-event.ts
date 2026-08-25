@@ -1,9 +1,7 @@
-// The Luma-style create flow lives entirely on the client (no host backend yet),
-// so the draft shape, the cover themes, and the few option lists are defined here
-// and a created event is persisted locally. Swap `saveDraft` for a real POST when
-// the backend lands; the screen and its parts won't need to change.
+// The create flow's draft shape and option lists. A created event is persisted
+// locally first (`saveDraft`) and synced to the backend by `createEvent` in
+// lib/api; the server validates against the same constants (lib/server/validate-draft).
 
-import { CURRENT_USER } from "@/lib/events-data";
 import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
 import type { Category } from "@/types";
 
@@ -12,12 +10,12 @@ export type { ThemeId } from "@/lib/create-themes";
 /** Who an event can be seen by. */
 export type Visibility = "public" | "private";
 
-/** A single calendar the event can be created under. */
-export type CalendarOption = { id: string; name: string; avatar: string };
-
-export const CALENDARS: CalendarOption[] = [
-  { id: "personal", name: "Personal Calendar", avatar: CURRENT_USER.avatar },
-];
+/**
+ * Calendars an event can be filed under. There's exactly one (the host's own);
+ * the create flow doesn't expose a picker, but every draft carries `calendarId`
+ * and the server validator accepts only these ids.
+ */
+export const CALENDARS = [{ id: "personal", name: "Personal Calendar" }] as const;
 
 /** Common time zones for the picker (Bolivia first). */
 export const TIMEZONES = [

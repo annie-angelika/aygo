@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import { CalendarHero } from "@/components/discover/calendar-hero";
 import { EventsBoard } from "@/components/discover/events-board";
 import { useCalendars } from "@/hooks/use-discover";
@@ -21,17 +19,12 @@ export function CalendarScreen({
 }) {
   const { calendars } = useCalendars();
   const calendar = calendars.find((c) => c.id === id) ?? initial;
-  const [following, setFollowing] = useState(false);
 
   if (!calendar) return null;
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-3 lg:gap-8 lg:pt-4">
-      <CalendarHero
-        calendar={calendar}
-        following={following}
-        onToggleFollow={() => setFollowing((f) => !f)}
-      />
+      <CalendarHero calendar={calendar} />
       <EventsBoard category={calendar.category} />
     </div>
   );

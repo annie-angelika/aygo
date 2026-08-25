@@ -130,10 +130,11 @@ export class MemoryStore implements Store {
   }
 
   async listEvents(): Promise<AygoEvent[]> {
-    return withLiveAttendance(
-      [...this.created(true), ...this.events.values()],
-      this.goingByEvent(),
-    );
+    // Private (unlisted) events never appear in lists — only by link.
+    const listed = this.createdEvents
+      .filter(({ draft }) => draft.visibility !== "private")
+      .map(({ sid, draft }) => draftToEvent(draft, this.guests.get(sid)?.profile, { light: true }));
+    return withLiveAttendance([...listed, ...this.events.values()], this.goingByEvent());
   }
 
   async getEvent(id: string): Promise<AygoEvent | null> {

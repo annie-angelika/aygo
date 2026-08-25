@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LuMapPin, LuVideo, LuInfo, LuSearch, LuLoaderCircle, LuLocateFixed } from "react-icons/lu";
+import { LuMapPin, LuSearch, LuLoaderCircle, LuLocateFixed } from "react-icons/lu";
 
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from "@/components/ui/popover";
 
@@ -16,16 +16,9 @@ export type Coords = { lat: number; lng: number };
 /** Where the browser stands on sharing the device's position. */
 type GeoState = "idle" | "asking" | "granted" | "denied" | "unavailable";
 
-type Place = { name: string; address: string };
-
-const VIRTUAL: Place[] = [
-  { name: "Create Zoom meeting", address: "zoom" },
-  { name: "Create Google Meet", address: "meet" },
-];
-
 /**
  * Location picker with a live place search (OpenStreetMap, via
- * /api/geocode/search) plus virtual-link options. Picking a real result hands
+ * /api/geocode/search). Picking a real result hands
  * the form its coordinates and city, so the pin and the city bucket are right
  * without the host typing "Place, City". `city` biases the search; the device's
  * position (asked for the first time the picker opens, never on page load)
@@ -141,7 +134,7 @@ export function LocationField({
               </span>
               {!value && (
                 <span className="block text-[12px] text-muted-foreground/70">
-                  Search a place or paste a virtual link
+                  Search a place
                 </span>
               )}
             </span>
@@ -155,7 +148,7 @@ export function LocationField({
             autoFocus
             value={query}
             onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search a place or paste a virtual link"
+            placeholder="Search a place"
             className="h-10 w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
           />
           {loading && (
@@ -217,23 +210,6 @@ export function LocationField({
             </Row>
           </Section>
         )}
-
-        <Section title="Virtual Options">
-          {VIRTUAL.map((v) => (
-            <Row
-              key={v.name}
-              icon={<LuVideo className="size-4" aria-hidden />}
-              onClick={() => onSelect(v.name)}
-            >
-              <span className="block truncate text-[13.5px] font-medium text-foreground">{v.name}</span>
-            </Row>
-          ))}
-        </Section>
-
-        <p className="flex gap-2 px-2 pt-1.5 text-[11.5px] text-muted-foreground">
-          <LuInfo className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          Have a virtual event? Paste its link above and pick “Use …”.
-        </p>
       </PopoverContent>
     </Popover>
   );

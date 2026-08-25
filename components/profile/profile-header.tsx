@@ -49,7 +49,7 @@ function SocialRow({ socials, className }: { socials: Socials; className?: strin
   );
 }
 
-/** Luma-style identity block: avatar beside name + socials, then meta + stats. */
+/** Luma-style identity block: avatar beside name + socials, then meta + the aygo count. */
 export function ProfileHeader({
   name,
   handle,
@@ -58,9 +58,7 @@ export function ProfileHeader({
   location,
   joined,
   socials,
-  followers,
-  following,
-  visited,
+  aygos,
   action,
 }: {
   name: string;
@@ -70,9 +68,8 @@ export function ProfileHeader({
   location: string;
   joined: string;
   socials?: Socials;
-  followers: number;
-  following: number;
-  visited: number;
+  /** Real stamp count — the same number the collection page shows. */
+  aygos: number;
   action?: React.ReactNode;
 }) {
   return (
@@ -109,10 +106,8 @@ export function ProfileHeader({
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-        <Stat inline value={followers} label="Followers" />
-        <Stat inline value={following} label="Following" />
-        <Stat inline value={visited} label="Visited" />
+      <div className="mt-3">
+        <Stat inline value={aygos} label={aygos === 1 ? "aygo" : "aygos"} />
       </div>
 
       {action && <div className="mt-4">{action}</div>}

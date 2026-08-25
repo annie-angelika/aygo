@@ -1,87 +1,26 @@
 "use client";
 
-import { LuChevronDown, LuGlobe, LuLock, LuPlus, LuCheck, LuInfo } from "react-icons/lu";
+import { LuChevronDown, LuGlobe, LuLock, LuCheck } from "react-icons/lu";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Menu, MenuTrigger, MenuContent, MenuItem } from "@/components/ui/menu";
-import { CALENDARS, type Visibility } from "@/lib/create-event";
-import { cn, initials } from "@/lib/utils";
+import type { Visibility } from "@/lib/create-event";
+import { cn } from "@/lib/utils";
 
 const pill =
   "inline-flex h-[34px] items-center gap-1.5 rounded-full bg-card pl-2 pr-3 text-[12.5px] font-semibold text-foreground ring-1 ring-border outline-none transition-colors hover:bg-muted/50 data-popup-open:bg-muted/50";
 
-/** Calendar + visibility — the two Luma pills that sit above the event name. */
+/** Visibility pill (Public / Private) that sits above the event name. */
 export function AudienceRow({
-  calendarId,
-  onCalendarChange,
   visibility,
   onVisibilityChange,
 }: {
-  calendarId: string;
-  onCalendarChange: (id: string) => void;
   visibility: Visibility;
   onVisibilityChange: (v: Visibility) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <CalendarMenu value={calendarId} onChange={onCalendarChange} />
+    <div className="flex items-center justify-end gap-2">
       <VisibilityMenu value={visibility} onChange={onVisibilityChange} />
     </div>
-  );
-}
-
-function CalendarMenu({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  const current = CALENDARS.find((c) => c.id === value) ?? CALENDARS[0];
-  return (
-    <Menu>
-      <MenuTrigger className={cn(pill, "min-w-0")}>
-        <Avatar className="size-5">
-          {current.avatar && <AvatarImage src={current.avatar} alt="" />}
-          <AvatarFallback className="bg-secondary text-[9px] font-semibold text-foreground">
-            {initials(current.name)}
-          </AvatarFallback>
-        </Avatar>
-        <span className="truncate">{current.name}</span>
-        <LuChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-      </MenuTrigger>
-      <MenuContent align="start" className="min-w-64 p-2">
-        <p className="px-2 pt-1 pb-2 text-[11.5px] text-muted-foreground">
-          Choose the calendar of the event:
-        </p>
-        {CALENDARS.map((c) => (
-          <MenuItem
-            key={c.id}
-            onClick={() => onChange(c.id)}
-            className="gap-2.5 px-2 py-2"
-          >
-            <Avatar className="size-7">
-              {c.avatar && <AvatarImage src={c.avatar} alt="" />}
-              <AvatarFallback className="text-[10px] font-semibold">
-                {initials(c.name)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="flex-1 text-[14px] font-medium text-foreground">{c.name}</span>
-            {c.id === value && <LuCheck className="size-4 text-foreground" aria-hidden />}
-          </MenuItem>
-        ))}
-        <MenuItem className="gap-2.5 px-2 py-2 text-muted-foreground">
-          <span className="grid size-7 place-items-center rounded-full bg-secondary">
-            <LuPlus className="size-4" aria-hidden />
-          </span>
-          <span className="text-[14px] font-medium">Create Calendar</span>
-        </MenuItem>
-        <p className="flex gap-2 px-2 pt-2 text-[11.5px] text-muted-foreground">
-          <LuInfo className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          Creating the event under a calendar grants its admins manage access.
-        </p>
-      </MenuContent>
-    </Menu>
   );
 }
 
@@ -91,8 +30,13 @@ const VISIBILITIES: {
   label: string;
   desc: string;
 }[] = [
-  { value: "public", Icon: LuGlobe, label: "Public", desc: "Shown on your calendar and eligible to be featured." },
-  { value: "private", Icon: LuLock, label: "Private", desc: "Unlisted. Only people with the link can register." },
+  { value: "public", Icon: LuGlobe, label: "Public", desc: "Listed in Discover and eligible to be featured." },
+  {
+    value: "private",
+    Icon: LuLock,
+    label: "Private",
+    desc: "Unlisted — hidden from Discover and lists; only people with the link can see and register.",
+  },
 ];
 
 function VisibilityMenu({
