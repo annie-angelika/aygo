@@ -28,6 +28,9 @@ export function EventActions({ event }: { event: AygoEvent }) {
     useRegistrations();
   const { isAuthenticated, openLoginModal } = useAuth();
   const mounted = useHydrated();
+  // The registration sheet is controlled here and always mounted, so it
+  // survives the flip from "tap to register" to "pending"/"going" beneath it.
+  const [sheet, setSheet] = useState(false);
   // The host's own event: the server refuses self-registration, so don't
   // offer it — point at the dashboard instead.
   const mine = mounted && ownsEventLocally(event.id);
@@ -67,7 +70,7 @@ export function EventActions({ event }: { event: AygoEvent }) {
         href={`/manage/${event.id}`}
         className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full bg-card text-[14px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted"
       >
-        You&apos;re hosting this event — manage it
+        Manage your event
         <LuArrowUpRight className="size-4" aria-hidden />
       </Link>
     );
@@ -76,9 +79,10 @@ export function EventActions({ event }: { event: AygoEvent }) {
   if (going) {
     return (
       <div className="flex flex-col items-center gap-2">
+        <RegisterDialog event={event} open={sheet} onOpenChange={setSheet} />
         <p className="inline-flex h-7 items-center gap-1.5 rounded-full bg-gold pl-2 pr-3 text-[12.5px] font-bold text-navy">
           <LuCheck className="size-4" strokeWidth={2.5} aria-hidden />
-          You&apos;re going to this event!
+          You&apos;re going!
         </p>
         <div className="flex items-center gap-4">
           {collected ? (
@@ -92,19 +96,15 @@ export function EventActions({ event }: { event: AygoEvent }) {
               className="inline-flex items-center gap-1 text-[12px] font-semibold text-foreground"
             >
               <LuQrCode className="size-3.5" aria-hidden />
-              Scan the host&apos;s QR to check in
+              Scan QR to check in
             </Link>
-          ) : (
-            <span className="text-[12px] font-medium text-muted-foreground">
-              Check in with the host&apos;s QR once it starts
-            </span>
-          )}
+          ) : null}
           <button
             type="button"
             onClick={() => toggleGoing(event.id)}
             className="text-[12px] font-medium text-muted-foreground"
           >
-            Cancel my spot
+            Cancel
           </button>
         </div>
       </div>
@@ -114,16 +114,17 @@ export function EventActions({ event }: { event: AygoEvent }) {
   if (pending) {
     return (
       <div className="flex flex-col items-center gap-2">
+        <RegisterDialog event={event} open={sheet} onOpenChange={setSheet} />
         <p className="inline-flex h-7 items-center gap-1.5 rounded-full bg-secondary pl-2 pr-3 text-[12.5px] font-semibold text-foreground">
           <LuClock className="size-4" aria-hidden />
-          Request pending · waiting on {event.host.name}
+          Pending
         </p>
         <button
           type="button"
           onClick={() => withdraw(event.id)}
           className="text-[12px] font-medium text-muted-foreground"
         >
-          Withdraw request
+          Withdraw
         </button>
       </div>
     );
@@ -142,11 +143,10 @@ export function EventActions({ event }: { event: AygoEvent }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <RegisterDialog event={event}>
-        <Button size="lg" className={CTA}>
-          {cta}
-        </Button>
-      </RegisterDialog>
+      <RegisterDialog event={event} open={sheet} onOpenChange={setSheet} />
+      <Button size="lg" onClick={() => setSheet(true)} className={CTA}>
+        {cta}
+      </Button>
       <TicketContact event={event} />
     </div>
   );
