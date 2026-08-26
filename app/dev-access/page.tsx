@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { LuLockKeyhole } from "react-icons/lu";
 
 import { Logo } from "@/components/layout/logo";
-import { safeNext } from "@/lib/server/dev-access";
+import { DEV_GATE_ENABLED, safeNext } from "@/lib/server/dev-access";
 
 export const metadata: Metadata = {
   title: "Dev access",
@@ -14,12 +15,14 @@ export const metadata: Metadata = {
  * until they enter the access code (see lib/server/dev-access.ts). Lives
  * outside the `(app)` shell on the same dark surface as the 404 — it's chrome
  * around the app, not a screen inside it. Plain form POST, no client JS.
+ * Where there is no gate (production) the route does not exist: 404.
  */
 export default async function DevAccessPage({
   searchParams,
 }: {
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
+  if (!DEV_GATE_ENABLED) notFound();
   const params = await searchParams;
   const next = safeNext(params.next);
   const failed = params.error === "1";

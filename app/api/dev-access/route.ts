@@ -16,7 +16,7 @@ import { handler } from "@/lib/server/http";
 import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
 
 export const POST = handler(async (req: Request) => {
-  if (!DEV_GATE_ENABLED) return NextResponse.redirect(new URL("/", req.url), 303);
+  if (!DEV_GATE_ENABLED) return NextResponse.json({ message: "Not found" }, { status: 404 });
   rateLimit(req, "devAccess", null, LIMITS.devAccess, LIMITS.devAccess);
 
   const form = await req.formData();
