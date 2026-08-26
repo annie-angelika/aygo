@@ -66,6 +66,10 @@ export function ManageScreen({ eventId }: { eventId: string }) {
   }
 
   const openFeedback = data.feedback.filter((f) => f.status === "open").length;
+  // Catalog (admin-created) events are edited from /admin; a host-created one
+  // carries its draft and gets the Settings tab.
+  const editable = data.draft !== null;
+  const shownTab: Tab = tab === "settings" && !editable ? "overview" : tab;
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-10 pt-4 lg:mx-auto lg:w-full lg:max-w-4xl lg:pt-8">
@@ -83,7 +87,7 @@ export function ManageScreen({ eventId }: { eventId: string }) {
         </Link>
       </header>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+      <Tabs value={shownTab} onValueChange={(v) => setTab(v as Tab)}>
         <TabsList className="w-full">
           <TabsTrigger value="overview" className="flex-1">
             Overview
@@ -96,9 +100,11 @@ export function ManageScreen({ eventId }: { eventId: string }) {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1">
-            Settings
-          </TabsTrigger>
+          {editable && (
+            <TabsTrigger value="settings" className="flex-1">
+              Settings
+            </TabsTrigger>
+          )}
           <TabsTrigger value="inbox" className="flex-1 gap-1.5">
             Inbox
             {openFeedback > 0 && (
@@ -110,14 +116,14 @@ export function ManageScreen({ eventId }: { eventId: string }) {
         </TabsList>
       </Tabs>
 
-      {tab === "overview" && (
+      {shownTab === "overview" && (
         <ManageOverview data={data} onOpenGuests={() => setTab("guests")} />
       )}
-      {tab === "guests" && <ManageGuests data={data} onChanged={refetch} />}
-      {tab === "settings" && (
+      {shownTab === "guests" && <ManageGuests data={data} onChanged={refetch} />}
+      {shownTab === "settings" && data.draft && (
         <ManageSettings draft={data.draft} onSaved={refetch} />
       )}
-      {tab === "inbox" && <ManageInbox data={data} onChanged={refetch} />}
+      {shownTab === "inbox" && <ManageInbox data={data} onChanged={refetch} />}
     </div>
   );
 }

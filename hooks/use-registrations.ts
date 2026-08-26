@@ -1,14 +1,13 @@
 "use client";
 
 import { useStorageValue, useHydrated } from "@/hooks/use-storage";
-import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
+import { STORAGE_KEYS, readStorage, writeStorage, type StorageKey } from "@/lib/storage";
 import { LEVELS } from "@/lib/events-data";
 import {
   rsvp,
   cancelRsvp,
   applyToEvent,
   withdrawApplication,
-  collectStamp,
 } from "@/lib/api";
 import type { AygoEvent, Stamp } from "@/types";
 
@@ -17,11 +16,24 @@ const NO_GOING: string[] = [];
 const NO_APPLIED: string[] = [];
 const NO_STAMPS: Stamp[] = [];
 
-// Fire-and-forget backend sync: the local write already updated the UI, so a
-// failed sync must never throw into the optimistic path. (A real backend would
-// retry from a queue; here we just keep the UI responsive.)
-const sync = (op: Promise<void>) =>
-  void op.catch((e) => console.error("registration sync failed", e));
+/**
+ * Optimistic write: the local list updates instantly, the server is told, and
+ * a refusal rolls the local list back (so the UI never claims a state the
+ * server rejected). Errors are also logged for the console.
+ */
+function syncList<T>(
+  key: StorageKey,
+  fallback: T[],
+  next: T[],
+  op: Promise<void>,
+): void {
+  const before = readStorage<T[]>(key, fallback);
+  writeStorage(key, next);
+  void op.catch((e) => {
+    console.error("registration sync failed", e);
+    writeStorage(key, before);
+  });
+}
 
 /**
  * The whole gamification state, backed by localStorage and reactive across the
@@ -37,11 +49,12 @@ export function useRegistrations() {
   const isGoing = (id: string) => going.includes(id);
   const toggleGoing = (id: string) => {
     const next = isGoing(id);
-    writeStorage(
+    syncList(
       STORAGE_KEYS.going,
+      NO_GOING,
       next ? going.filter((g) => g !== id) : [...going, id],
+      next ? cancelRsvp(id) : rsvp(id),
     );
-    sync(next ? cancelRsvp(id) : rsvp(id));
   };
 
   const isApplied = (id: string) => applied.includes(id);
@@ -62,8 +75,12 @@ export function useRegistrations() {
     }
   };
   const withdraw = (id: string) => {
-    writeStorage(STORAGE_KEYS.applied, applied.filter((a) => a !== id));
-    sync(withdrawApplication(id));
+    syncList(
+      STORAGE_KEYS.applied,
+      NO_APPLIED,
+      applied.filter((a) => a !== id),
+      withdrawApplication(id),
+    );
   };
   // Instant join (no approval needed): straight into "going" — awaited and
   // rolled back on refusal (sold out, event over) just like `apply`.
@@ -82,6 +99,11 @@ export function useRegistrations() {
   };
 
   const hasStamp = (id: string) => stamps.some((s) => s.eventId === id);
+  /**
+   * Record an aygo the SERVER already granted (the caller awaited the
+   * `POST /me/stamps`, so this is a mirror, not a request). Once attended, the
+   * event leaves the "going" and "applied" lists.
+   */
   const addStamp = (event: AygoEvent) => {
     if (hasStamp(event.id)) return;
     const stamp: Stamp = {
@@ -89,12 +111,12 @@ export function useRegistrations() {
       title: event.title,
       category: event.category,
       image: event.cover,
+      city: event.city,
+      earnedAt: new Date().toISOString(),
     };
     writeStorage(STORAGE_KEYS.stamps, [...stamps, stamp]);
-    // Once attended, it leaves the "going" and "applied" lists.
     writeStorage(STORAGE_KEYS.going, going.filter((g) => g !== event.id));
     writeStorage(STORAGE_KEYS.applied, applied.filter((a) => a !== event.id));
-    sync(collectStamp(event.id));
   };
 
   return {

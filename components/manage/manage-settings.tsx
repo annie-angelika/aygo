@@ -22,25 +22,19 @@ import {
 import { WhenCard, whenProblem } from "@/components/create/when-card";
 import { CoverCard } from "@/components/create/cover-card";
 import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
+import { PhotoStrip } from "@/components/create/photo-strip";
 import { DeleteEvent } from "@/components/manage/delete-event";
 import { createEvent, ApiError } from "@/lib/api";
-import { type EventDraft, type Visibility } from "@/lib/create-event";
+import { MAX_IMAGES, type EventDraft, type Visibility } from "@/lib/create-event";
 import { hasPaymentChannel, normalizeWhatsapp, formatWhatsapp } from "@/lib/payment";
 
 export function ManageSettings({
   draft,
   onSaved,
 }: {
-  draft: EventDraft | null;
+  draft: EventDraft;
   onSaved: () => void;
 }) {
-  if (!draft) {
-    return (
-      <p className="rounded-2xl bg-card/60 px-4 py-6 text-center text-[12.5px] text-muted-foreground ring-1 ring-border">
-        This is a catalog event — it&apos;s managed from the admin dashboard.
-      </p>
-    );
-  }
   return (
     <div className="flex flex-col gap-5">
       <SettingsForm draft={draft} onSaved={onSaved} />
@@ -106,6 +100,11 @@ function SettingsForm({
           onPosition={(p) => set({ coverPosition: p })}
           onPickImage={() => setPickerOpen(true)}
           onRemove={() => set({ images: [] })}
+        />
+        <PhotoStrip
+          images={images}
+          onChange={(next) => set({ images: next })}
+          onAdd={() => setPickerOpen(true)}
         />
       </div>
       <Field label="Title">
@@ -259,7 +258,10 @@ function SettingsForm({
       <ImagePickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={(srcs) => set({ images: srcs.slice(0, 1) })}
+        remaining={MAX_IMAGES - images.length}
+        onSelect={(srcs) =>
+          setDraft((d) => ({ ...d, images: [...(d.images ?? []), ...srcs].slice(0, MAX_IMAGES) }))
+        }
       />
     </form>
   );

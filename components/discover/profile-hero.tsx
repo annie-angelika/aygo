@@ -10,7 +10,7 @@ import { IllimaniRidge } from "@/components/ui/brand-icons";
  * an optional badge, the blurb, and the Illimani ridge closing the block.
  * Breaks out of the page padding to run full-bleed. Callers supply the `logo`
  * node and `meta` row so the same shell serves community calendars and alike.
- * `cover` is accepted for callers that carry one; the navy sky is the banner.
+ * The navy sky is the banner — there is no cover image.
  */
 export function ProfileHero({
   logo,
@@ -20,7 +20,6 @@ export function ProfileHero({
   badge,
   mapHref,
 }: {
-  cover: string;
   logo: React.ReactNode;
   name: string;
   meta: React.ReactNode;

@@ -1,38 +1,42 @@
 // Links the browser session to the signed-in account (see lib/server/session.ts
 // for the model). Called from `useAccountSession` on every auth change.
 
-import { api, USE_MOCK } from "@/lib/api/client";
+import { api, ApiError } from "@/lib/api/client";
+
+/** Pollar wants the DPoP proof rebuilt with this server nonce, then retried. */
+export class NonceChallenge extends Error {
+  constructor(readonly nonce: string) {
+    super("DPoP nonce required");
+    this.name = "NonceChallenge";
+  }
+}
 
 /**
- * Make the server session the one that belongs to this account on this
- * browser, seeding the profile from the social login the first time.
- * Resolves `{ changed }` — when true the caller reloads so every local-first
- * cache re-hydrates from the right account. → `POST /me/session`
+ * Prove the login to the server (a Pollar access token plus a DPoP proof for
+ * Pollar's own session check, which the server relays) so this browser's
+ * session becomes the one that belongs to the verified account — on any
+ * device. Resolves `{ changed }`: when true the caller reloads so every
+ * local-first cache re-hydrates from the right account. Throws
+ * `NonceChallenge` when the proof must be rebuilt with a nonce.
+ * → `POST /me/session`
  */
 export async function linkAccountSession(input: {
-  account: string;
-  name?: string | null;
-  avatar?: string | null;
+  accessToken: string;
+  dpop: string;
 }): Promise<{ changed: boolean }> {
-  if (USE_MOCK) return { changed: false };
-  return api.post<{ changed: boolean }>("/me/session", {
-    account: input.account,
-    name: input.name ?? undefined,
-    avatar: input.avatar ?? undefined,
-  });
+  try {
+    return await api.post<{ changed: boolean }>("/me/session", input);
+  } catch (e) {
+    const nonce =
+      e instanceof ApiError && e.status === 428 && e.body && typeof e.body === "object"
+        ? (e.body as { nonce?: unknown }).nonce
+        : undefined;
+    if (typeof nonce === "string" && nonce) throw new NonceChallenge(nonce);
+    throw e;
+  }
 }
 
 /** Sign out server-side: rotate to a fresh anonymous session. → `DELETE /me/session` */
 export async function endAccountSession(): Promise<{ changed: boolean }> {
-  if (USE_MOCK) return { changed: false };
   return api.delete<{ changed: boolean }>("/me/session");
-}
-
-/** Stable, non-reversible key for an account identity (SHA-256 hex). */
-export async function accountKey(identity: string): Promise<string> {
-  const bytes = new TextEncoder().encode(identity.trim().toLowerCase());
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
 }

@@ -72,6 +72,7 @@ export const LIMITS = {
   feedback: { max: 10, windowMs: 60 * 60_000 },
   reply: { max: 30, windowMs: 60 * 60_000 },
   profile: { max: 20, windowMs: 60 * 60_000 },
+  usernameCheck: { max: 60, windowMs: 60_000 },
   preferences: { max: 60, windowMs: 60 * 60_000 },
   session: { max: 20, windowMs: 10 * 60_000 },
   stamps: { max: 20, windowMs: 60 * 60_000 },

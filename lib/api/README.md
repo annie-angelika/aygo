@@ -5,61 +5,48 @@ components, server pages) imports typed functions from `@/lib/api`; it never cal
 `fetch` directly. That keeps the network surface — base URL, auth, error shape — in
 one place, so wiring the real backend is a config change, not a refactor.
 
-## The backend is implemented
+## The backend
 
-These endpoints are live as Next route handlers under `app/api/`, backed by a
-swappable store (`lib/server/store/`: `memory` or `postgres`/Neon, chosen by
+The endpoints are Next route handlers under `app/api/`, backed by a swappable
+store (`lib/server/store/`: `memory` for local dev or `postgres`/Neon, chosen by
 `AYGO_DATA_SOURCE`). Guests are identified by a signed cookie
-(`lib/server/session.ts`). First-time setup: `POST /api/admin/seed` with the
-`x-admin-token` header creates the schema and seeds the catalog.
+(`lib/server/session.ts`); a sign-in binds that session to a server-verified
+account (see *Accounts* below). First-time setup: `POST /api/admin/seed` with
+the `x-admin-token` header creates the schema and seeds the discover content
+(cities, calendars, interest pages). **No demo events or people are ever
+seeded** — everything guests see is created in the app.
 
 **Client vs. server data access:** the client hooks call these HTTP endpoints.
-Server Components do **not** — they read the catalog straight from the data
-modules (`lib/events-data.ts`), which is also the seed source, so there's no
+Server Components (e.g. `/[slug]`) read the store directly, so there's no
 self-fetch over HTTP and no relative-URL pitfall at build time.
 
-## How it works today (mock mode)
-
-`NEXT_PUBLIC_API_URL` is unset → `USE_MOCK` is `true` → every function resolves from
-the bundled mock data (`lib/*-data.ts`) and localStorage. The app is fully usable
-with no backend.
-
-## Turning the backend on
-
-1. Implement the endpoints below (the app's own Next route handlers under `/api`, or
-   any host).
-2. Set `NEXT_PUBLIC_API_URL=/api` (same-origin) — or an absolute URL.
-3. Done. Every `api/*` function flips from mock to real calls; no feature code
-   changes.
-
-Auth: the session is a signed cookie (`AYGO_SESSION_SECRET`), sent automatically via
-`credentials: "include"`. For token auth, call `setAuthToken(jwt)` after login.
+`NEXT_PUBLIC_API_URL` defaults to the same-origin `/api`; set it only to point
+the client at another host. The session cookie rides on every call via
+`credentials: "include"`; for token auth, call `setAuthToken(jwt)`.
 
 ## Endpoints
 
 All paths are relative to `NEXT_PUBLIC_API_URL`. `me` = the signed-in user (from the
 session cookie / bearer token).
 
-Each row is marked **wired** (already consumed by the app) or **seam** (ready for
-the backend; the screen still reads mock/config synchronously until you migrate it).
-
 ### Catalog (read)
 
-| Function | Method & path | Returns | |
-| --- | --- | --- | --- |
-| `fetchEvents()` | `GET /events` | `AygoEvent[]` | wired |
-| `fetchEventByCode(code)` | `GET /events/by-code/:code` | `AygoEvent` | wired |
-| `fetchEvent(id)` | `GET /events/:id` | `AygoEvent` | seam |
-| `fetchTraveler(username)` | `GET /users/:username` | `TravelerProfile` | seam |
-| `fetchAttendees(eventId)` | `GET /events/:id/attendees` | `TravelerProfile[]` | seam |
+| Function | Method & path | Returns |
+| --- | --- | --- |
+| `fetchEvents()` | `GET /events` | `AygoEvent[]` |
+| `fetchEventByCode(code)` | `GET /events/by-code/:code` | `AygoEvent` |
+| `fetchAttendees(eventId)` | `GET /events/:id/attendees` | `Attendee[]` (real RSVPs, `username` when they have one) |
+| `fetchPublicProfile(username)` | `GET /users/:username` | `PublicProfile` (identity, collection, public hosted events) |
+
+`/profile` is always **you**; `/u/<username>` is anyone's public profile.
 
 ### Discover (read)
 
-| Function | Method & path | Returns | |
-| --- | --- | --- | --- |
-| `fetchCities()` | `GET /cities` | `CityInfo[]` (real, computed event counts) | wired |
-| `fetchCalendars()` | `GET /calendars` | `CalendarInfo[]` | wired |
-| `fetchCategoryStats()` | `GET /categories` | `CategoryStat[]` (real counts) | wired |
+| Function | Method & path | Returns |
+| --- | --- | --- |
+| `fetchCities()` | `GET /cities` | `CityInfo[]` (real, computed event counts) |
+| `fetchCalendars()` | `GET /calendars` | `CalendarInfo[]` |
+| `fetchCategoryStats()` | `GET /categories` | `CategoryStat[]` (real counts) |
 
 > Only the **serializable halves** live in the backend (`cities`, `calendars`,
 > `category_pages` tables, seeded from `lib/cities-data.ts` /
@@ -82,44 +69,68 @@ the backend; the screen still reads mock/config synchronously until you migrate 
 | `adminDeleteCalendar(id)` | `DELETE /admin/calendars/:id` | |
 
 Import these from `@/lib/api/admin` (not the barrel) so they never ride in app
-bundles. Security boundary = the admin key; Pollar login is the identity layer
-in the dashboard UI (Pollar doesn't yet issue a token our backend can verify).
+bundles. Security boundary = the admin key.
 
 ### The signed-in user (read + write, local-first)
 
-| Function | Method & path | Body | |
-| --- | --- | --- | --- |
-| `rsvp(eventId)` | `POST /me/registrations/:eventId` | — | wired |
-| `cancelRsvp(eventId)` | `DELETE /me/registrations/:eventId` | — | wired |
-| `applyToEvent(eventId, message?)` | `POST /me/applications/:eventId` | `{ message }` | wired |
-| `withdrawApplication(eventId)` | `DELETE /me/applications/:eventId` | — | wired |
-| `collectStamp(eventId)` | `POST /me/stamps` | `{ eventId }` | wired |
-| `saveProfile(edits)` | `PUT /me/profile` | `ProfileEdits` | wired |
-| `savePreferences(prefs)` | `PUT /me/preferences` | `Preferences` | wired |
-| `createEvent(draft)` | `POST /events` | `EventDraft` | wired |
+| Function | Method & path | Body |
+| --- | --- | --- |
+| `rsvp(eventId)` | `POST /me/registrations/:eventId` | — |
+| `cancelRsvp(eventId)` | `DELETE /me/registrations/:eventId` | — |
+| `applyToEvent(eventId, message?)` | `POST /me/applications/:eventId` | `{ message }` |
+| `withdrawApplication(eventId)` | `DELETE /me/applications/:eventId` | — |
+| `collectStamp(eventId)` | `POST /me/stamps` | `{ eventId }` |
+| `saveProfile(edits)` | `PUT /me/profile` | `ProfileEdits` (`username` ignored here) |
+| `setUsername(username)` | `PUT /me/username` | `{ username }` → 409 when taken |
+| `checkUsername(username)` | `GET /usernames/:username` | → `{ available }` |
+| `savePreferences(prefs)` | `PUT /me/preferences` | `Preferences` (interests + home city) |
+| `createEvent(draft)` | `POST /events` | `EventDraft` (up to 6 photos) |
 
 Created events are stored per-guest and **projected into the catalog** at read
 time (`lib/server/store/draft-event.ts`): they come back from `GET /events`
 (newest first) as regular `AygoEvent`s with the creator's saved profile as the
 host, resolve by id and by share code, and their `/<code>` page renders
 server-side for anyone with the link.
-| `fetchRegistrations()` | `GET /me/registrations` | → `{ going, applied, stamps }` | wired |
-| `fetchProfile()` | `GET /me/profile` | → `Partial<ProfileEdits>` | wired |
-| `fetchPreferences()` | `GET /me/preferences` | → `Preferences` | wired |
-| `fetchMyEvents()` | `GET /me/events` | → `EventDraft[]` (what you host) | wired |
+| `fetchRegistrations()` | `GET /me/registrations` | → `{ going, applied, stamps }` |
+| `fetchProfile()` | `GET /me/profile` | → `Partial<ProfileEdits>` (+ `username`) |
+| `fetchPreferences()` | `GET /me/preferences` | → `Preferences \| null` |
+| `fetchMyEvents()` | `GET /me/events` | → `EventDraft[]` (what you host) |
 
 ### Inbox, messaging and accounts
 
-| Function | Method & path | Body | |
-| --- | --- | --- | --- |
-| `fetchNotifications()` | `GET /me/notifications` | → `{ items, unread }` | wired |
-| `markNotificationsRead(ids?)` | `POST /me/notifications/read` | `{ ids? }` (none = all) | wired |
-| `sendEventFeedback(id, kind, msg)` | `POST /events/:id/feedback` | `{ kind, message }` → `{ id }` | wired |
-| `fetchMyThreads()` | `GET /me/reports` | → `EventReport[]` (your questions/reports + replies) | wired |
-| `replyToMyThread(id, msg)` | `POST /me/reports/:id/reply` | `{ message }` | wired |
-| `replyToFeedback(eventId, reportId, msg)` | `POST /events/:id/feedback/:reportId/reply` | `{ message }` (host) | wired |
-| `linkAccountSession({ account, name, avatar })` | `POST /me/session` | → `{ changed }` | wired |
-| `endAccountSession()` | `DELETE /me/session` | → `{ changed }` | wired |
+| Function | Method & path | Body |
+| --- | --- | --- |
+| `fetchNotifications()` | `GET /me/notifications` | → `{ items, unread }` (unread counts every row) |
+| `markNotificationsRead(ids?)` | `POST /me/notifications/read` | `{ ids? }` (none = all) |
+| `sendEventFeedback(id, kind, msg)` | `POST /events/:id/feedback` | `{ kind, message }` → `{ id }` |
+| `fetchMyThreads()` | `GET /me/reports` | → `EventReport[]` (your questions/reports + replies) |
+| `replyToMyThread(id, msg)` | `POST /me/reports/:id/reply` | `{ message }` |
+| `replyToFeedback(eventId, reportId, msg)` | `POST /events/:id/feedback/:reportId/reply` | `{ message }` (host) |
+| `linkAccountSession({ accessToken, dpop })` | `POST /me/session` | → `{ changed }`, or 428 `{ nonce }` |
+| `endAccountSession()` | `DELETE /me/session` | → `{ changed }` |
+
+### Usernames
+
+Every account has a public handle, picked right after the first sign-in
+(`components/onboarding/username-gate.tsx` — a dialog that can't be dismissed
+while the server says the session has none) and editable in Settings. Rules
+live in `lib/username.ts` (shared, live validation) and
+`lib/server/username.ts` (reserved names + content filter); uniqueness is the
+`usernames` table's primary key, claimed atomically by `PUT /me/username`.
+The handle is never inside the profile JSON.
+
+### Accounts (a login that follows you across devices)
+
+Pollar's access tokens are DPoP-bound, so the server can't use one by itself.
+On sign-in the browser builds a DPoP proof for Pollar's own session check
+(`GET /v1/auth/session/resume`) with the SDK's per-session key and sends
+token + proof to `POST /me/session`; the server relays that exact request
+(`lib/server/pollar.ts`), Pollar verifies signature, bound key and claims, and
+returns the profile. The **verified** identity (provider id, else email) is
+hashed into an account key and mapped to one session id in the `accounts`
+table — so the same person on a new device, or after clearing cookies, gets
+their events, RSVPs, stamps and inbox back. Nothing the client typed ever
+names the account. Sign-out rotates the browser to a fresh anonymous id.
 
 ### Databases per environment
 
@@ -150,8 +161,10 @@ production data, "reset from parent" the `dev` branch in the Neon console.
   10 MB for events with photos) and must be `application/json`.
 - **Images** — `lib/server/images.ts`: only JPEG/PNG/WebP data URLs whose
   bytes really start with that format's magic number, with decoded size and
-  pixel dimensions capped (read from the header, no decoder); https URLs only
-  from known hosts. No SVG/GIF/HEIC, no other schemes.
+  pixel dimensions capped (read from the header, no decoder); the client
+  (`lib/image.ts`) resizes and steps JPEG quality down to stay under the cap.
+  Event artwork is an upload or one of `public/covers`; avatar URLs only from
+  the login providers. No SVG/GIF/HEIC, no other schemes.
 - **Content** — `lib/server/moderation.ts` + `banned-terms.ts`: invisible
   chars, NFKC, Cyrillic/Greek look-alikes, leetspeak, spaced/dotted letters
   and stretched letters are all folded before whole-word matching; plus spam
@@ -177,9 +190,8 @@ a decision notifies the guest, a question/reply notifies the other side, and
 a report status change notifies the reporter. `POST /events` validates dates
 (no past events), media (≤ 6 photos), price, and runs the content filter
 (`lib/server/moderation.ts`) on every free-text field; the same filter guards
-questions, replies and join notes. Accounts: see `lib/server/session.ts` —
-one session id per Pollar account per browser, switched on sign-in and
-rotated on sign-out.
+questions, replies and join notes. Delivery is in-app only (the bell and
+`/inbox`); no email/SMS/push channel exists, and nothing pretends otherwise.
 
 The **hydration** functions (`fetch*`) are called once per page load by
 `hooks/use-server-sync.ts` (mounted in the root layout via
@@ -187,7 +199,7 @@ The **hydration** functions (`fetch*`) are called once per page load by
 stamps) are **unioned** — server rows are adopted locally and local-only rows
 are pushed up as unsynced offline writes; profile and preferences keep the
 local copy when one exists (pushing it up if it differs) and adopt the
-server's otherwise. In mock mode they return `null` (keep local as-is).
+server's otherwise.
 
 ## Local-first model
 
@@ -196,5 +208,9 @@ localStorage **first** and rendered immediately — the UI never blocks on the n
 The matching `api/*` call then syncs the change to the backend in the background.
 On load, the `fetch*` functions hydrate the local cache from the server.
 
-This is why the app feels instant and why it works offline. Types live in
-`@/types`; consume everything through the `@/lib/api` barrel.
+Optimistic list writes (going / applied) roll back locally when the server
+refuses them; registering and collecting an aygo await the server first, so a
+confirmation is never shown for something the server didn't accept.
+
+This is why the app feels instant. Types live in `@/types`; consume everything
+through the `@/lib/api` barrel.

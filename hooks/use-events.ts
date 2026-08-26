@@ -7,8 +7,8 @@ import type { AygoEvent } from "@/types";
 const NO_EVENTS: AygoEvent[] = [];
 
 /**
- * The event catalog. Backed by `@/lib/api` (mock today, backend when configured)
- * and cached stale-while-revalidate so navigating back to a list is instant.
+ * The event catalog, from `@/lib/api`, cached stale-while-revalidate so
+ * navigating back to a list is instant.
  */
 export function useEvents() {
   const { data, loading, error, refetch } = useAsyncData(

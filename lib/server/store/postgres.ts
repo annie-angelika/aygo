@@ -10,8 +10,8 @@ import { eventCode } from "@/lib/events-data";
 import { DATABASE_URL } from "@/lib/server/env";
 import type {
   AygoEvent,
-  TravelerProfile,
   ProfileEdits,
+  PublicProfile,
   Preferences,
   Stamp,
   CityInfo,
@@ -35,11 +35,9 @@ import type {
   NotificationInput,
 } from "@/lib/server/store/types";
 import {
-  CATALOG_EVENTS,
   CATALOG_CITIES,
   CATALOG_CALENDARS,
   CATALOG_CATEGORY_PAGES,
-  anchoredCatalogEvents,
   citiesWithCounts,
   categoriesWithCounts,
   withLiveAttendance,
@@ -54,7 +52,6 @@ import {
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS events (id text PRIMARY KEY, data jsonb NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS travelers (username text PRIMARY KEY, data jsonb NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS going (session_id text NOT NULL, event_id text NOT NULL, PRIMARY KEY (session_id, event_id))`,
   `CREATE TABLE IF NOT EXISTS applications (session_id text NOT NULL, event_id text NOT NULL, message text, PRIMARY KEY (session_id, event_id))`,
   `CREATE TABLE IF NOT EXISTS stamps (session_id text NOT NULL, event_id text NOT NULL, data jsonb NOT NULL, PRIMARY KEY (session_id, event_id))`,
@@ -75,6 +72,20 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS report_replies_report_idx ON report_replies (report_id)`,
   `CREATE TABLE IF NOT EXISTS notifications (id text PRIMARY KEY, session_id text NOT NULL, kind text NOT NULL, title text NOT NULL, body text NOT NULL, href text NOT NULL, event_id text, read boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now())`,
   `CREATE INDEX IF NOT EXISTS notifications_session_idx ON notifications (session_id, created_at DESC)`,
+  // A verified login identity ↔ the guest session that holds its data, so an
+  // account follows the person across devices (see lib/server/session.ts).
+  `CREATE TABLE IF NOT EXISTS accounts (account_key text PRIMARY KEY, session_id text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now())`,
+  // Per-session lookups that used to scan: the host's manage view, inboxes.
+  `CREATE INDEX IF NOT EXISTS going_event_idx ON going (event_id)`,
+  `CREATE INDEX IF NOT EXISTS applications_event_idx ON applications (event_id)`,
+  `CREATE INDEX IF NOT EXISTS stamps_event_idx ON stamps (event_id)`,
+  `CREATE INDEX IF NOT EXISTS created_events_session_idx ON created_events (session_id, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS reports_session_idx ON reports (session_id, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS reports_event_idx ON reports (event_id)`,
+  // The travelers table (never written) is gone with the fake social graph.
+  `DROP TABLE IF EXISTS travelers`,
+  // Public handles: one per session, unique across the app (/u/<username>).
+  `CREATE TABLE IF NOT EXISTS usernames (username text PRIMARY KEY, session_id text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now())`,
 ];
 
 export class PostgresStore implements Store {
@@ -91,17 +102,10 @@ export class PostgresStore implements Store {
     for (const stmt of SCHEMA) await this.sql.query(stmt);
   }
 
-  async seed(): Promise<{ events: number; users: number }> {
+  async seed(): Promise<{ cities: number; calendars: number }> {
     this.bustEvents();
     await this.init();
     await this.sql.transaction([
-      ...anchoredCatalogEvents().map(
-        (e) =>
-          this.sql`INSERT INTO events (id, data) VALUES (${e.id}, ${JSON.stringify(e)}::jsonb)
-                   ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data`,
-      ),
-      // Travelers are real accounts only — clear any previously seeded ones.
-      this.sql`DELETE FROM travelers`,
       ...CATALOG_CITIES.map(
         (c) =>
           this.sql`INSERT INTO cities (slug, data) VALUES (${c.slug}, ${JSON.stringify(c)}::jsonb)
@@ -118,22 +122,28 @@ export class PostgresStore implements Store {
                    ON CONFLICT (category) DO UPDATE SET data = EXCLUDED.data`,
       ),
     ]);
-    return { events: CATALOG_EVENTS.length, users: 0 };
+    return { cities: CATALOG_CITIES.length, calendars: CATALOG_CALENDARS.length };
   }
 
   /** Real RSVPs per event, with the goer's saved profile when there is one. */
   private async goingByEvent(eventId?: string): Promise<Map<string, Attendee[]>> {
     const rows = eventId
-      ? await this.sql`SELECT g.event_id, p.data AS profile FROM going g
+      ? await this.sql`SELECT g.event_id, p.data AS profile, u.username FROM going g
                        LEFT JOIN profiles p ON p.session_id = g.session_id
+                       LEFT JOIN usernames u ON u.session_id = g.session_id
                        WHERE g.event_id = ${eventId}`
-      : await this.sql`SELECT g.event_id, p.data AS profile FROM going g
-                       LEFT JOIN profiles p ON p.session_id = g.session_id`;
+      : await this.sql`SELECT g.event_id, p.data AS profile, u.username FROM going g
+                       LEFT JOIN profiles p ON p.session_id = g.session_id
+                       LEFT JOIN usernames u ON u.session_id = g.session_id`;
     const map = new Map<string, Attendee[]>();
     for (const r of rows) {
       const profile = (r.profile ?? undefined) as Creator | undefined;
       const list = map.get(r.event_id as string) ?? [];
-      list.push({ name: profile?.name || "Guest", avatar: profile?.avatar });
+      list.push({
+        name: profile?.name || "Guest",
+        avatar: profile?.avatar,
+        ...(r.username ? { username: r.username as string } : null),
+      });
       map.set(r.event_id as string, list);
     }
     return map;
@@ -242,10 +252,24 @@ export class PostgresStore implements Store {
     return (await this.goingByEvent(eventId)).get(eventId) ?? [];
   }
 
-  async getTraveler(username: string): Promise<TravelerProfile | null> {
-    const rows =
-      await this.sql`SELECT data FROM travelers WHERE username = ${username}`;
-    return rows.length ? (rows[0].data as TravelerProfile) : null;
+  // --- Accounts ---
+
+  async getAccountSession(accountKey: string): Promise<string | null> {
+    const rows = await this
+      .sql`SELECT session_id FROM accounts WHERE account_key = ${accountKey}`;
+    return rows.length ? (rows[0].session_id as string) : null;
+  }
+
+  async bindAccount(accountKey: string, sid: string): Promise<void> {
+    await this
+      .sql`INSERT INTO accounts (account_key, session_id) VALUES (${accountKey}, ${sid})
+           ON CONFLICT (account_key) DO NOTHING`;
+  }
+
+  async getSessionAccount(sid: string): Promise<string | null> {
+    const rows = await this
+      .sql`SELECT account_key FROM accounts WHERE session_id = ${sid}`;
+    return rows.length ? (rows[0].account_key as string) : null;
   }
 
   // --- Discover ---
@@ -308,7 +332,6 @@ export class PostgresStore implements Store {
           UNION SELECT session_id FROM profiles
           UNION SELECT session_id FROM created_events
         ) s) AS guests,
-        (SELECT count(*) FROM travelers) AS travelers,
         (SELECT count(*) FROM reports WHERE status = 'open') AS open_reports`,
       this.sql`SELECT ce.data AS draft, ce.created_at, p.data AS profile
                FROM created_events ce
@@ -324,7 +347,6 @@ export class PostgresStore implements Store {
         applications: Number(t.applications),
         stamps: Number(t.stamps),
         guests: Number(t.guests),
-        travelers: Number(t.travelers),
         openReports: Number(t.open_reports),
       },
       recentCreated: recent.map((r) => {
@@ -446,9 +468,12 @@ export class PostgresStore implements Store {
   }
 
   async addStamp(sid: string, stamp: Stamp): Promise<void> {
+    // The earn-date is the moment of the grant (stored in the column, read
+    // back as `earnedAt`); an explicit one only comes from a trusted caller.
+    const earnedAt = stamp.earnedAt ?? new Date().toISOString();
     await this.sql.transaction([
       this
-        .sql`INSERT INTO stamps (session_id, event_id, data) VALUES (${sid}, ${stamp.eventId}, ${JSON.stringify(stamp)}::jsonb)
+        .sql`INSERT INTO stamps (session_id, event_id, data, created_at) VALUES (${sid}, ${stamp.eventId}, ${JSON.stringify(stamp)}::jsonb, ${earnedAt}::timestamptz)
              ON CONFLICT (session_id, event_id) DO UPDATE SET data = EXCLUDED.data`,
       this
         .sql`DELETE FROM going WHERE session_id = ${sid} AND event_id = ${stamp.eventId}`,
@@ -458,16 +483,61 @@ export class PostgresStore implements Store {
   }
 
   async getProfile(sid: string): Promise<Partial<ProfileEdits>> {
-    const rows =
-      await this.sql`SELECT data FROM profiles WHERE session_id = ${sid}`;
-    return rows.length ? (rows[0].data as Partial<ProfileEdits>) : {};
+    const [rows, names] = await Promise.all([
+      this.sql`SELECT data FROM profiles WHERE session_id = ${sid}`,
+      this.sql`SELECT username FROM usernames WHERE session_id = ${sid}`,
+    ]);
+    const profile = rows.length ? (rows[0].data as Partial<ProfileEdits>) : {};
+    return names.length ? { ...profile, username: names[0].username as string } : profile;
   }
 
   async saveProfile(sid: string, edits: ProfileEdits): Promise<void> {
     this.bustEvents();
+    // The handle lives in its own table (uniqueness) — never inside the JSON.
+    const { username: _ignored, ...rest } = edits;
+    void _ignored;
     await this
-      .sql`INSERT INTO profiles (session_id, data) VALUES (${sid}, ${JSON.stringify(edits)}::jsonb)
+      .sql`INSERT INTO profiles (session_id, data) VALUES (${sid}, ${JSON.stringify(rest)}::jsonb)
            ON CONFLICT (session_id) DO UPDATE SET data = EXCLUDED.data`;
+  }
+
+  async setUsername(sid: string, username: string): Promise<"ok" | "taken"> {
+    // One statement, atomic under concurrency: claim the handle for this
+    // session (replacing its previous one) unless another session holds it —
+    // then the primary key refuses and we report "taken".
+    try {
+      await this
+        .sql`INSERT INTO usernames (username, session_id) VALUES (${username}, ${sid})
+             ON CONFLICT (session_id) DO UPDATE SET username = EXCLUDED.username`;
+      return "ok";
+    } catch (e) {
+      if ((e as { code?: string }).code === "23505") return "taken";
+      throw e;
+    }
+  }
+
+  async getPublicProfile(username: string): Promise<PublicProfile | null> {
+    const holder = await this
+      .sql`SELECT session_id FROM usernames WHERE username = ${username}`;
+    if (!holder.length) return null;
+    const sid = holder[0].session_id as string;
+    const [profile, regs, mine, events] = await Promise.all([
+      this.getProfile(sid),
+      this.getRegistrations(sid),
+      this.sql`SELECT id FROM created_events WHERE session_id = ${sid}`,
+      this.listEvents(),
+    ]);
+    const owned = new Set(mine.map((r) => r.id as string));
+    return {
+      username,
+      name: profile.name || "Guest",
+      avatar: profile.avatar ?? "",
+      bio: profile.bio ?? "",
+      location: profile.location ?? "",
+      socials: profile.socials ?? {},
+      stamps: regs.stamps,
+      hosting: events.filter((e) => owned.has(e.id)),
+    };
   }
 
   async getPreferences(sid: string): Promise<Preferences | null> {
@@ -527,11 +597,13 @@ export class PostgresStore implements Store {
     if (!event) return null;
     const [draftRows, going, requests, stamps, feedback] = await Promise.all([
       this.sql`SELECT data FROM created_events WHERE id = ${eventId}`,
-      this.sql`SELECT g.session_id, g.created_at, p.data AS profile FROM going g
+      this.sql`SELECT g.session_id, g.created_at, p.data AS profile, u.username FROM going g
                LEFT JOIN profiles p ON p.session_id = g.session_id
+               LEFT JOIN usernames u ON u.session_id = g.session_id
                WHERE g.event_id = ${eventId} ORDER BY g.created_at DESC`,
-      this.sql`SELECT a.session_id, a.message, a.created_at, p.data AS profile FROM applications a
+      this.sql`SELECT a.session_id, a.message, a.created_at, p.data AS profile, u.username FROM applications a
                LEFT JOIN profiles p ON p.session_id = a.session_id
+               LEFT JOIN usernames u ON u.session_id = a.session_id
                WHERE a.event_id = ${eventId} ORDER BY a.created_at DESC`,
       this.sql`SELECT count(*) AS n FROM stamps WHERE event_id = ${eventId}`,
       this.listReports(),
@@ -542,6 +614,7 @@ export class PostgresStore implements Store {
         requestId: r.session_id as string,
         name: profile?.name || "Guest",
         avatar: profile?.avatar,
+        ...(r.username ? { username: r.username as string } : null),
         at: new Date(r.created_at as string).toISOString(),
       };
     };
@@ -689,6 +762,12 @@ export class PostgresStore implements Store {
       read: r.read as boolean,
       createdAt: new Date(r.created_at as string).toISOString(),
     }));
+  }
+
+  async countUnreadNotifications(sid: string): Promise<number> {
+    const rows = await this
+      .sql`SELECT count(*) AS n FROM notifications WHERE session_id = ${sid} AND read = false`;
+    return Number(rows[0].n);
   }
 
   async markNotificationsRead(sid: string, ids?: string[]): Promise<void> {

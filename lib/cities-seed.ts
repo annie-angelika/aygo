@@ -1,12 +1,17 @@
 // City seed — PURE DATA. No React or react-icons here: this module is imported
-// server-side (the catalog store, the mock discover API) as well as by the
-// client. Presentation (icon + tint) lives in `lib/cities-data.ts`.
+// server-side (the catalog store) as well as by the client. Presentation
+// (icon + tint) lives in `lib/cities-data.ts`.
 //
 // Every city carries its centre (`lat`/`lng`) and a generous metro-area
 // `bbox` ([west, south, east, north]) so the place search can be bounded to
 // the city the user picked. `countryCode` is lowercase ISO 3166-1 alpha-2.
 
 import type { CityInfo } from "@/types";
+
+/** The home market — the fallback whenever no city is known. */
+export const HOME_CITY = "La Paz";
+/** Its centre, for map defaults when nothing is geocoded yet. */
+export const HOME_CENTER = { lng: -68.1193, lat: -16.4897 } as const;
 
 /** Seed data (no counts — the backend computes those from real events). */
 export const CITY_DATA: Omit<CityInfo, "eventCount">[] = [

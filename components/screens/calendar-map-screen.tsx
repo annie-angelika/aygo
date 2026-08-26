@@ -1,14 +1,15 @@
 import { MapScreen } from "@/components/discover/map-screen";
+import { HOME_CITY } from "@/lib/cities-seed";
 import type { CalendarInfo } from "@/types";
 
 /** Dedicated map view for a community calendar, at /<calendar>/map. Centers on
- *  the calendar's location and scopes to the calendar's interest. The row is
- *  resolved server-side from the store (see /[slug]/map). */
+ *  the calendar's location (the home market when it has none) and scopes to
+ *  the calendar's interest. The row is resolved server-side (see /[slug]/map). */
 export function CalendarMapScreen({ calendar }: { calendar: CalendarInfo }) {
   return (
     <MapScreen
       title={calendar.name}
-      city={calendar.location ?? "La Paz"}
+      city={calendar.location ?? HOME_CITY}
       category={calendar.category}
       logo={
         // eslint-disable-next-line @next/next/no-img-element

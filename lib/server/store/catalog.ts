@@ -1,9 +1,9 @@
-// The catalog seed: the canonical events + travelers both stores load from. It's
-// derived from the same mock modules the frontend used, so turning the backend on
-// changes *where* the data lives, not the data itself. Only the serializable
-// domain objects are taken (no icons / class strings — those stay client config).
+// The catalog seed both stores load: cities, featured calendars and the
+// per-interest page copy. No demo events and no demo people — everything
+// guests see is created in the app. Only serializable domain objects live here
+// (no icons / class strings — those stay client config).
 
-import { CITY_DATA } from "@/lib/cities-data";
+import { CITY_DATA } from "@/lib/cities-seed";
 import {
   FEATURED_CALENDARS,
   CATEGORY_PAGES,
@@ -11,57 +11,13 @@ import {
   categoriesWithCounts,
 } from "@/lib/discover-data";
 import { eventTimeFields } from "@/lib/server/store/draft-event";
-import type { AygoEvent, TravelerProfile, Stamp, Attendee } from "@/types";
+import type { AygoEvent, Stamp, Attendee } from "@/types";
 
-// No demo events: everything guests see is created in the app. The static
-// `events` array in lib/events-data only backs the client's mock mode.
-export const CATALOG_EVENTS: AygoEvent[] = [];
-/** No seeded travelers — real accounts only. Empty is empty. */
-export const CATALOG_USERS: TravelerProfile[] = [];
 export const CATALOG_CITIES = CITY_DATA;
 export const CATALOG_CALENDARS = FEATURED_CALENDARS;
 export const CATALOG_CATEGORY_PAGES = CATEGORY_PAGES;
 
 export { citiesWithCounts, categoriesWithCounts };
-
-/**
- * The date the static catalog is authored around — the day its cluster of
- * events is meant to read as "today". Every seed re-anchors to the real today
- * by shifting all event dates by the gap from this anchor, so the demo stays a
- * live mix of past/upcoming events instead of freezing in whatever week the
- * seed was written.
- */
-const SEED_ANCHOR = "2026-06-21";
-
-/** Shift the date part of a "YYYY-MM-DDTHH:mm[:ss]" start by `days`, keeping the time. */
-function shiftStart(startsAt: string, days: number): string {
-  const [datePart, timePart = "00:00"] = startsAt.split("T");
-  const [y, m, d] = datePart.split("-").map(Number);
-  const shifted = new Date(y, m - 1, d + days);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${shifted.getFullYear()}-${p(shifted.getMonth() + 1)}-${p(shifted.getDate())}T${timePart}`;
-}
-
-/**
- * The catalog with every event re-anchored to today (see {@link SEED_ANCHOR}).
- * Both stores seed from this rather than the raw array, so a freshly seeded
- * database always has a natural spread of past and upcoming events. The derived
- * when-fields are recomputed from the shifted start; `withLiveAttendance`
- * refreshes them again on every read, so they never drift afterwards either.
- */
-export function anchoredCatalogEvents(): AygoEvent[] {
-  const [ay, am, ad] = SEED_ANCHOR.split("-").map(Number);
-  const anchor = new Date(ay, am - 1, ad);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const offsetDays = Math.round(
-    (today.getTime() - anchor.getTime()) / 86_400_000,
-  );
-  return CATALOG_EVENTS.map((e) => {
-    // eventTimeFields returns `startsAt` alongside the derived when-fields.
-    return { ...e, ...eventTimeFields(shiftStart(e.startsAt, offsetDays)) };
-  });
-}
 
 /**
  * Overlay per-read fields onto catalog events so nothing goes stale in storage:
@@ -98,5 +54,6 @@ export function stampFromEvent(event: AygoEvent): Stamp {
     title: event.title,
     category: event.category,
     image: event.cover,
+    city: event.city,
   };
 }

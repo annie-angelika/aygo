@@ -15,7 +15,6 @@
 import { useEffect } from "react";
 import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
 import {
-  USE_MOCK,
   fetchRegistrations,
   fetchProfile,
   fetchPreferences,
@@ -40,7 +39,6 @@ const push = (op: Promise<void>) =>
 
 async function syncRegistrations(): Promise<void> {
   const server = await fetchRegistrations();
-  if (!server) return;
 
   const going = readStorage<string[]>(STORAGE_KEYS.going, []);
   const applied = readStorage<string[]>(STORAGE_KEYS.applied, []);
@@ -72,14 +70,20 @@ async function syncRegistrations(): Promise<void> {
 
 async function syncProfile(): Promise<void> {
   const server = await fetchProfile();
-  if (!server) return;
   const local = readStorage<Partial<ProfileEdits>>(STORAGE_KEYS.profile, {});
   if (Object.keys(local).length === 0) {
     if (Object.keys(server).length > 0)
       writeStorage(STORAGE_KEYS.profile, server);
-  } else if (changed(local, server)) {
-    push(saveProfile(local as ProfileEdits));
+    return;
   }
+  // The handle is server-owned (unique, set through its own endpoint): the
+  // server's copy always wins, whatever the local cache remembers.
+  const { username: _serverName, ...serverEdits } = server;
+  const { username: _localName, ...localEdits } = local;
+  void _localName;
+  const merged = { ...local, ...(_serverName ? { username: _serverName } : null) };
+  if (changed(local, merged)) writeStorage(STORAGE_KEYS.profile, merged);
+  if (changed(localEdits, serverEdits)) push(saveProfile(local as ProfileEdits));
 }
 
 async function syncPreferences(): Promise<void> {
@@ -95,14 +99,13 @@ async function syncPreferences(): Promise<void> {
 /** The server's list of events you host is authoritative (it's what /manage
  * checks), so the local "Hosting" hint simply mirrors it. */
 async function syncHostedEvents(): Promise<void> {
-  const server = await fetchMyEvents();
-  if (server) replaceDrafts(server);
+  replaceDrafts(await fetchMyEvents());
 }
 
-/** Mount once (see components/layout/server-sync.tsx). No-op in mock mode. */
+/** Mount once (see components/layout/server-sync.tsx). */
 export function useServerSync(): void {
   useEffect(() => {
-    if (USE_MOCK || started) return;
+    if (started) return;
     started = true;
     void Promise.allSettled([
       syncRegistrations(),

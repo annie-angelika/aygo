@@ -3,24 +3,25 @@
 // the id was issued by us (so it can't be forged to read another guest's data).
 // This identifies the user behind every `/me/*` route.
 //
-// Accounts: Pollar's login is client-side and its tokens are DPoP-bound, so the
-// server can't verify them directly. What we CAN do is keep one session id PER
-// ACCOUNT PER BROWSER: a second signed cookie maps `account key → session id`.
-// Signing in as account A restores A's id; signing in as B on the same browser
-// gets B's own id; signing out rotates to a fresh anonymous id. So ownership,
-// RSVPs and inboxes never bleed between two accounts sharing a device. The
-// trust boundary is unchanged (possession of this browser's cookies).
+// Accounts: a login is verified SERVER-SIDE (lib/server/pollar.ts), and the
+// verified identity maps to ONE session id in the store's `accounts` table —
+// so signing in on a second device, or after clearing cookies, restores the
+// same events, RSVPs, stamps and inbox. Signing in as account A on a browser
+// that was anonymous adopts that browser's id for A (a guest who signs up
+// keeps what they did before); on a browser already holding another account's
+// id a fresh id is minted, so two people sharing a device never bleed into
+// each other. Signing out rotates to a fresh anonymous id.
 
 import "server-only";
 import { cookies } from "next/headers";
 import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 import { SESSION_SECRET } from "@/lib/server/env";
+import { getStore } from "@/lib/server/store";
 
 const COOKIE = "aygo_session";
-const ACCOUNTS_COOKIE = "aygo_accounts";
+/** A browser cookie from the retired per-browser account map — cleared on sight. */
+const LEGACY_ACCOUNTS_COOKIE = "aygo_accounts";
 const MAX_AGE = 60 * 60 * 24 * 365; // 1 year
-/** How many accounts one browser remembers (oldest dropped first). */
-const MAX_ACCOUNTS = 8;
 
 function sign(id: string): string {
   return createHmac("sha256", SESSION_SECRET).update(id).digest("base64url");
@@ -72,64 +73,46 @@ export async function getSessionId(): Promise<string> {
   return fresh;
 }
 
-// --- Account ↔ session map (second signed cookie) ---
-
-/** Parse the signed `account → id` map; tampering yields an empty map. */
-function readAccounts(store: CookieStore): Record<string, string> {
-  const raw = store.get(ACCOUNTS_COOKIE)?.value;
-  if (!raw) return {};
-  const payload = verify(raw);
-  if (!payload) return {};
-  try {
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString());
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeAccounts(store: CookieStore, map: Record<string, string>): void {
-  const entries = Object.entries(map).slice(-MAX_ACCOUNTS);
-  const payload = Buffer.from(JSON.stringify(Object.fromEntries(entries))).toString(
-    "base64url",
-  );
-  store.set(ACCOUNTS_COOKIE, `${payload}.${sign(payload)}`, COOKIE_OPTS);
-}
-
 /**
- * Make the session cookie carry the id that belongs to `accountKey` on this
- * browser: the remembered one, or — for an account never seen here — the
- * current id (so an anonymous browse that just signed up keeps its RSVPs),
- * unless that id already belongs to another account, in which case a fresh id
- * is minted. Returns whether the active id changed (the client reloads then).
+ * Make the session cookie carry the id that belongs to `accountKey` (a hash of
+ * a server-verified identity): the account's stored id when it has one, else
+ * the current id — unless that id already belongs to another account, in
+ * which case a fresh id is minted and bound. Returns whether the active id
+ * changed (the client reloads then) and the id now in force.
  */
 export async function switchToAccount(
   accountKey: string,
 ): Promise<{ changed: boolean; sid: string }> {
-  const store = await cookies();
+  const cookieStore = await cookies();
+  if (cookieStore.get(LEGACY_ACCOUNTS_COOKIE)) cookieStore.delete(LEGACY_ACCOUNTS_COOKIE);
   const current = await getSessionId();
-  const map = readAccounts(store);
-  const remembered = map[accountKey];
+  const store = getStore();
+
+  const remembered = await store.getAccountSession(accountKey);
   if (remembered) {
-    if (remembered !== current) setSession(store, remembered);
+    if (remembered !== current) setSession(cookieStore, remembered);
     return { changed: remembered !== current, sid: remembered };
   }
-  const takenByOther = Object.values(map).includes(current);
+
+  const takenByOther = (await store.getSessionAccount(current)) !== null;
   const sid = takenByOther ? randomUUID() : current;
-  map[accountKey] = sid;
-  writeAccounts(store, map);
-  if (sid !== current) setSession(store, sid);
-  return { changed: sid !== current, sid };
+  await store.bindAccount(accountKey, sid);
+  // Two devices signing up the same account at once: whichever bind landed
+  // first wins, and this one adopts it.
+  const bound = (await store.getAccountSession(accountKey)) ?? sid;
+  if (bound !== current) setSession(cookieStore, bound);
+  return { changed: bound !== current, sid: bound };
 }
 
-/** Sign out: rotate to a fresh anonymous id (the account's own id stays remembered). */
+/** Sign out: rotate to a fresh anonymous id (the account's own id stays bound to it). */
 export async function resetSession(): Promise<{ changed: boolean }> {
-  const store = await cookies();
-  const current = currentId(store);
-  const map = readAccounts(store);
+  const cookieStore = await cookies();
+  if (cookieStore.get(LEGACY_ACCOUNTS_COOKIE)) cookieStore.delete(LEGACY_ACCOUNTS_COOKIE);
+  const current = currentId(cookieStore);
   // Only rotate when the current id is an account's — an anonymous browser
   // signing out of nothing keeps its state.
-  if (!current || !Object.values(map).includes(current)) return { changed: false };
-  setSession(store, randomUUID());
+  if (!current || (await getStore().getSessionAccount(current)) === null)
+    return { changed: false };
+  setSession(cookieStore, randomUUID());
   return { changed: true };
 }

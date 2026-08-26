@@ -1,10 +1,10 @@
 "use client";
 
-// Paid events: aygo doesn't move money yet — the host told us where to be
-// paid, so under the CTA the guest gets that in one tap: a WhatsApp chat with
-// a prefilled message and/or the host's payment link. When the host left no
-// channel, fall back to an in-app question. Also used by the confirmation
-// sheet right after reserving.
+// Paid events: aygo doesn't move money — the host told us where to be paid,
+// so under the CTA the guest gets that in one tap: a WhatsApp chat with a
+// prefilled message and/or the host's payment link, and the host confirms the
+// payment by hand. When the host left no channel, fall back to an in-app
+// question. Also used by the confirmation sheet right after reserving.
 
 import { LuTicket, LuExternalLink } from "react-icons/lu";
 import { FaWhatsapp } from "react-icons/fa6";
@@ -100,7 +100,7 @@ export function TicketContact({ event }: { event: AygoEvent }) {
         </button>
       )}
       <p className="text-[11px] text-muted-foreground">
-        You pay the host directly · in-app payments coming soon
+        You pay the host directly · they confirm it by hand
       </p>
     </div>
   );

@@ -11,11 +11,10 @@ import {
   MenuItem,
   MenuSeparator,
 } from "@/components/ui/menu";
-import { useProfileEdits } from "@/hooks/use-profile";
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useAuth } from "@/hooks/use-auth";
+import { useMe } from "@/hooks/use-me";
 import { signOutEverywhere } from "@/hooks/use-account-session";
-import { CURRENT_USER } from "@/lib/events-data";
 import { cn, initials } from "@/lib/utils";
 
 /** Top-bar avatar that opens the account menu: profile, settings, sign out. */
@@ -26,18 +25,15 @@ export function ProfileMenu({
   active: boolean;
   dark?: boolean;
 }) {
-  const { edits } = useProfileEdits();
   const { stamps, hydrated } = useRegistrations();
   const auth = useAuth();
+  // One identity everywhere (lib/identity): the top-bar photo always matches
+  // the profile page.
+  const { me, email } = useMe();
+  const { name, avatar } = me;
+  const subtitle = me.username ? `@${me.username}` : email;
   const count = stamps.length;
-
-  // Same precedence as the profile page (use-traveler): your explicit edits
-  // win, then the signed-in social identity, then the neutral placeholder —
-  // so the top-bar photo always matches your profile.
-  const name = edits.name ?? auth.name ?? CURRENT_USER.name;
-  const avatar = edits.avatar ?? auth.avatar ?? CURRENT_USER.avatar;
-  const subtitle = auth.email ?? `@${CURRENT_USER.username}`;
-  const href = `/user/${CURRENT_USER.username}`;
+  const href = "/profile";
 
   // Sign out clears the Pollar login, rotates the server session AND wipes the
   // local caches, so a second account on this device never inherits this one's
@@ -92,9 +88,9 @@ export function ProfileMenu({
             <p className="truncate text-[13px] font-semibold text-foreground">
               {name}
             </p>
-            <p className="truncate text-[11.5px] text-muted-foreground">
-              {subtitle}
-            </p>
+            {subtitle && (
+              <p className="truncate text-[11.5px] text-muted-foreground">{subtitle}</p>
+            )}
           </div>
         </div>
 

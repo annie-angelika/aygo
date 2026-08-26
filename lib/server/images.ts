@@ -5,7 +5,7 @@
 //     decoded bytes must START with that format's magic number; decoded size
 //     and pixel dimensions are capped (dimensions are read from the headers —
 //     no decoder runs on the server).
-//   - https URLs: only hosts we know (stock photos / login-provider avatars).
+//   - https URLs: only hosts we know (login-provider avatars).
 //   - our own cover set: `/covers/<name>.png` served from public/ (see
 //     STOCK_COVERS in lib/create-event).
 //   - nothing else (no http:, blob:, javascript:, svg, gif, bmp, heic).
@@ -13,10 +13,9 @@
 import "server-only";
 import { HttpError } from "@/lib/server/http";
 
-export const EVENT_IMAGE_HOSTS = ["picsum.photos", "fastly.picsum.photos"] as const;
+/** Event artwork is uploaded (data URL) or one of our own covers — no remote hosts. */
+export const EVENT_IMAGE_HOSTS: readonly string[] = [];
 export const AVATAR_HOSTS = [
-  "picsum.photos",
-  "fastly.picsum.photos",
   "lh3.googleusercontent.com",
   "avatars.githubusercontent.com",
   "pollar.xyz",

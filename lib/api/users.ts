@@ -1,25 +1,21 @@
-// Travelers (public profiles) + an event's attendees — the social-graph reads.
-// No fake graph anywhere: attendees are real RSVPs from the backend, and in
-// mock mode (no backend) both lists are honestly empty.
+// Other people, as far as the app knows them: an event's real attendees and
+// the public profile behind a username. No invented graph anywhere.
 
-import { findUser } from "@/lib/users-data";
-import type { TravelerProfile, Attendee } from "@/types";
-import { api, USE_MOCK } from "@/lib/api/client";
-
-/** A public traveler profile by username. → `GET /users/:username` */
-export async function fetchTraveler(
-  username: string,
-  signal?: AbortSignal,
-): Promise<TravelerProfile | undefined> {
-  if (USE_MOCK) return findUser(username);
-  return api.get<TravelerProfile>(`/users/${username}`, undefined, signal);
-}
+import type { Attendee, PublicProfile } from "@/types";
+import { api } from "@/lib/api/client";
 
 /** Who's really going (RSVPs). → `GET /events/:id/attendees` */
 export async function fetchAttendees(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<Attendee[]> {
-  if (USE_MOCK) return [];
   return api.get<Attendee[]>(`/events/${eventId}/attendees`, undefined, signal);
+}
+
+/** The public profile at /u/<username>. Throws a 404 `ApiError` when nobody holds it. → `GET /users/:username` */
+export async function fetchPublicProfile(
+  username: string,
+  signal?: AbortSignal,
+): Promise<PublicProfile> {
+  return api.get<PublicProfile>(`/users/${encodeURIComponent(username)}`, undefined, signal);
 }

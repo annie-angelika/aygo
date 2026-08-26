@@ -1,18 +1,15 @@
-// The events catalog (read) + event creation (write). In mock mode this serves
-// the bundled `events-data` and persists drafts locally; with a backend it maps
-// to the routes documented in each function. See `lib/api/README.md`.
+// The events catalog (read) + event creation (write). Each function maps to
+// the route documented on it. See `lib/api/README.md`.
 
-import { events, findEvent, findEventByCode } from "@/lib/events-data";
 import { saveDraft, type EventDraft } from "@/lib/create-event";
 import type { AygoEvent, FeedbackKind } from "@/types";
 import type { EventReport } from "@/lib/server/store/types";
-import { api, USE_MOCK } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 
 export type { EventReport };
 
 /** All events in the catalog. → `GET /events` */
 export async function fetchEvents(signal?: AbortSignal): Promise<AygoEvent[]> {
-  if (USE_MOCK) return events;
   return api.get<AygoEvent[]>("/events", undefined, signal);
 }
 
@@ -20,8 +17,7 @@ export async function fetchEvents(signal?: AbortSignal): Promise<AygoEvent[]> {
 export async function fetchEvent(
   id: string,
   signal?: AbortSignal,
-): Promise<AygoEvent | undefined> {
-  if (USE_MOCK) return findEvent(id);
+): Promise<AygoEvent> {
   return api.get<AygoEvent>(`/events/${id}`, undefined, signal);
 }
 
@@ -29,20 +25,18 @@ export async function fetchEvent(
 export async function fetchEventByCode(
   code: string,
   signal?: AbortSignal,
-): Promise<AygoEvent | undefined> {
-  if (USE_MOCK) return findEventByCode(code);
+): Promise<AygoEvent> {
   return api.get<AygoEvent>(`/events/by-code/${code}`, undefined, signal);
 }
 
 /**
- * Create an event. Local-first: the draft is persisted to localStorage right
- * away (so the create flow has an instant effect offline), then synced to the
- * backend. → `POST /events`
+ * Create (or edit) an event. The server is the source of truth: the draft is
+ * mirrored into localStorage only once it has been accepted, so a refused
+ * event never lingers as a phantom "Hosting" row. → `POST /events`
  */
 export async function createEvent(draft: EventDraft): Promise<void> {
-  saveDraft(draft); // optimistic: show it immediately
-  if (USE_MOCK) return;
   await api.post("/events", await withThumb(draft));
+  saveDraft(draft);
 }
 
 /**
@@ -62,8 +56,7 @@ async function withThumb(draft: EventDraft): Promise<EventDraft> {
 }
 
 /** The events this account created, newest first. → `GET /me/events` */
-export async function fetchMyEvents(signal?: AbortSignal): Promise<EventDraft[] | null> {
-  if (USE_MOCK) return null;
+export async function fetchMyEvents(signal?: AbortSignal): Promise<EventDraft[]> {
   return api.get<EventDraft[]>("/me/events", undefined, signal);
 }
 
@@ -76,19 +69,16 @@ export async function sendEventFeedback(
   eventId: string,
   kind: FeedbackKind,
   message: string,
-): Promise<{ id: string } | null> {
-  if (USE_MOCK) return null;
+): Promise<{ id: string }> {
   return api.post<{ id: string }>(`/events/${eventId}/feedback`, { kind, message });
 }
 
 /** Your own threads (questions + reports) with every reply. → `GET /me/reports` */
 export async function fetchMyThreads(signal?: AbortSignal): Promise<EventReport[]> {
-  if (USE_MOCK) return [];
   return api.get<EventReport[]>("/me/reports", undefined, signal);
 }
 
 /** Follow up in one of your threads. → `POST /me/reports/:id/reply` */
 export async function replyToMyThread(threadId: string, message: string): Promise<void> {
-  if (USE_MOCK) return;
   await api.post(`/me/reports/${threadId}/reply`, { message });
 }

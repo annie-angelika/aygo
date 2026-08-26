@@ -8,7 +8,6 @@ import type { Calendar } from "@/lib/discover-data";
 export function CalendarHero({ calendar }: { calendar: Calendar }) {
   return (
     <ProfileHero
-      cover={calendar.cover}
       logo={
         // eslint-disable-next-line @next/next/no-img-element
         <img src={calendar.logo} alt="" className="size-full object-cover" />

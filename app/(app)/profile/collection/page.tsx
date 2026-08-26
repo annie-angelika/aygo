@@ -1,21 +1,15 @@
 import { PassportScreen } from "@/components/screens/passport-screen";
-import { findUser } from "@/lib/users-data";
+import { AuthGate } from "@/components/auth/auth-gate";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
-  const { username } = await params;
-  const name = findUser(username)?.name ?? `@${username}`;
-  return { title: `${name}'s collection` };
-}
+export const metadata = { title: "Your collection" };
 
-export default async function UserPassportPage({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
-  const { username } = await params;
-  return <PassportScreen username={username} />;
+export default function CollectionPage() {
+  return (
+    <AuthGate
+      title="Sign in to see your collection"
+      description="Every aygo you collect at an event is kept here once you sign in."
+    >
+      <PassportScreen />
+    </AuthGate>
+  );
 }

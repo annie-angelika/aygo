@@ -28,7 +28,7 @@ export function PassportCard({
           {count} {count === 1 ? "aygo" : "aygos"}
         </p>
         <p className="mt-0.5 text-[11.5px] text-cream/70">
-          Earned at events you attended
+          Earned by attending events
         </p>
       </div>
       <span className="relative inline-flex h-[26px] shrink-0 items-center gap-0.5 rounded-full bg-white/12 pl-3 pr-2 text-[11.5px] font-semibold">

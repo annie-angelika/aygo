@@ -25,7 +25,7 @@ export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
   const dark = tone === "dark";
   const onHome = pathname.startsWith("/home");
   const onDiscover = pathname.startsWith("/discover");
-  const onProfile = pathname.startsWith("/user") || pathname.startsWith("/settings");
+  const onProfile = pathname.startsWith("/profile") || pathname.startsWith("/u/") || pathname.startsWith("/settings");
   const onCreate = pathname.startsWith("/create");
 
   return (

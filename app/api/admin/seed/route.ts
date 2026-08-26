@@ -1,5 +1,6 @@
-// POST /api/admin/seed → one-off setup: create the schema and seed the catalog
-// (events, travelers, discover content) from the seed data. Admin only —
+// POST /api/admin/seed → one-off setup: create the schema and seed the discover
+// content (cities, calendars, interest pages). No demo events or people are
+// ever seeded — everything guests see is created in the app. Admin only —
 // the `x-admin-token` header (scripts) or the admin cookie (dashboard).
 
 import { getStore } from "@/lib/server/store";

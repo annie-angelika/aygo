@@ -6,22 +6,12 @@ import { savePreferences } from "@/lib/api";
 import type { Category, Preferences } from "@/types";
 
 // Stable module-level default (required by useSyncExternalStore).
-const DEFAULT_PREFERENCES: Preferences = {
-  theme: "system",
-  language: "en",
-  notifications: {
-    invites: ["email", "whatsapp", "push"],
-    reminders: ["email", "whatsapp", "push"],
-    blasts: ["email", "whatsapp", "push"],
-    updates: ["email", "push"],
-    feedback: ["email"],
-  },
-};
+const DEFAULT_PREFERENCES: Preferences = {};
 
 /**
- * Locally-saved app preferences (theme, language, notification channels).
- * Auto-persists on every change — Luma-style, no explicit save button.
- * Local-first: persists instantly, then syncs to the backend in the background.
+ * Saved app preferences — interests and home city, the two things the app
+ * actually reads. Auto-persists on every change (Luma-style, no save button):
+ * locally first, then synced to the backend in the background.
  */
 export function usePreferences() {
   const prefs = useStorageValue<Preferences>(
@@ -37,7 +27,7 @@ export function usePreferences() {
     );
   };
 
-  /** Toggle one interest in the "For you" set. */
+  /** Toggle one interest. */
   const toggleInterest = (c: Category) => {
     const current = prefs.interests ?? [];
     update({

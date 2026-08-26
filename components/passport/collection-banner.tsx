@@ -12,16 +12,10 @@ const SKY = [
 
 /**
  * The banner at the top of your collection: a navy night sky scattered with
- * aygo stars, grounded by the Illimani ridge. Takes the same props as before
- * (`count` is accepted so callers don't change) but the sky is the same for every
- * level — the stamps below are what grow.
+ * aygo stars, grounded by the Illimani ridge. The same sky for every level —
+ * the stamps below are what grow.
  */
-export function CollectionBanner({
-  className,
-}: {
-  count?: number;
-  className?: string;
-}) {
+export function CollectionBanner({ className }: { className?: string }) {
   return (
     <div
       className={cn("relative h-[150px] overflow-hidden bg-navy", className)}

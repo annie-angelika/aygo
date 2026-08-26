@@ -63,7 +63,12 @@ export function parseDraft(body: unknown, previous: EventDraft | null): EventDra
   const theme = enumOf(b.theme ?? THEME_IDS[0], "theme", THEME_IDS);
   const calendarId = enumOf(b.calendarId ?? CALENDAR_IDS[0], "calendarId", CALENDAR_IDS);
   const visibility = enumOf(b.visibility ?? "public", "visibility", ["public", "private"] as const);
-  const category = b.category == null ? undefined : enumOf(b.category, "category", CATEGORIES);
+  // The create flow always sends an interest; an edit of an older draft that
+  // predates the field keeps whatever it had (the projection falls back).
+  const category =
+    b.category == null && previous
+      ? previous.category
+      : enumOf(b.category, "category", CATEGORIES);
   const timezone = enumOf(b.timezone ?? TIMEZONES[0], "timezone", TIMEZONES);
 
   // Dates: valid, end after start, and not in the past (unless unchanged on

@@ -6,6 +6,7 @@ import { PollarAuthProvider } from "@/components/auth/pollar-provider";
 import { ServerSync } from "@/components/layout/server-sync";
 import { AccountSession } from "@/components/layout/account-session";
 import { LoginModal } from "@/components/auth/login-modal";
+import { UsernameGate } from "@/components/onboarding/username-gate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,6 +67,7 @@ export default function RootLayout({
           <AccountSession />
           <ServerSync />
           <LoginModal />
+          <UsernameGate />
           {children}
         </PollarAuthProvider>
       </body>

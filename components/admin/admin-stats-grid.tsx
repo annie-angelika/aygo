@@ -10,7 +10,6 @@ import {
   LuMailQuestion,
   LuStamp,
   LuUsers,
-  LuGlobe,
   LuInbox,
 } from "react-icons/lu";
 
@@ -28,7 +27,6 @@ const TILES: {
   { key: "applications", label: "Join requests", Icon: LuMailQuestion },
   { key: "stamps", label: "Aygos collected", Icon: LuStamp },
   { key: "guests", label: "Active guests", Icon: LuUsers },
-  { key: "travelers", label: "Travelers", Icon: LuGlobe },
   { key: "openReports", label: "Open inbox", Icon: LuInbox },
 ];
 

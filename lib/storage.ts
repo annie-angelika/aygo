@@ -8,8 +8,7 @@ export const STORAGE_KEYS = {
   applied: "aygo.applied", // string[] of event ids with a request pending host approval
   stamps: "aygo.stamps", // Stamp[] collected in the passport
   profile: "aygo.profile", // ProfileEdits — your editable identity fields
-  featured: "aygo.featured", // string[] of stamp eventIds pinned to your passport
-  preferences: "aygo.preferences", // Preferences — theme, language, notifications
+  preferences: "aygo.preferences", // Preferences — interests + home city
   created: "aygo.created", // EventDraft[] — events you created (Luma-style create flow)
   onboarded: "aygo.onboarded", // boolean — the welcome tour was seen/dismissed
 } as const;

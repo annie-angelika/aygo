@@ -8,6 +8,7 @@ import { LuMapPinned } from "react-icons/lu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EventPreviewDialog } from "@/components/event/event-preview-dialog";
 import { CATEGORY_META } from "@/lib/events-data";
+import { findCityByName, HOME_CENTER } from "@/lib/cities-seed";
 import { cn } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
 
@@ -15,17 +16,18 @@ import type { AygoEvent } from "@/types";
 // Positron is the muted gray style that matches the app's desaturated look.
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
 
-// Where to center when no event carries coordinates yet.
-const CITY_CENTERS: Record<string, [number, number]> = {
-  "La Paz": [-68.13, -16.5],
-  "Potosí": [-66.97, -20.3],
-};
+// Where to center when no event carries coordinates yet: the city's own
+// centre from the seed (every city carries one), else the home market.
+function cityCenter(city: string): { lng: number; lat: number } {
+  const info = findCityByName(city);
+  return info?.lat != null && info?.lng != null ? { lng: info.lng, lat: info.lat } : HOME_CENTER;
+}
 
 /** Initial camera: fit every pinned event, or fall back to the city center. */
 function viewFor(mapped: AygoEvent[], city: string) {
   if (mapped.length === 0) {
-    const [longitude, latitude] = CITY_CENTERS[city] ?? CITY_CENTERS["La Paz"];
-    return { longitude, latitude, zoom: 12 };
+    const { lng, lat } = cityCenter(city);
+    return { longitude: lng, latitude: lat, zoom: 12 };
   }
   if (mapped.length === 1) {
     return { longitude: mapped[0].lng!, latitude: mapped[0].lat!, zoom: 14 };

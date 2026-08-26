@@ -9,13 +9,16 @@ import type { EventDraft } from "@/lib/create-event";
 import type { AdminEventInput } from "@/lib/server/store/types";
 import { realAvatar } from "@/lib/utils";
 import { localToInstant, dayKeyAt, wallClock } from "@/lib/event-time";
+import { HOME_CITY } from "@/lib/cities-seed";
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** The create flow doesn't capture a category (yet) — every draft lands here. */
-const DEFAULT_CATEGORY: Category = "Party";
+/** Drafts older than the interest picker land here; new ones always carry one. */
+const DEFAULT_CATEGORY: Category = "Culture";
+/** aygo's own artwork for an admin event created without a cover. */
+const DEFAULT_ADMIN_COVER = "/covers/aygo-night.png";
 
 /**
  * The derived when-fields every catalog event carries, recomputed from a
@@ -77,10 +80,7 @@ export function adminInputToEvent(
     id,
     title: input.title.trim(),
     category: input.category,
-    cover:
-      input.cover?.trim() ||
-      existing?.cover ||
-      `https://picsum.photos/seed/aygo-${id}/800/600`,
+    cover: input.cover?.trim() || existing?.cover || DEFAULT_ADMIN_COVER,
     ...eventTimeFields(input.startsAt),
     place: input.place.trim(),
     city: input.city.trim(),
@@ -167,7 +167,7 @@ export function draftToEvent(
   const city =
     (comma > 0 ? draft.location.slice(comma + 1) : "").trim() ||
     draft.city?.trim() ||
-    "La Paz";
+    HOME_CITY;
 
   return {
     id: draft.id,

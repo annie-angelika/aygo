@@ -5,14 +5,14 @@ import {
   LuCalendarDays,
   LuMapPin,
   LuCheck,
-  LuDoorOpen,
   LuLoaderCircle,
+  LuMessageCircle,
   LuShieldCheck,
 } from "react-icons/lu";
+import { FaWhatsapp } from "react-icons/fa6";
 
 import { useRegistrations } from "@/hooks/use-registrations";
-import { useProfileEdits } from "@/hooks/use-profile";
-import { useAuth } from "@/hooks/use-auth";
+import { useMe } from "@/hooks/use-me";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { RegisterTicket } from "@/components/event/register-ticket";
-import { applyConfigFor, currentApplicant, type Applicant } from "@/lib/apply";
+import { applyConfigFor } from "@/lib/apply";
+import { formatWhatsapp } from "@/lib/payment";
 import { initials } from "@/lib/utils";
+import type { Identity } from "@/lib/identity";
 import { ThemeCover } from "@/components/event/theme-cover";
 import type { AygoEvent } from "@/types";
 
@@ -50,8 +52,8 @@ export function RegisterDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { apply, join } = useRegistrations();
-  const { edits } = useProfileEdits();
-  const auth = useAuth();
+  // Your details come pre-loaded from the one resolved identity (lib/identity).
+  const { me, email } = useMe();
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,15 +61,6 @@ export function RegisterDialog({
 
   const cfg = applyConfigFor(event);
   const paid = event.price != null && event.price > 0;
-  // Your details come pre-loaded, same precedence as everywhere: explicit
-  // profile edits win, then the social login, then the neutral base.
-  const base = currentApplicant();
-  const me: Applicant = {
-    name: edits.name ?? auth.name ?? base.name,
-    avatar: edits.avatar ?? auth.avatar ?? base.avatar,
-    handle: auth.email ?? base.handle,
-    location: edits.location ?? base.location,
-  };
 
   function handleOpenChange(next: boolean) {
     if (busy && !next) return;
@@ -118,7 +111,7 @@ export function RegisterDialog({
             <div className="mt-5 flex-1 space-y-5 overflow-y-auto px-5 pb-1">
               <EventRecap event={event} />
               {paid && <TicketCard event={event} />}
-              <ApplicantCard me={me} />
+              <ApplicantCard me={me} email={email} />
               <Requirements items={cfg.requirements} />
               {cfg.asksMessage && (
                 <MessageField
@@ -201,22 +194,29 @@ function EventRecap({ event }: { event: AygoEvent }) {
 }
 
 /**
- * Paid events: how the ticket is settled. aygo doesn't take payments, so the
- * one real option is cash to the host when you arrive.
+ * Paid events: how the ticket is settled. aygo doesn't move money — you pay
+ * the host directly through the channel THEY set (WhatsApp and/or a payment
+ * link) and they confirm it by hand. Shown exactly as configured, never a
+ * generic "at the door" promise.
  */
 function TicketCard({ event }: { event: AygoEvent }) {
+  const wa = event.payment?.whatsapp;
+  const link = event.payment?.link;
+  const channel = wa
+    ? { Icon: FaWhatsapp, title: "Pay via WhatsApp", detail: `${event.host.name} · ${formatWhatsapp(wa)}` }
+    : link
+      ? { Icon: LuCheck, title: "Pay with the host's link", detail: `${event.host.name} confirms your payment by hand` }
+      : { Icon: LuMessageCircle, title: "Arrange with the host", detail: `Message ${event.host.name} for how to pay` };
   return (
     <div className="flex flex-col gap-2.5">
       <p className={`${EYEBROW} text-gold-deep`}>Ticket · Bs {event.price}</p>
       <div className="flex items-center gap-3 rounded-[18px] bg-card px-3.5 py-3 ring-1 ring-foreground/8">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
-          <LuDoorOpen className="size-5" aria-hidden />
+          <channel.Icon className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-semibold text-foreground">Pay at the door</p>
-          <p className="truncate text-[11.5px] text-muted-foreground">
-            Cash to {event.host.name} when you arrive
-          </p>
+          <p className="text-[14px] font-semibold text-foreground">{channel.title}</p>
+          <p className="truncate text-[11.5px] text-muted-foreground">{channel.detail}</p>
         </div>
       </div>
     </div>
@@ -224,7 +224,8 @@ function TicketCard({ event }: { event: AygoEvent }) {
 }
 
 /** The already-loaded profile — what the host will see on your request. */
-function ApplicantCard({ me }: { me: Applicant }) {
+function ApplicantCard({ me, email }: { me: Identity; email: string | null }) {
+  const secondary = [email, me.location].filter(Boolean).join(" · ");
   return (
     <div>
       <p className={`mb-2.5 ${EYEBROW}`}>Registering as</p>
@@ -239,9 +240,9 @@ function ApplicantCard({ me }: { me: Applicant }) {
           <p className="truncate text-[14px] font-semibold text-foreground">
             {me.name}
           </p>
-          <p className="truncate text-[12px] text-muted-foreground">
-            {me.handle} · {me.location}
-          </p>
+          {secondary && (
+            <p className="truncate text-[12px] text-muted-foreground">{secondary}</p>
+          )}
         </div>
       </div>
     </div>

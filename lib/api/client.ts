@@ -6,24 +6,12 @@
  * shape, credentials — in one auditable place, so wiring a real backend never
  * touches feature code.
  *
- * Mock mode
- * ---------
- * While `NEXT_PUBLIC_API_URL` is unset, `USE_MOCK` is `true` and each api module
- * resolves from the bundled mock data instead of hitting the network — the app
- * is fully usable with zero backend. Point `NEXT_PUBLIC_API_URL` at the API
- * (e.g. `/api` for the same-origin Next route handlers, see `.env.example`) and
- * every module flips to real calls with no other code change.
+ * The backend is this app's own route handlers under `/api` (see `app/api`).
+ * `NEXT_PUBLIC_API_URL` only needs setting to point at another host.
  */
 
 /** Base URL for the API. Defaults to the same-origin `/api` route handlers. */
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "/api";
-
-/**
- * `true` while no backend is configured: api modules serve mock data. Flip it by
- * setting `NEXT_PUBLIC_API_URL`. Exported so each module can branch once, at the
- * top of every function, keeping the real call right beside the mock.
- */
-export const USE_MOCK = !process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "/api";
 
 /** A non-2xx response. Carries the HTTP status and parsed body for the caller. */
 export class ApiError extends Error {

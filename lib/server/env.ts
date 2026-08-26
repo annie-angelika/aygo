@@ -5,7 +5,7 @@
 
 import "server-only";
 
-/** Where the data lives. Defaults to the in-process mock store. */
+/** Where the data lives. Defaults to the in-process store (dev only, resets on restart). */
 export type DataSource = "memory" | "postgres";
 
 export const DATA_SOURCE: DataSource =
@@ -60,9 +60,3 @@ export const SESSION_SECRET = (() => {
 
 /** Token guarding `POST /api/admin/seed` (sent as the `x-admin-token` header). */
 export const ADMIN_TOKEN = process.env.AYGO_ADMIN_TOKEN ?? "";
-
-/** Origins allowed to call `/api` cross-origin from a browser (CORS allowlist). */
-export const CORS_ORIGINS = (process.env.AYGO_CORS_ORIGINS ?? "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);

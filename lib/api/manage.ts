@@ -7,7 +7,7 @@ import type {
   GuestRow,
   RequestRow,
 } from "@/lib/server/store/types";
-import { api, USE_MOCK } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 
 export type { ManageData, GuestRow, RequestRow };
 
@@ -16,7 +16,6 @@ export async function fetchManageEvent(
   eventId: string,
   signal?: AbortSignal,
 ): Promise<ManageData | null> {
-  if (USE_MOCK) return null;
   return api.get<ManageData>(`/events/${eventId}/manage`, undefined, signal);
 }
 

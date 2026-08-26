@@ -1,4 +1,4 @@
-// GET /api/events/:id/attendees → travelers attending the event
+// GET /api/events/:id/attendees → who is really going (RSVP rows)
 
 import { getStore } from "@/lib/server/store";
 import { pathId } from "@/lib/server/validate";

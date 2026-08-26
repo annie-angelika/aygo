@@ -27,7 +27,9 @@ export function GuestRow({
           {guest.name}
         </p>
         <p className="truncate text-[11.5px] text-muted-foreground">
-          {subtitle ?? new Date(guest.at).toLocaleDateString()}
+          {[guest.username && `@${guest.username}`, subtitle ?? new Date(guest.at).toLocaleDateString()]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       </div>
       {action}
