@@ -1,12 +1,12 @@
 // In-process store (AYGO_DATA_SOURCE=memory). Everything lives in Maps and resets
-// on restart — ideal for local dev and tests, zero setup. The catalog is seeded
-// from the mock data the moment the module loads.
+// on restart — ideal for local dev and tests, zero setup. The discover seed
+// (cities, calendars) loads the moment the module loads.
 
 import { eventCode } from "@/lib/events-data";
 import type {
   AygoEvent,
-  TravelerProfile,
   ProfileEdits,
+  PublicProfile,
   Preferences,
   Stamp,
   FeedbackReply,
@@ -32,11 +32,9 @@ import type {
   NotificationInput,
 } from "@/lib/server/store/types";
 import {
-  CATALOG_USERS,
   CATALOG_CITIES,
   CATALOG_CALENDARS,
   CATALOG_CATEGORY_PAGES,
-  anchoredCatalogEvents,
   citiesWithCounts,
   categoriesWithCounts,
   withLiveAttendance,
@@ -70,7 +68,8 @@ function emptyGuest(): GuestState {
 
 export class MemoryStore implements Store {
   private events = new Map<string, AygoEvent>();
-  private users = new Map<string, TravelerProfile>();
+  private accounts = new Map<string, string>(); // account key → session id
+  private usernames = new Map<string, string>(); // username → session id
   private calendars = new Map<string, CalendarInfo>();
   private cities = new Map<string, Omit<CityInfo, "eventCount">>();
   private guests = new Map<string, GuestState>();
@@ -89,11 +88,9 @@ export class MemoryStore implements Store {
     // Nothing to create — state is just in-memory Maps.
   }
 
-  async seed(): Promise<{ events: number; users: number }> {
-    this.events = new Map(anchoredCatalogEvents().map((e) => [e.id, e]));
-    this.users = new Map(CATALOG_USERS.map((u) => [u.username, u]));
+  async seed(): Promise<{ cities: number; calendars: number }> {
     this.calendars = new Map(CATALOG_CALENDARS.map((c) => [c.id, c]));
-    return { events: this.events.size, users: this.users.size };
+    return { cities: CATALOG_CITIES.length, calendars: this.calendars.size };
   }
 
   private guest(sid: string): GuestState {
@@ -114,15 +111,21 @@ export class MemoryStore implements Store {
     );
   }
 
+  private usernameOf(sid: string): string | undefined {
+    for (const [u, s] of this.usernames) if (s === sid) return u;
+    return undefined;
+  }
+
   /** Real RSVPs per event, with the goer's saved profile when there is one. */
   private goingByEvent(): Map<string, Attendee[]> {
     const map = new Map<string, Attendee[]>();
-    for (const g of this.guests.values()) {
+    for (const [sid, g] of this.guests) {
       for (const eventId of g.going.keys()) {
         const list = map.get(eventId) ?? [];
         list.push({
           name: g.profile.name || "Guest",
           avatar: g.profile.avatar,
+          ...(this.usernameOf(sid) ? { username: this.usernameOf(sid) } : null),
         });
         map.set(eventId, list);
       }
@@ -155,8 +158,19 @@ export class MemoryStore implements Store {
     return this.goingByEvent().get(eventId) ?? [];
   }
 
-  async getTraveler(username: string): Promise<TravelerProfile | null> {
-    return this.users.get(username) ?? null;
+  // --- Accounts ---
+
+  async getAccountSession(accountKey: string): Promise<string | null> {
+    return this.accounts.get(accountKey) ?? null;
+  }
+
+  async bindAccount(accountKey: string, sid: string): Promise<void> {
+    if (!this.accounts.has(accountKey)) this.accounts.set(accountKey, sid);
+  }
+
+  async getSessionAccount(sid: string): Promise<string | null> {
+    for (const [key, s] of this.accounts) if (s === sid) return key;
+    return null;
   }
 
   // --- Discover ---
@@ -198,7 +212,6 @@ export class MemoryStore implements Store {
         applications,
         stamps,
         guests: this.guests.size,
-        travelers: this.users.size,
         openReports: this.reports.filter((r) => r.status === "open").length,
       },
       recentCreated: this.createdEvents.slice(0, 10).map((c) => ({
@@ -291,11 +304,42 @@ export class MemoryStore implements Store {
   }
 
   async getProfile(sid: string): Promise<Partial<ProfileEdits>> {
-    return this.guest(sid).profile;
+    const username = this.usernameOf(sid);
+    return { ...this.guest(sid).profile, ...(username ? { username } : null) };
   }
 
   async saveProfile(sid: string, edits: ProfileEdits): Promise<void> {
-    this.guest(sid).profile = edits;
+    const { username: _ignored, ...rest } = edits;
+    void _ignored;
+    this.guest(sid).profile = rest;
+  }
+
+  async setUsername(sid: string, username: string): Promise<"ok" | "taken"> {
+    const holder = this.usernames.get(username);
+    if (holder && holder !== sid) return "taken";
+    const previous = this.usernameOf(sid);
+    if (previous) this.usernames.delete(previous);
+    this.usernames.set(username, sid);
+    return "ok";
+  }
+
+  async getPublicProfile(username: string): Promise<PublicProfile | null> {
+    const sid = this.usernames.get(username);
+    if (!sid) return null;
+    const profile = this.guest(sid).profile;
+    const hosting = (await this.listEvents()).filter(
+      (e) => this.createdEvents.some((c) => c.draft.id === e.id && c.sid === sid),
+    );
+    return {
+      username,
+      name: profile.name || "Guest",
+      avatar: profile.avatar ?? "",
+      bio: profile.bio ?? "",
+      location: profile.location ?? "",
+      socials: profile.socials ?? {},
+      stamps: [...this.guest(sid).stamps.values()],
+      hosting,
+    };
   }
 
   async getPreferences(sid: string): Promise<Preferences | null> {
@@ -359,6 +403,7 @@ export class MemoryStore implements Store {
         requestId: sid,
         name: g.profile.name || "Guest",
         avatar: g.profile.avatar,
+        ...(this.usernameOf(sid) ? { username: this.usernameOf(sid) } : null),
       };
       const goingAt = g.going.get(eventId);
       if (goingAt) going.push({ ...identity, at: goingAt });
@@ -470,6 +515,10 @@ export class MemoryStore implements Store {
 
   async listNotifications(sid: string): Promise<AppNotification[]> {
     return [...(this.notifications.get(sid) ?? [])];
+  }
+
+  async countUnreadNotifications(sid: string): Promise<number> {
+    return (this.notifications.get(sid) ?? []).filter((n) => !n.read).length;
   }
 
   async markNotificationsRead(sid: string, ids?: string[]): Promise<void> {

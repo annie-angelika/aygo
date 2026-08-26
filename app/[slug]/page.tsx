@@ -3,14 +3,7 @@ import { notFound } from "next/navigation";
 
 import { CITIES, findCity } from "@/lib/cities-data";
 import { getStore } from "@/lib/server/store";
-import {
-  CATEGORIES,
-  findCategory,
-  categorySlug,
-  events,
-  eventCode,
-  findEventByCode,
-} from "@/lib/events-data";
+import { CATEGORIES, findCategory, categorySlug } from "@/lib/events-data";
 import { AppShell } from "@/components/layout/app-shell";
 import { CityScreen } from "@/components/screens/city-screen";
 import { CalendarScreen } from "@/components/screens/calendar-screen";
@@ -25,11 +18,9 @@ import { EventDetail } from "@/components/screens/event-detail";
  * immersive (its own back button + sticky RSVP), like /create.
  */
 /**
- * Resolve any event (seeded or guest-created) by its share code from the store,
- * so the detail page reads the exact same rows — and the exact same dates — as
- * the lists do. Resolving seeded events from the static array instead would drift
- * out of sync once the seeded dates and "today" diverge. `cache` dedupes the
- * lookup across metadata + render.
+ * Resolve an event by its share code from the store, so the detail page reads
+ * the exact same row — and the same dates — as the lists do. `cache` dedupes
+ * the lookup across metadata + render.
  */
 const findEventByCodeInStore = cache((code: string) =>
   getStore().getEventByCode(code),
@@ -48,11 +39,11 @@ const findCityInStore = cache(async (slug: string) =>
   findCity(slug) ? undefined : (await getStore().listCities()).find((c) => c.slug === slug),
 );
 
+/** Cities and interests are known at build time; events are live rows. */
 export function generateStaticParams() {
   return [
     ...CITIES.map((c) => ({ slug: c.slug })),
     ...CATEGORIES.map((c) => ({ slug: categorySlug(c) })),
-    ...events.map((e) => ({ slug: eventCode(e.id) })),
   ];
 }
 
@@ -67,7 +58,6 @@ export async function generateMetadata({
     (await findCityInStore(slug))?.name ??
     findCategory(slug) ??
     (await findCalendarInStore(slug))?.name ??
-    findEventByCode(slug)?.title ??
     (await findEventByCodeInStore(slug))?.title;
   return name ? { title: name } : { title: { absolute: "aygo" } };
 }
@@ -109,8 +99,7 @@ export default async function SlugPage({
     );
   }
 
-  // Every event — seeded or guest-created — resolves from the store, so the
-  // detail always matches the lists (same rows, same dates).
+  // Events resolve from the store, so the detail always matches the lists.
   const event = await findEventByCodeInStore(slug);
   if (event) {
     return (

@@ -68,6 +68,25 @@ export type ProfileEdits = {
   location: string;
   avatar: string;
   socials: Socials;
+  /**
+   * Your public handle (/u/<username>). Required for every account — picked
+   * right after the first sign-in — and set through its own endpoint (it must
+   * be unique), so `PUT /me/profile` ignores it.
+   */
+  username?: string;
+};
+
+/** What anyone can see at /u/<username>: identity + collection + public events. */
+export type PublicProfile = {
+  username: string;
+  name: string;
+  avatar: string;
+  bio: string;
+  location: string;
+  socials: Socials;
+  stamps: Stamp[];
+  /** Public events this person hosts (upcoming first). */
+  hosting: AygoEvent[];
 };
 
 /** Optional social handles shown as icon links on a profile (Luma-style). */
@@ -80,24 +99,14 @@ export type Socials = {
   website?: string;
 };
 
-/** Appearance theme, mirrored from the device or forced. */
-export type ThemePref = "system" | "light" | "dark";
-
-/** UI language. */
-export type LanguagePref = "en" | "es";
-
-/** A channel a notification can be delivered through. */
-export type NotificationChannel = "email" | "whatsapp" | "push";
-
-/** Locally-saved app preferences (Preferences tab). */
+/**
+ * Saved app preferences (Settings → Interests). Only what the app actually
+ * reads: nothing is stored that no feature consumes.
+ */
 export type Preferences = {
-  theme: ThemePref;
-  language: LanguagePref;
-  /** Per notification-type id → the channels it's delivered on. */
-  notifications: Record<string, NotificationChannel[]>;
-  /** Interests that drive "For you" recommendations. Absent → not chosen yet. */
+  /** Interests you picked. Absent → not chosen yet. */
   interests?: Category[];
-  /** Home city (a CityInfo name) — recommendations lean toward it. */
+  /** Home city (a CityInfo name) — Discover's "Explore" shortcuts point here. */
   homeCity?: string;
 };
 
@@ -110,7 +119,9 @@ export type Stamp = {
   image?: string;
   /** Tiny base64 preview for a blur-up while the image loads, if the backend has one. */
   blurDataURL?: string;
-  /** ISO timestamp of when it was collected (from the backend). */
+  /** City of the event, for the stamp's landmark mark. */
+  city?: string;
+  /** ISO timestamp of when it was collected. */
   earnedAt?: string;
 };
 
@@ -146,7 +157,6 @@ export type CalendarInfo = {
   cover: string;
   description: string;
   location?: string;
-  subscribers?: string;
   featured?: string;
   category?: Category;
 };
@@ -156,7 +166,6 @@ export type CategoryStat = {
   category: Category;
   /** Real event count, computed by the backend. */
   count: number;
-  subscribers?: string;
   blurb?: string;
   image: string;
 };
@@ -165,6 +174,8 @@ export type CategoryStat = {
 export type Attendee = {
   name: string;
   avatar?: string;
+  /** Their public handle, when they've picked one (links to /u/<username>). */
+  username?: string;
 };
 
 /** What a user can send about an event: a question to the host, or a report. */
@@ -207,33 +218,4 @@ export type Level = {
   index: number;
   name: string;
   min: number;
-};
-
-/** A place a traveler visited and rated — a stop on their routes. */
-export type Visit = {
-  id: string;
-  place: string;
-  city: string;
-  cover: string;
-  category: Category;
-  rating: number; // 1–5
-  date: string; // "Jun 14, 2026"
-  likes: number; // hearts from other travelers
-};
-
-/**
- * A traveler you can discover (via shared events), follow, and whose routes you
- * can heart. There is no messaging — the social actions are follow + heart.
- */
-export type TravelerProfile = {
-  username: string;
-  name: string;
-  avatar: string;
-  bio: string;
-  location: string;
-  joined: string; // "March 2024" — when they joined aygo
-  socials?: Socials;
-  followers: number;
-  following: number;
-  visits: Visit[];
 };

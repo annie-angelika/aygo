@@ -36,7 +36,7 @@ export function CityCard({ city }: { city: City }) {
         </p>
         <p className="text-[11px] text-muted-foreground">
           {empty
-            ? "Coming soon"
+            ? "No events yet"
             : `${city.eventCount} ${city.eventCount === 1 ? "event" : "events"}`}
         </p>
       </div>

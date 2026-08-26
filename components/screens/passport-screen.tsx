@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { LuStamp, LuShare2 } from "react-icons/lu";
+import { LuShare2, LuStamp } from "react-icons/lu";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { BackButton } from "@/components/ui/back-button";
 import { ShareButton } from "@/components/ui/share-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CollectionBanner } from "@/components/passport/collection-banner";
 import { CollectFab } from "@/components/passport/collect-fab";
-import { StampBadge } from "@/components/passport/stamp-grid";
+import { StampBadge } from "@/components/passport/stamp-badge";
 import { AygoStar } from "@/components/ui/brand-icons";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -20,62 +20,110 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { StampModal } from "@/components/passport/stamp-modal";
-import { groupAygosByMonth, monthsForYear } from "@/lib/aygos";
-import { useTraveler } from "@/hooks/use-traveler";
+import { groupAygosByMonth, monthsForYear, UNDATED_KEY } from "@/lib/aygos";
+import { useMyCollection } from "@/hooks/use-me";
+import { usePublicProfile } from "@/hooks/use-public-profile";
 import { cn } from "@/lib/utils";
 import type { Stamp } from "@/types";
 
+/** What the collection page shows, whether it's yours or someone's public one. */
+type CollectionView = {
+  name: string;
+  username: string | null;
+  email: string | null;
+  avatar: string;
+  stamps: Stamp[];
+  isSelf: boolean;
+};
+
+/**
+ * An aygo collection — the real stamps, grouped by the month they were earned.
+ * Yours without `username`; someone's public one (/u/<username>/collection)
+ * with it.
+ */
 export function PassportScreen({ username }: { username?: string }) {
-  const { user, isSelf, displayStamps, loading } = useTraveler(username);
+  return username ? <PublicCollection username={username} /> : <OwnCollection />;
+}
+
+function OwnCollection() {
+  const { me, email, stamps } = useMyCollection();
+  return (
+    <Collection
+      view={{ name: me.name, username: me.username, email, avatar: me.avatar, stamps, isSelf: true }}
+    />
+  );
+}
+
+function PublicCollection({ username }: { username: string }) {
+  const { profile, loading, missing } = usePublicProfile(username);
+  if (!profile) {
+    return (
+      <div className="px-4 pt-4 lg:mx-auto lg:w-full lg:max-w-xl lg:pt-8">
+        {loading && !missing ? (
+          <Skeleton className="h-48 rounded-2xl" />
+        ) : (
+          <EmptyState
+            icon={LuStamp}
+            title="Collection not found"
+            subtitle={`Nobody on aygo goes by @${username}.`}
+          />
+        )}
+      </div>
+    );
+  }
+  return (
+    <Collection
+      view={{
+        name: profile.name,
+        username: profile.username,
+        email: null,
+        avatar: profile.avatar,
+        stamps: profile.stamps,
+        isSelf: false,
+      }}
+    />
+  );
+}
+
+function Collection({ view }: { view: CollectionView }) {
+  const { stamps, isSelf } = view;
   const [selected, setSelected] = useState<{
     stamp: Stamp;
     dateLabel: string;
   } | null>(null);
   const [year, setYear] = useState<string>("");
 
-  if (!user) {
-    return (
-      <div className="px-4 pt-4 lg:mx-auto lg:w-full lg:max-w-xl lg:pt-8">
-        {loading ? (
-          <Skeleton className="h-48 rounded-2xl" />
-        ) : (
-          <EmptyState
-            icon={LuStamp}
-            title="Traveler not found"
-            subtitle="This collection doesn't exist (or hasn't joined aygo yet)."
-          />
-        )}
-      </div>
-    );
-  }
-
   // Only real collected aygos — an empty collection shows the empty state,
   // never demo filler.
-  const months = groupAygosByMonth(displayStamps);
-  const count = displayStamps.length;
+  const months = groupAygosByMonth(stamps);
+  const count = stamps.length;
 
-  const years = [...new Set(months.map((m) => m.key.slice(0, 4)))];
+  const dated = months.filter((m) => m.key !== UNDATED_KEY);
+  const undated = months.find((m) => m.key === UNDATED_KEY);
+  const years = [...new Set(dated.map((m) => m.key.slice(0, 4)))];
   const activeYear = year || years[0] || "";
-  // Show the whole selected year, newest month first, quiet months included.
-  const shown = monthsForYear(activeYear, months);
+  // Show the whole selected year, newest month first, quiet months included;
+  // aygos with no known date close the list under "Earlier".
+  const shown = [
+    ...(activeYear ? monthsForYear(activeYear, dated) : []),
+    ...(undated ? [undated] : []),
+  ];
   const hasAny = months.some((m) => m.stamps.length > 0);
 
   return (
     <div className="flex flex-col pb-10">
-      <CollectionHero
-        count={count}
-        name={user.name}
-        username={user.username}
-        avatar={user.avatar}
-        joined={user.joined}
-      />
+      <CollectionHero count={count} view={view} />
 
       <div className="flex flex-col gap-5 px-4 pt-5 lg:px-8">
         {!hasAny ? (
           <EmptyState
             icon={LuStamp}
             title="No aygos yet"
-            subtitle="Check in at events to start collecting aygos."
+            subtitle={
+              isSelf
+                ? "Check in at events to start collecting aygos."
+                : `${view.name} hasn't collected any aygos yet.`
+            }
           />
         ) : (
           <>
@@ -140,29 +188,16 @@ export function PassportScreen({ username }: { username?: string }) {
 }
 
 /**
- * The header of a collection: the navy star sky up top, the traveler's photo
- * overlapping it, then their name, the count of aygos they hold, and — across a
- * hairline — the share action at the far end.
+ * The header of a collection: the navy star sky up top, the person's photo
+ * overlapping it, their name and handle, the count of aygos they hold and —
+ * once they have a handle to share — the share action at the far end.
  */
-function CollectionHero({
-  count,
-  name,
-  username,
-  avatar,
-  joined,
-}: {
-  count: number;
-  name: string;
-  username: string;
-  avatar: string;
-  joined: string;
-}) {
+function CollectionHero({ count, view }: { count: number; view: CollectionView }) {
+  const { name, username, email, avatar } = view;
+  const shareUrl = username ? `/u/${username}/collection` : null;
   return (
     <div className="relative">
-      <CollectionBanner
-        count={count}
-        className="lg:mx-4 lg:mt-4 lg:h-52 lg:overflow-hidden lg:rounded-3xl"
-      />
+      <CollectionBanner className="lg:mx-4 lg:mt-4 lg:h-52 lg:overflow-hidden lg:rounded-3xl" />
       <BackButton className="absolute left-4 top-4 size-9 border-0 bg-white text-navy shadow-[0_6px_16px_-8px_rgba(9,25,53,0.5)] hover:bg-white lg:left-8 lg:top-8" />
 
       <div className="relative px-4 lg:px-8">
@@ -177,9 +212,11 @@ function CollectionHero({
         <h1 className="mt-2.5 truncate text-[26px] font-bold leading-[1.15] tracking-[-0.03em] text-foreground">
           {name}
         </h1>
-        <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
-          @{username} · since {joined}
-        </p>
+        {(username || email) && (
+          <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+            {username ? `@${username}` : email}
+          </p>
+        )}
 
         {/* The count of aygos, and the share action at the opposite end of the line. */}
         <div className="mt-3.5 flex items-center justify-between border-b border-border pb-3.5">
@@ -193,15 +230,18 @@ function CollectionHero({
             </span>
           </div>
 
-          <ShareButton
-            title={`${name} on aygo`}
-            text={`Check out @${username}'s aygo collection`}
-            copiedLabel="Copied!"
-            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-card px-3.5 text-[13px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted active:translate-y-px"
-          >
-            <LuShare2 className="size-3.5" aria-hidden />
-            Share
-          </ShareButton>
+          {shareUrl && (
+            <ShareButton
+              title={`${name} on aygo`}
+              text={`Check out @${username}'s aygo collection`}
+              url={shareUrl}
+              copiedLabel="Copied!"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-card px-3.5 text-[13px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted active:translate-y-px"
+            >
+              <LuShare2 className="size-3.5" aria-hidden />
+              Share
+            </ShareButton>
+          )}
         </div>
       </div>
     </div>

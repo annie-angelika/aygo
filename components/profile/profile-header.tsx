@@ -1,6 +1,5 @@
 import {
   LuMapPin,
-  LuCalendar,
   LuInstagram,
   LuTwitter,
   LuLinkedin,
@@ -52,21 +51,23 @@ function SocialRow({ socials, className }: { socials: Socials; className?: strin
 /** Luma-style identity block: avatar beside name + socials, then meta + the aygo count. */
 export function ProfileHeader({
   name,
-  handle,
+  username,
+  email,
   avatar,
   bio,
   location,
-  joined,
   socials,
   aygos,
   action,
 }: {
   name: string;
-  handle: string;
+  /** The public handle (/u/<username>); null while one hasn't been picked. */
+  username?: string | null;
+  /** Your own sign-in email (self view only), under the handle. */
+  email?: string | null;
   avatar: string;
   bio: string;
   location: string;
-  joined: string;
   socials?: Socials;
   /** Real stamp count — the same number the collection page shows. */
   aygos: number;
@@ -86,7 +87,12 @@ export function ProfileHeader({
           <h1 className="truncate text-[26px] font-bold leading-[1.15] tracking-[-0.03em] text-foreground">
             {name}
           </h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">@{handle}</p>
+          {username && (
+            <p className="mt-0.5 truncate text-[13px] text-muted-foreground">@{username}</p>
+          )}
+          {email && (
+            <p className="truncate text-[12px] text-muted-foreground/80">{email}</p>
+          )}
           {socials && <SocialRow socials={socials} className="mt-2" />}
         </div>
       </div>
@@ -95,16 +101,14 @@ export function ProfileHeader({
         <p className="mt-3 text-[13px] leading-snug text-foreground/80">{bio}</p>
       )}
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <LuMapPin className="size-3.5" aria-hidden />
-          {location}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <LuCalendar className="size-3.5" aria-hidden />
-          Joined {joined}
-        </span>
-      </div>
+      {location && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <LuMapPin className="size-3.5" aria-hidden />
+            {location}
+          </span>
+        </div>
+      )}
 
       <div className="mt-3">
         <Stat inline value={aygos} label={aygos === 1 ? "aygo" : "aygos"} />

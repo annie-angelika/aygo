@@ -1,6 +1,7 @@
 import { AygoArt } from "@/components/passport/aygo-art";
-import { AygoStar, MarkLaPaz } from "@/components/ui/brand-icons";
+import { AygoStar } from "@/components/ui/brand-icons";
 import { CATEGORY_META } from "@/lib/events-data";
+import { cityMeta } from "@/lib/cities-data";
 import { cn } from "@/lib/utils";
 import type { Stamp } from "@/types";
 
@@ -60,6 +61,7 @@ export function AygoStamp({
 }) {
   const s = SIZES[size];
   const { Icon } = CATEGORY_META[stamp.category];
+  const { Icon: CityMark } = cityMeta(stamp.city);
   const date = stampDate(stamp) ?? dateLabel;
 
   return (
@@ -91,7 +93,7 @@ export function AygoStamp({
           s.strip,
         )}
       >
-        <MarkLaPaz className={cn("text-cream", s.mark)} />
+        <CityMark className={cn("text-cream", s.mark)} />
         {date && <span className="truncate">{date}</span>}
       </span>
 

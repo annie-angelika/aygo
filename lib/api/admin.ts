@@ -1,6 +1,6 @@
 // The admin surface (dashboard only — nothing here is called by the app UI).
 // Auth is a signed httpOnly cookie minted by exchanging the admin key once;
-// see lib/server/admin.ts. In mock mode everything no-ops as "not an admin".
+// see lib/server/admin.ts.
 
 import type {
   AdminStats,
@@ -9,13 +9,12 @@ import type {
   EventReport,
 } from "@/lib/server/store/types";
 import type { AygoEvent, CalendarInfo } from "@/types";
-import { api, USE_MOCK } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 
 export type { AdminStats, AdminEventInput, AdminCalendarInput, EventReport };
 
 /** Is this browser an admin right now? → `GET /admin/session` */
 export async function fetchAdminSession(): Promise<boolean> {
-  if (USE_MOCK) return false;
   const { admin } = await api.get<{ admin: boolean }>("/admin/session");
   return admin;
 }

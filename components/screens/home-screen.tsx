@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { EventTimeline } from "@/components/event/event-timeline";
 import { SiteFooter } from "@/components/layout/site-footer";
-import type { AygoEvent } from "@/types";
 
 export type Period = "upcoming" | "past";
 
@@ -23,12 +22,16 @@ export function HomeScreen({ period }: { period: Period }) {
   const { data, loading } = useEvents();
   const { going, stamps, isGoing } = useRegistrations();
 
-  const upcoming = data
-    .filter((e) => going.includes(e.id))
+  // Upcoming: what you're registered for and hasn't ended. Past: events you
+  // checked in to (an aygo) plus registrations whose event already ended —
+  // an event you went to without scanning the QR still belongs to your history.
+  const mine = data.filter((e) => going.includes(e.id));
+  const upcoming = mine
+    .filter((e) => !e.isPast)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  const past = stamps
-    .map((s) => data.find((e) => e.id === s.eventId))
-    .filter((e): e is AygoEvent => Boolean(e))
+  const attended = new Set(stamps.map((s) => s.eventId));
+  const past = data
+    .filter((e) => attended.has(e.id) || (going.includes(e.id) && e.isPast))
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 
   const list = period === "past" ? past : upcoming;
@@ -65,7 +68,7 @@ export function HomeScreen({ period }: { period: Period }) {
           <EmptyState
             icon={LuMountain}
             title="No past events yet"
-            subtitle="Events you check in to show up here and earn a passport stamp."
+            subtitle="Events you attended show up here — check in at the door to earn the aygo."
             className="lg:mx-auto lg:w-full lg:max-w-xl"
           />
         ) : (

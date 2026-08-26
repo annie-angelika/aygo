@@ -81,7 +81,14 @@ function CollectFlow({ onClose }: { onClose: () => void }) {
       setStep({
         kind: "done",
         event,
-        stamp: { eventId: event.id, title: event.title, category: event.category, image: event.cover },
+        stamp: {
+          eventId: event.id,
+          title: event.title,
+          category: event.category,
+          image: event.cover,
+          city: event.city,
+          earnedAt: new Date().toISOString(),
+        },
       });
     } catch (err) {
       setStep({

@@ -10,16 +10,19 @@ import Link from "next/link";
 import { LuArrowRight, LuCalendarX, LuSearch, LuX } from "react-icons/lu";
 
 import { useEventFilter } from "@/hooks/use-event-filter";
+import { usePreferences } from "@/hooks/use-preferences";
 import { useRegistrations } from "@/hooks/use-registrations";
 import { EventRow } from "@/components/event/event-row";
 import { EventTimeline } from "@/components/event/event-timeline";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionTitle } from "@/components/ui/section-title";
-import { IllimaniRidge, MarkLaPaz } from "@/components/ui/brand-icons";
+import { IllimaniRidge } from "@/components/ui/brand-icons";
 import { InterestRow } from "@/components/discover/interest-row";
 import { CalendarRow } from "@/components/discover/calendar-row";
 import { CityExplorer } from "@/components/city/city-explorer";
+import { findCityByName, HOME_CITY } from "@/lib/cities-seed";
+import { cityMeta } from "@/lib/cities-data";
 import { cn } from "@/lib/utils";
 
 const TODAY_LABEL = new Intl.DateTimeFormat("en-US", {
@@ -33,6 +36,11 @@ export function DiscoverBoard() {
   const [listAll, setListAll] = useState(false);
   const { isGoing } = useRegistrations();
   const { loading, filtered, extra, setExtra } = useEventFilter({ upcomingOnly: true });
+  // The "Explore" shortcuts point at your home city (Settings → Interests),
+  // the home market until you pick one.
+  const { prefs } = usePreferences();
+  const home = findCityByName(prefs.homeCity ?? HOME_CITY) ?? findCityByName(HOME_CITY)!;
+  const { Icon: HomeMark } = cityMeta(home.name);
 
   // The search box drives the shared filter's query so matching (title, place,
   // host, interest, blurb) lives in one place.
@@ -46,8 +54,16 @@ export function DiscoverBoard() {
   }
 
   const searching = query.trim().length > 0 || listAll;
-  const today = filtered.filter((e) => e.dayLabel === "Today").slice(0, 3);
-  const soon = today.length > 0 ? today : filtered.slice(0, 3);
+  // Your interests (Settings → Interests) lead the "Coming up" picks: matching
+  // events first, then everything else in date order. Stable, so with no
+  // interests chosen it's simply the soonest three.
+  const interests = new Set(prefs.interests ?? []);
+  const byInterest = (list: typeof filtered) =>
+    interests.size === 0
+      ? list
+      : [...list].sort((a, b) => Number(interests.has(b.category)) - Number(interests.has(a.category)));
+  const today = byInterest(filtered.filter((e) => e.dayLabel === "Today")).slice(0, 3);
+  const soon = today.length > 0 ? today : byInterest(filtered).slice(0, 3);
 
   return (
     <>
@@ -63,11 +79,11 @@ export function DiscoverBoard() {
             </h1>
           </div>
           <Link
-            href="/la-paz"
+            href={`/${home.slug}`}
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/10 pl-2 pr-2.5 text-[13px] font-semibold ring-1 ring-white/15 transition-colors hover:bg-white/15"
           >
-            <MarkLaPaz className="size-5 text-gold" aria-hidden />
-            Explore La Paz
+            <HomeMark className="size-5 text-gold" aria-hidden />
+            Explore {home.name}
             <LuArrowRight className="size-3.5 text-cream/60" aria-hidden />
           </Link>
         </div>
@@ -178,7 +194,7 @@ export function DiscoverBoard() {
             <SectionTitle
               action={
                 <Link
-                  href="/la-paz/map"
+                  href={`/${home.slug}/map`}
                   className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Map

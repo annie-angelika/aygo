@@ -92,7 +92,7 @@ export function EventActions({ event }: { event: AygoEvent }) {
             </span>
           ) : started ? (
             <Link
-              href="/user/you/collection"
+              href="/profile/collection"
               className="inline-flex items-center gap-1 text-[12px] font-semibold text-foreground"
             >
               <LuQrCode className="size-3.5" aria-hidden />

@@ -11,8 +11,9 @@ import type { AygoEvent } from "@/types";
 /**
  * The confirmation after you submit — kept to a glance: a gold aygo star for
  * a saved spot (a clock while the host reviews), a one-line title, your
- * ticket stub, and Done. Paid events show the host's pay button only once
+ * ticket stub, and Done. Paid events show the host's pay buttons only once
  * you're actually in; while a request is pending there's nothing to pay yet.
+ * The host confirms payments by hand — there's no in-app checkout.
  */
 export function RegisterTicket({
   event,
@@ -25,7 +26,7 @@ export function RegisterTicket({
 }) {
   const pending = cfg.requiresApproval;
   const paid = event.price != null && event.price > 0;
-  const canPay = paid && !pending && !!(event.payment?.whatsapp || event.payment?.link);
+  const canPay = cfg.canPayHost && !pending;
   return (
     <div className="flex flex-col items-center gap-4 px-5 pb-6 pt-7 text-center">
       <span
@@ -79,7 +80,7 @@ export function RegisterTicket({
           )}
           {paid && (
             <span className="inline-flex h-[22px] items-center rounded-full bg-secondary px-2 text-[11.5px] font-semibold text-foreground">
-              Bs {event.price} · at the door
+              Bs {event.price} · {cfg.canPayHost ? "pay the host" : "arrange with host"}
             </span>
           )}
         </div>

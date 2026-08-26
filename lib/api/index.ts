@@ -6,7 +6,7 @@
  * endpoint contract and the local-first model.
  */
 
-export { api, ApiError, USE_MOCK, setAuthToken } from "@/lib/api/client";
+export { api, ApiError, setAuthToken } from "@/lib/api/client";
 
 export * from "@/lib/api/events";
 export * from "@/lib/api/users";

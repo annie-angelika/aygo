@@ -1,7 +1,8 @@
 "use client";
 
-// Interests + home city — the two signals behind "For you". Auto-persists like
-// the rest of Preferences. `compact` drops the headings for the welcome sheet.
+// Interests + home city — what Discover leads with: matching events come first
+// in "Coming up", and the "Explore" shortcuts point at your city. Auto-persists
+// like the rest of Preferences. `compact` drops the headings for the welcome sheet.
 
 import {
   Select,
@@ -27,7 +28,7 @@ export function TasteSettings({ compact = false }: { compact?: boolean }) {
       <section className="flex flex-col gap-2">
         {!compact && <h2 className="text-[15px] font-semibold text-foreground">Interests</h2>}
         <p className="text-[12.5px] text-muted-foreground">
-          {compact ? "What are you into?" : "Pick what you're into — Discover leans toward these."}
+          {compact ? "What are you into?" : "Pick what you're into — Discover shows these first."}
         </p>
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((c) => {
@@ -57,7 +58,7 @@ export function TasteSettings({ compact = false }: { compact?: boolean }) {
       <section className="flex flex-col gap-2">
         {!compact && <h2 className="text-[15px] font-semibold text-foreground">Home city</h2>}
         <p className="text-[12.5px] text-muted-foreground">
-          {compact ? "Where should we look first?" : "Events here come first in your recommendations."}
+          {compact ? "Where should we look first?" : "Discover's Explore shortcuts point here."}
         </p>
         <Select
           value={prefs.homeCity ?? "none"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { LuCheck } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
@@ -9,43 +9,39 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { SocialLinks } from "@/components/settings/social-links";
+import { UsernameField, type UsernameStatus } from "@/components/settings/username-field";
 import { useProfileEdits } from "@/hooks/use-profile";
-import { useAuth } from "@/hooks/use-auth";
+import { useMe } from "@/hooks/use-me";
+import { setUsername, ApiError } from "@/lib/api";
 import { fileToAvatar } from "@/lib/image";
-import { USERS, CURRENT_USERNAME } from "@/lib/users-data";
+import { normalizeUsername } from "@/lib/username";
 import type { ProfileEdits } from "@/types";
 
 const BIO_MAX = 160;
+const LOCATION_MAX = 80;
 
 /**
  * "Your Profile" settings form — photo, name, bio, location, social links.
- * Prefill precedence matches the rest of the app: your explicit edits win,
- * then the signed-in social identity (Pollar), then the neutral base.
+ * Prefilled from the one resolved identity (lib/identity): your explicit edits
+ * win, then the signed-in social identity (Pollar), then the neutral base.
  */
 export function ProfileForm() {
-  const base = USERS[CURRENT_USERNAME];
-  const { edits, save } = useProfileEdits();
-  const auth = useAuth();
-
-  const merged = useMemo<ProfileEdits>(
-    () => ({
-      name: edits.name ?? auth.name ?? base.name,
-      bio: edits.bio ?? base.bio,
-      location: edits.location ?? base.location,
-      avatar: edits.avatar ?? auth.avatar ?? base.avatar,
-      socials: edits.socials ?? base.socials ?? {},
-    }),
-    [edits, auth.name, auth.avatar, base],
-  );
+  const { save } = useProfileEdits();
+  const { me: merged, email } = useMe();
 
   const [draft, setDraft] = useState(merged);
   const [synced, setSynced] = useState(merged);
   const [saved, setSaved] = useState(false);
+  const [handle, setHandle] = useState(merged.username ?? "");
+  const [handleStatus, setHandleStatus] = useState<UsernameStatus>({ kind: "idle" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   // Re-sync when the stored value loads (hydration) or changes elsewhere —
   // the "reset state during render" pattern, not an effect.
   if (synced !== merged) {
     setSynced(merged);
     setDraft(merged);
+    setHandle(merged.username ?? "");
   }
 
   const set = (patch: Partial<ProfileEdits>) => {
@@ -58,10 +54,29 @@ export function ProfileForm() {
   const setName = (f: string, l: string) =>
     set({ name: [f, l].filter(Boolean).join(" ") });
 
-  const onSubmit = (e: React.FormEvent) => {
+  const handleChanged = normalizeUsername(handle) !== (merged.username ?? "");
+  const handleOk = !handleChanged || handleStatus.kind === "available";
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    save({ ...draft, name: draft.name.trim() });
-    setSaved(true);
+    if (busy || !handleOk) return;
+    setBusy(true);
+    setError(null);
+    try {
+      // The handle is unique, so it goes through its own endpoint first; the
+      // rest of the profile is local-first and syncs in the background.
+      const username = handleChanged ? await setUsername(handle) : merged.username ?? undefined;
+      const { username: _current, ...edits } = draft;
+      void _current;
+      save({ ...edits, name: draft.name.trim(), ...(username ? { username } : null) });
+      setSaved(true);
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status < 500 ? err.message : "Couldn't save — try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -97,18 +112,30 @@ export function ProfileForm() {
       </div>
 
       <Field label="Username">
-        <div className="flex items-center overflow-hidden rounded-xl bg-card ring-1 ring-border">
-          <span className="grid h-10 w-10 shrink-0 place-items-center bg-secondary text-[13px] text-muted-foreground">
-            @
-          </span>
-          <input
-            value={CURRENT_USERNAME}
-            readOnly
-            aria-label="Username"
-            className="h-10 w-full cursor-not-allowed bg-transparent px-3 text-[13px] text-muted-foreground outline-none"
-          />
-        </div>
+        <UsernameField
+          value={handle}
+          onChange={(v) => {
+            setHandle(v);
+            setSaved(false);
+          }}
+          current={merged.username}
+          onStatus={setHandleStatus}
+        />
       </Field>
+
+      {email && (
+        <Field label="Email">
+          <Input
+            value={email}
+            readOnly
+            aria-label="Email"
+            className="h-10 cursor-not-allowed bg-card text-muted-foreground"
+          />
+          <span className="text-[10.5px] text-muted-foreground">
+            From your sign-in — change it with your login provider.
+          </span>
+        </Field>
+      )}
 
       <Field label="Bio">
         <Textarea
@@ -122,18 +149,32 @@ export function ProfileForm() {
         </span>
       </Field>
 
+      <Field label="Location">
+        <Input
+          value={draft.location}
+          onChange={(e) => set({ location: e.target.value.slice(0, LOCATION_MAX) })}
+          placeholder="La Paz, Bolivia"
+          className="h-10 bg-card"
+        />
+      </Field>
+
       <SocialLinks
         value={draft.socials}
         onChange={(socials) => set({ socials })}
       />
 
       <div className="flex flex-col items-center gap-2 pt-1">
+        {error && (
+          <p role="alert" className="w-full rounded-xl bg-destructive/10 px-3 py-2 text-center text-[12.5px] font-medium text-destructive">
+            {error}
+          </p>
+        )}
         <Button
           type="submit"
-          disabled={!draft.name.trim()}
+          disabled={!draft.name.trim() || !handleOk || busy}
           className="h-11 w-full rounded-full text-[14px] font-semibold"
         >
-          Save changes
+          {busy ? "Saving…" : "Save changes"}
         </Button>
         {saved && (
           <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-gold-deep">

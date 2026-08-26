@@ -5,8 +5,8 @@
 
 import type {
   AygoEvent,
-  TravelerProfile,
   ProfileEdits,
+  PublicProfile,
   Preferences,
   Stamp,
   CityInfo,
@@ -37,7 +37,7 @@ export type AdminEventInput = {
   /** Absent → the server geocodes "place, city" (Nominatim) at write time. */
   lat?: number;
   lng?: number;
-  /** Absent → a seeded placeholder image. */
+  /** Absent → aygo's own default artwork. */
   cover?: string;
   hostName?: string;
   hostPhone?: string;
@@ -56,6 +56,7 @@ export type GuestRow = {
   requestId: string;
   name: string;
   avatar?: string;
+  username?: string;
   /** ISO timestamp of when they registered/applied. */
   at: string;
 };
@@ -123,7 +124,6 @@ export type AdminStats = {
     applications: number;
     stamps: number;
     guests: number;
-    travelers: number;
     openReports: number;
   };
   recentCreated: CreatedEventSummary[];
@@ -132,8 +132,8 @@ export type AdminStats = {
 export interface Store {
   /** Create tables if missing. No-op for the memory store. */
   init(): Promise<void>;
-  /** Load the catalog (events, travelers, discover content) from the seed data. */
-  seed(): Promise<{ events: number; users: number }>;
+  /** Load the discover content (cities, calendars, interest pages) from the seed. */
+  seed(): Promise<{ cities: number; calendars: number }>;
 
   // --- Catalog (shared, read-only) ---
   listEvents(): Promise<AygoEvent[]>;
@@ -141,7 +141,14 @@ export interface Store {
   getEventByCode(code: string): Promise<AygoEvent | null>;
   /** Real RSVPs for an event (goer name + avatar when they saved a profile). */
   getAttendees(eventId: string): Promise<Attendee[]>;
-  getTraveler(username: string): Promise<TravelerProfile | null>;
+
+  // --- Accounts (verified login identity ↔ guest session) ---
+  /** The session id that belongs to an account key, or null when never seen. */
+  getAccountSession(accountKey: string): Promise<string | null>;
+  /** Bind an account to a session id (first sign-in). */
+  bindAccount(accountKey: string, sid: string): Promise<void>;
+  /** The account bound to a session id, or null for an anonymous session. */
+  getSessionAccount(sid: string): Promise<string | null>;
 
   // --- Discover (shared, read-only; counts computed from real events) ---
   listCities(): Promise<CityInfo[]>;
@@ -173,8 +180,14 @@ export interface Store {
   /** Collect the aygo for an attended event (also clears going/applied). */
   addStamp(sid: string, stamp: Stamp): Promise<void>;
 
+  /** Saved edits plus the session's username (when picked). */
   getProfile(sid: string): Promise<Partial<ProfileEdits>>;
+  /** Persist edits. `username` in `edits` is ignored — see `setUsername`. */
   saveProfile(sid: string, edits: ProfileEdits): Promise<void>;
+  /** Claim a (normalized, validated) username for a session; "taken" when another session holds it. */
+  setUsername(sid: string, username: string): Promise<"ok" | "taken">;
+  /** The public view behind /u/<username>, or null when nobody holds that handle. */
+  getPublicProfile(username: string): Promise<PublicProfile | null>;
 
   getPreferences(sid: string): Promise<Preferences | null>;
   savePreferences(sid: string, prefs: Preferences): Promise<void>;
@@ -218,6 +231,8 @@ export interface Store {
   addNotification(sid: string, input: NotificationInput): Promise<void>;
   /** Newest first, capped to a sensible page. */
   listNotifications(sid: string): Promise<AppNotification[]>;
+  /** Unread count over EVERY notification, not just the page. */
+  countUnreadNotifications(sid: string): Promise<number>;
   /** Mark the given ids read — or everything when `ids` is omitted. */
   markNotificationsRead(sid: string, ids?: string[]): Promise<void>;
 }

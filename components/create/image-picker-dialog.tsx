@@ -12,22 +12,22 @@ import {
 import { fileToCover } from "@/lib/image";
 
 /**
- * Full-screen "Choose Image" sheet — upload your own photo (downscaled
- * client-side so nothing huge is stored). No stock photos: without a photo the
- * event's THEME is its cover.
- * `remaining` caps how many uploads are still allowed.
+ * Full-screen "Choose Image" sheet — upload your own photos (downscaled and
+ * size-capped client-side so nothing huge is stored). No stock photos: without
+ * a photo the event's THEME is its cover. `remaining` is how many more photos
+ * the event can take (see MAX_IMAGES); the picker never hands back more.
  */
 export function ImagePickerDialog({
   open,
   onOpenChange,
   onSelect,
-  remaining = 1,
+  remaining,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** One or more image sources, in the order picked. */
   onSelect: (srcs: string[]) => void;
-  remaining?: number;
+  remaining: number;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,8 @@ export function ImagePickerDialog({
           ? "Couldn't read that photo — try a JPG or PNG."
           : `${failed} photo${failed > 1 ? "s" : ""} couldn't be read and were skipped.`,
       );
+    // Whatever was readable is handed over; the sheet stays open only to show
+    // the error for the ones that weren't.
     if (ok.length > 0 && failed === 0) pick(ok);
     else if (ok.length > 0) onSelect(ok);
   }
@@ -75,7 +77,9 @@ export function ImagePickerDialog({
         <div className="shrink-0 px-5 pt-7 text-center">
           <SheetTitle>Choose Image</SheetTitle>
           <SheetDescription className="mt-1">
-            One square photo. Without one, your theme is the cover.
+            {remaining > 1
+              ? `Up to ${remaining} more photos — the first is the cover.`
+              : "One more photo. Without one, your theme is the cover."}
           </SheetDescription>
         </div>
 
@@ -92,7 +96,7 @@ export function ImagePickerDialog({
               <LuUpload className="size-5" aria-hidden />
             )}
             <span className="text-[12.5px] font-medium">
-              {busy ? "Preparing photo…" : "Tap here to upload a photo"}
+              {busy ? "Preparing photos…" : "Tap here to upload"}
             </span>
           </button>
           {error && (
@@ -102,6 +106,7 @@ export function ImagePickerDialog({
             ref={fileRef}
             type="file"
             accept="image/*"
+            multiple={remaining > 1}
             onChange={onFiles}
             className="hidden"
           />

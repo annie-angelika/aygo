@@ -24,7 +24,6 @@ export const POST = handler(async (req: Request) => {
     logo: url(b.logo, "logo"),
     cover: url(b.cover, "cover"),
     location: optStr(b.location, "location", { max: 80 }),
-    subscribers: optStr(b.subscribers, "subscribers", { max: 20 }),
     featured: optStr(b.featured, "featured", { max: 80 }),
     category: b.category ? enumOf(b.category, "category", CATEGORIES) : undefined,
   };

@@ -11,12 +11,13 @@ import { EventOptions } from "@/components/create/event-options";
 import type { PriceSettings } from "@/components/create/price-dialog";
 import { hasPaymentChannel } from "@/lib/payment";
 import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
+import { PhotoStrip } from "@/components/create/photo-strip";
 import { ThemeSheet } from "@/components/create/theme-sheet";
 import { WhenCard, whenProblem } from "@/components/create/when-card";
 import { WhereWhat } from "@/components/create/where-what";
 import { CategorySelect } from "@/components/create/category-select";
 import type { LocationMeta } from "@/components/create/location-field";
-import { CALENDARS, TIMEZONES, type Visibility } from "@/lib/create-event";
+import { CALENDARS, TIMEZONES, MAX_IMAGES, type Visibility } from "@/lib/create-event";
 import { CITY_DATA, findCityByName, nearestCity } from "@/lib/cities-data";
 import type { Category } from "@/types";
 import { DEFAULT_THEME_ID, getTheme } from "@/lib/create-themes";
@@ -174,6 +175,7 @@ export function CreateEventScreen() {
             onRemove={() => setImages([])}
             className="lg:max-w-none"
           />
+          <PhotoStrip images={images} onChange={setImages} onAdd={() => setPickerOpen(true)} />
 
           <ThemeSheet themeId={themeId} onThemeChange={setThemeId} />
 
@@ -242,7 +244,8 @@ export function CreateEventScreen() {
       <ImagePickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={(srcs) => setImages(srcs.slice(0, 1))}
+        remaining={MAX_IMAGES - images.length}
+        onSelect={(srcs) => setImages((prev) => [...prev, ...srcs].slice(0, MAX_IMAGES))}
       />
     </div>
   );

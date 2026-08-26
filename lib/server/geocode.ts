@@ -70,7 +70,11 @@ type Row = {
   address?: Record<string, string>;
 };
 
-const HEADERS = { "User-Agent": "aygo-events (dev)" };
+// Nominatim's policy asks for an identifying User-Agent with a way to reach
+// the operator; AYGO_CONTACT (an email or URL) fills that in per deployment.
+const HEADERS = {
+  "User-Agent": `aygo-events/1.0 (${process.env.AYGO_CONTACT ?? "https://github.com/aleregex/aygo"})`,
+};
 
 async function nominatim(
   q: string,

@@ -1,6 +1,7 @@
-// GET /api/me/profile → the guest's saved profile edits
-// PUT /api/me/profile → persist them (validated: lengths, real image, safe
-// social handles/URLs, content filter on name/bio/location)
+// GET /api/me/profile → the guest's saved profile edits + their username
+// PUT /api/me/profile → persist the edits (validated: lengths, real image, safe
+// social handles/URLs, content filter on name/bio/location). `username` is
+// ignored here — it's unique and lives behind PUT /me/username.
 
 import { getStore } from "@/lib/server/store";
 import { getSessionId } from "@/lib/server/session";

@@ -19,7 +19,7 @@ export type { CalendarInfo as Calendar, CategoryStat } from "@/types";
 // --- Real counts -------------------------------------------------------------
 // Dress stored city/category rows with counts computed from the live events
 // list (created events included). Upcoming-only — that's the number a "what's
-// happening" surface sells. Shared by the server stores and the mock api path.
+// happening" surface sells. Used by both server stores.
 
 export function citiesWithCounts(
   cities: Omit<CityInfo, "eventCount">[],
@@ -51,20 +51,18 @@ export function categoriesWithCounts(
     .map((p) => ({ ...p, count: byCategory.get(p.category) ?? 0 }));
 }
 
-const pic = (seed: string, w = 480, h = 360) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
-
 /**
  * Copy + artwork per interest ("Browse by interest" tiles and the category
- * page). No counts here — the backend computes them from real events.
+ * page). Artwork is aygo's own (public/covers) — no stock-photo service. No
+ * counts here — the backend computes them from real events.
  */
 export const CATEGORY_PAGES: Omit<CategoryStat, "count">[] = [
-  { category: "Music", blurb: "Peñas, gigs, and DJ sets — from charango folk to basement house. The city's sound, every night of the week.", image: pic("jazz-night") },
-  { category: "Food", blurb: "Salteña crawls, market tastings, and supper clubs. A new flavor to chase around La Paz each week.", image: pic("saltena-morning") },
-  { category: "Culture", blurb: "Fairs, gallery openings, and workshops from local artists and makers. Meet the people behind the scene.", image: pic("feria-diseno") },
-  { category: "Outdoors", blurb: "Hikes, summits, and bike descents across the highest trails in the Andes. Fresh air at altitude.", image: pic("killikilli-sunset") },
-  { category: "Party", blurb: "Cumbia, house, and rooftop afters. Find your next night out and the crew to share it with.", image: pic("after-prado") },
-  { category: "Sports", blurb: "Pickup games, downhill rides, and weekend leagues for every level. Show up and play.", image: pic("downhill-bici") },
+  { category: "Music", blurb: "Peñas, gigs, and DJ sets — from charango folk to basement house. The city's sound, every night of the week.", image: "/covers/aygo-night.png" },
+  { category: "Food", blurb: "Salteña crawls, market tastings, and supper clubs. A new flavor to chase around the city each week.", image: "/covers/aygo-gold.png" },
+  { category: "Culture", blurb: "Fairs, gallery openings, and workshops from local artists and makers. Meet the people behind the scene.", image: "/covers/aygo-paper.png" },
+  { category: "Outdoors", blurb: "Hikes, summits, and bike descents across the highest trails in the Andes. Fresh air at altitude.", image: "/covers/aygo-dawn.png" },
+  { category: "Party", blurb: "Cumbia, house, and rooftop afters. Find your next night out and the crew to share it with.", image: "/covers/aygo-cream-night.png" },
+  { category: "Sports", blurb: "Pickup games, downhill rides, and weekend leagues for every level. Show up and play.", image: "/covers/aygo-stripe.png" },
 ];
 
 export function findCategoryPage(
@@ -80,8 +78,3 @@ export function findCategoryPage(
  * adds one, and Discover hides the section while the list is empty.
  */
 export const FEATURED_CALENDARS: CalendarInfo[] = [];
-
-/** Static resolution over the seed (slug routing + instant hero identity). */
-export function findCalendar(id: string): CalendarInfo | undefined {
-  return FEATURED_CALENDARS.find((c) => c.id === id);
-}

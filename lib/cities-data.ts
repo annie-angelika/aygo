@@ -25,7 +25,7 @@ import {
   type MarkProps,
 } from "@/components/ui/brand-icons";
 import type { CityInfo, Region } from "@/types";
-import { CITY_DATA } from "@/lib/cities-seed";
+import { CITY_DATA, findCityByName } from "@/lib/cities-seed";
 
 export type { CityInfo, Region } from "@/types";
 export { CITY_DATA, findCityByName, nearestCity } from "@/lib/cities-seed";
@@ -72,6 +72,12 @@ const DEFAULT_META = { Icon: LuMapPin as CityIcon };
 /** Dress backend city facts with their client presentation. */
 export function withCityMeta(info: CityInfo): City {
   return { ...info, ...(CITY_META[info.slug] ?? DEFAULT_META) };
+}
+
+/** Presentation for a city NAME (an event's `city`): its landmark mark, the pin when unknown. */
+export function cityMeta(name?: string | null): { Icon: CityIcon } {
+  const info = name ? findCityByName(name) : undefined;
+  return (info && CITY_META[info.slug]) ?? DEFAULT_META;
 }
 
 /**
