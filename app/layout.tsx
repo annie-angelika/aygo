@@ -7,6 +7,7 @@ import { ServerSync } from "@/components/layout/server-sync";
 import { AccountSession } from "@/components/layout/account-session";
 import { LoginModal } from "@/components/auth/login-modal";
 import { UsernameGate } from "@/components/onboarding/username-gate";
+import { SkipOnGate } from "@/components/layout/skip-on-gate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,10 +65,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <PollarAuthProvider>
-          <AccountSession />
-          <ServerSync />
-          <LoginModal />
-          <UsernameGate />
+          <SkipOnGate>
+            <AccountSession />
+            <ServerSync />
+            <LoginModal />
+            <UsernameGate />
+          </SkipOnGate>
           {children}
         </PollarAuthProvider>
       </body>
