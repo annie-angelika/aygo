@@ -94,17 +94,21 @@ export async function verifyPollarSession(
 }
 
 /**
- * The stable identity behind a verified profile: the provider's own id when
- * there is one (survives an email change), else the email. Null when the
- * profile carries nothing we can key an account by.
+ * Every identity a verified profile answers to, strongest first: provider ids
+ * (they survive an email change), then the verified email. All of them key the
+ * SAME account, so signing in with Google on one device and an email code on
+ * another lands on the same session (both are verified proofs of the email).
+ * Empty when the profile carries nothing we can key an account by.
  */
-export function identityOf(profile: VerifiedProfile): string | null {
+export function identitiesOf(profile: VerifiedProfile): string[] {
   const p = profile.providers;
-  if (p?.google?.id) return `google:${p.google.id}`;
-  if (p?.github?.id) return `github:${p.github.id}`;
-  if (p?.wallet?.address) return `wallet:${p.wallet.address}`;
+  const ids: string[] = [];
+  if (p?.google?.id) ids.push(`google:${p.google.id}`);
+  if (p?.github?.id) ids.push(`github:${p.github.id}`);
+  if (p?.wallet?.address) ids.push(`wallet:${p.wallet.address}`);
   const mail = (profile.mail || p?.email?.address || "").trim().toLowerCase();
-  return mail ? `email:${mail}` : null;
+  if (mail) ids.push(`email:${mail}`);
+  return ids;
 }
 
 /** Non-reversible key an account is stored under (SHA-256 hex of the identity). */

@@ -77,11 +77,13 @@ async function syncProfile(): Promise<void> {
     return;
   }
   // The handle is server-owned (unique, set through its own endpoint): the
-  // server's copy always wins, whatever the local cache remembers.
-  const { username: _serverName, ...serverEdits } = server;
+  // server's copy always wins — including its ABSENCE. A cached handle from a
+  // previous account must not survive onto a session that has none, or the
+  // mandatory "pick your username" dialog never shows.
+  const { username: serverName, ...serverEdits } = server;
   const { username: _localName, ...localEdits } = local;
   void _localName;
-  const merged = { ...local, ...(_serverName ? { username: _serverName } : null) };
+  const merged = { ...localEdits, ...(serverName ? { username: serverName } : null) };
   if (changed(local, merged)) writeStorage(STORAGE_KEYS.profile, merged);
   if (changed(localEdits, serverEdits)) push(saveProfile(local as ProfileEdits));
 }

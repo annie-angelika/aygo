@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { LuTicket, LuCompass, LuPlus } from "react-icons/lu";
 
 import { Logo } from "@/components/layout/logo";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { ProfileMenu } from "@/components/layout/profile-menu";
 import { SignInButton } from "@/components/auth/sign-in-button";
 import { useAuth } from "@/hooks/use-auth";
@@ -69,6 +70,8 @@ export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
               <NavIcon href="/home" label="Tickets" active={onHome} dark={dark}>
                 <LuTicket className="size-[18px]" />
               </NavIcon>
+
+              <NotificationBell active={pathname.startsWith("/inbox")} dark={dark} />
 
               <ProfileMenu active={onProfile} dark={dark} />
             </>

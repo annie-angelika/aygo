@@ -147,6 +147,9 @@ export interface Store {
   getAccountSession(accountKey: string): Promise<string | null>;
   /** Bind an account to a session id (first sign-in). */
   bindAccount(accountKey: string, sid: string): Promise<void>;
+  /** Point `accountKey` at `sid` even when it was bound elsewhere — used to
+   * heal alias keys after a stronger identity resolved the account. */
+  rebindAccount(accountKey: string, sid: string): Promise<void>;
   /** The account bound to a session id, or null for an anonymous session. */
   getSessionAccount(sid: string): Promise<string | null>;
 

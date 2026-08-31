@@ -11,7 +11,7 @@ import { getStore } from "@/lib/server/store";
 import { switchToAccount, resetSession } from "@/lib/server/session";
 import {
   verifyPollarSession,
-  identityOf,
+  identitiesOf,
   accountKeyOf,
   DpopNonceRequired,
 } from "@/lib/server/pollar";
@@ -39,10 +39,11 @@ export const POST = handler(async (req: Request) => {
     if (e instanceof DpopNonceRequired) return json({ nonce: e.nonce }, 428);
     throw e;
   }
-  const identity = identityOf(profile);
-  if (!identity) throw new HttpError(401, "Your login carries no identity we can use");
+  const identities = identitiesOf(profile);
+  if (identities.length === 0)
+    throw new HttpError(401, "Your login carries no identity we can use");
 
-  const { changed, sid } = await switchToAccount(accountKeyOf(identity));
+  const { changed, sid } = await switchToAccount(identities.map(accountKeyOf));
 
   // First sign-in for this account: borrow the verified social identity for
   // the profile, so hosts and guests see a real name instead of "Guest".

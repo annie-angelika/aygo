@@ -4,6 +4,7 @@
 // event" — surfaced as `forbidden` so the screen can explain instead of erroring.
 
 import { useAsyncData } from "@/hooks/use-async-data";
+import { usePollWhileVisible } from "@/hooks/use-poll";
 import { fetchManageEvent } from "@/lib/api/manage";
 import { ApiError } from "@/lib/api";
 import { readStorage, STORAGE_KEYS } from "@/lib/storage";
@@ -16,6 +17,9 @@ export function useManageEvent(eventId: string) {
     { cacheKey: `manage:${eventId}` },
   );
   const forbidden = error instanceof ApiError && error.status === 403;
+  // New requests, check-ins and inbox messages land while the host keeps the
+  // dashboard open — no reload needed (stops once ownership was refused).
+  usePollWhileVisible(refetch, undefined, !forbidden);
   return { data: data ?? null, loading, error, forbidden, refetch };
 }
 

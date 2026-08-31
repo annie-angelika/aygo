@@ -74,32 +74,42 @@ export async function getSessionId(): Promise<string> {
 }
 
 /**
- * Make the session cookie carry the id that belongs to `accountKey` (a hash of
- * a server-verified identity): the account's stored id when it has one, else
- * the current id — unless that id already belongs to another account, in
- * which case a fresh id is minted and bound. Returns whether the active id
- * changed (the client reloads then) and the id now in force.
+ * Make the session cookie carry the id that belongs to this account.
+ * `accountKeys` are hashes of the login's verified identities, strongest
+ * first (provider id, then email) — the first one with a stored id wins, so
+ * a Google login and an email-code login for the same address resolve to the
+ * same account. The other keys are then (re)bound to that id, healing
+ * accounts that fragmented while each login method was keyed separately.
+ * With no stored id anywhere, the current id is adopted — unless it already
+ * belongs to another account, in which case a fresh id is minted. Returns
+ * whether the active id changed (the client reloads then) and the id in force.
  */
 export async function switchToAccount(
-  accountKey: string,
+  accountKeys: string[],
 ): Promise<{ changed: boolean; sid: string }> {
   const cookieStore = await cookies();
   if (cookieStore.get(LEGACY_ACCOUNTS_COOKIE)) cookieStore.delete(LEGACY_ACCOUNTS_COOKIE);
   const current = await getSessionId();
   const store = getStore();
 
-  const remembered = await store.getAccountSession(accountKey);
-  if (remembered) {
+  for (const key of accountKeys) {
+    const remembered = await store.getAccountSession(key);
+    if (!remembered) continue;
+    // Point every identity of this login at the id we resolved — the
+    // stronger key decided, so a weaker key still aimed at a fragment of
+    // this account (an accidental duplicate) is re-aimed here.
+    for (const other of accountKeys)
+      if (other !== key) await store.rebindAccount(other, remembered);
     if (remembered !== current) setSession(cookieStore, remembered);
     return { changed: remembered !== current, sid: remembered };
   }
 
   const takenByOther = (await store.getSessionAccount(current)) !== null;
   const sid = takenByOther ? randomUUID() : current;
-  await store.bindAccount(accountKey, sid);
+  for (const key of accountKeys) await store.bindAccount(key, sid);
   // Two devices signing up the same account at once: whichever bind landed
   // first wins, and this one adopts it.
-  const bound = (await store.getAccountSession(accountKey)) ?? sid;
+  const bound = (await store.getAccountSession(accountKeys[0])) ?? sid;
   if (bound !== current) setSession(cookieStore, bound);
   return { changed: bound !== current, sid: bound };
 }

@@ -168,6 +168,10 @@ export class MemoryStore implements Store {
     if (!this.accounts.has(accountKey)) this.accounts.set(accountKey, sid);
   }
 
+  async rebindAccount(accountKey: string, sid: string): Promise<void> {
+    this.accounts.set(accountKey, sid);
+  }
+
   async getSessionAccount(sid: string): Promise<string | null> {
     for (const [key, s] of this.accounts) if (s === sid) return key;
     return null;

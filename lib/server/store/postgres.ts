@@ -84,6 +84,10 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS reports_event_idx ON reports (event_id)`,
   // The travelers table (never written) is gone with the fake social graph.
   `DROP TABLE IF EXISTS travelers`,
+  // One account, many identity keys: a Google id and the same person's email
+  // both point at one session, so session_id can no longer be unique.
+  `ALTER TABLE accounts DROP CONSTRAINT IF EXISTS accounts_session_id_key`,
+  `CREATE INDEX IF NOT EXISTS accounts_session_idx ON accounts (session_id)`,
   // Public handles: one per session, unique across the app (/u/<username>).
   `CREATE TABLE IF NOT EXISTS usernames (username text PRIMARY KEY, session_id text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now())`,
 ];
@@ -266,6 +270,12 @@ export class PostgresStore implements Store {
            ON CONFLICT (account_key) DO NOTHING`;
   }
 
+  async rebindAccount(accountKey: string, sid: string): Promise<void> {
+    await this
+      .sql`INSERT INTO accounts (account_key, session_id) VALUES (${accountKey}, ${sid})
+           ON CONFLICT (account_key) DO UPDATE SET session_id = EXCLUDED.session_id`;
+  }
+
   async getSessionAccount(sid: string): Promise<string | null> {
     const rows = await this
       .sql`SELECT account_key FROM accounts WHERE session_id = ${sid}`;
@@ -300,19 +310,38 @@ export class PostgresStore implements Store {
   }
 
   async listCalendars(): Promise<CalendarInfo[]> {
+    // Same policy as cities: the code's seed always shows (no reseed needed on
+    // a fresh database); a stored row for the same id carries edits and wins.
     const rows = await this.sql`SELECT data FROM calendars`;
-    return rows.map((r) => r.data as CalendarInfo);
+    const stored = new Map(
+      rows.map((r) => {
+        const c = r.data as CalendarInfo;
+        return [c.id, c] as const;
+      }),
+    );
+    const merged = CATALOG_CALENDARS.map((c) => ({ ...c, ...stored.get(c.id) }));
+    const seeded = new Set(CATALOG_CALENDARS.map((c) => c.id));
+    for (const [id, c] of stored) if (!seeded.has(id)) merged.push(c);
+    return merged;
   }
 
   async listCategoryStats(): Promise<CategoryStat[]> {
+    // Seed-merged like cities/calendars — "Browse by interest" must not
+    // disappear on a database that was never (re)seeded.
     const [rows, events] = await Promise.all([
       this.sql`SELECT data FROM category_pages`,
       this.listEvents(),
     ]);
-    return categoriesWithCounts(
-      rows.map((r) => r.data as Omit<CategoryStat, "count">),
-      events,
+    const stored = new Map(
+      rows.map((r) => {
+        const p = r.data as Omit<CategoryStat, "count">;
+        return [p.category, p] as const;
+      }),
     );
+    const merged = CATALOG_CATEGORY_PAGES.map((p) => ({ ...p, ...stored.get(p.category) }));
+    const seeded = new Set(CATALOG_CATEGORY_PAGES.map((p) => p.category));
+    for (const [category, p] of stored) if (!seeded.has(category)) merged.push(p);
+    return categoriesWithCounts(merged, events);
   }
 
   // --- Admin ---
