@@ -9,7 +9,7 @@
 // the page reloads so it re-hydrates from the right account. `signOut` does
 // the reverse.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePollar } from "@pollar/react";
 import { buildProof, WebCryptoKeyManager } from "@pollar/core";
 
@@ -74,10 +74,18 @@ async function link(accessToken: string): Promise<{ changed: boolean }> {
   }
 }
 
+const MAX_LINK_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 4_000;
+
 export function useAccountSession() {
   const auth = useAuth();
   const { getClient } = usePollar();
   const linked = useRef<string | null>(null);
+  const attempts = useRef(0);
+  // Bumped to re-run the effect for a bounded retry: a link that fails
+  // silently leaves the UI signed in as one person while the server session
+  // still belongs to another (or to no one).
+  const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
     if (!POLLAR_KEY || !auth.isAuthenticated || !auth.profile) return;
@@ -90,20 +98,27 @@ export function useAccountSession() {
     if (!accessToken || !marker || linked.current === marker) return;
     linked.current = marker;
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     void (async () => {
       try {
         const { changed } = await link(accessToken);
+        attempts.current = 0;
         if (changed && !cancelled && mayReload()) restart();
         if (!changed) clearReloadGuard();
       } catch (e) {
         console.error("account link failed", e);
         linked.current = null;
+        if (!cancelled && attempts.current < MAX_LINK_ATTEMPTS) {
+          attempts.current += 1;
+          timer = setTimeout(() => setRetryTick((n) => n + 1), RETRY_DELAY_MS);
+        }
       }
     })();
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
-  }, [auth.isAuthenticated, auth.profile, getClient]);
+  }, [auth.isAuthenticated, auth.profile, getClient, retryTick]);
 }
 
 /** Sign out everywhere: Pollar, the server session, and every local cache.

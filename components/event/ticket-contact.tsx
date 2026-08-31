@@ -72,8 +72,16 @@ export function TicketContact({ event }: { event: AygoEvent }) {
 
   return (
     <div className="flex flex-col items-center gap-1.5">
-      {hasChannel ? (
+      {/* Signed out, every path leads to the login modal first: paying rides
+          on a registration, and the host's WhatsApp number isn't for anonymous
+          visitors to harvest. */}
+      {hasChannel && isAuthenticated ? (
         <PayHostButtons event={event} />
+      ) : hasChannel ? (
+        <button type="button" onClick={openLoginModal} className={LINK}>
+          <LuTicket className="size-4" aria-hidden />
+          Sign in to reserve &amp; pay
+        </button>
       ) : isAuthenticated ? (
         <ActionDialog
           label="Ask about tickets"

@@ -35,9 +35,12 @@ export function useProfileEdits() {
     }
     return stored;
   }, [stored]);
-  const save = (next: ProfileEdits) => {
+  // Local-first for instant UI, but the caller awaits the server sync — a
+  // rejected save (image too big, handle refused, moderation) must surface
+  // instead of living only in localStorage until the next sign-out wipes it.
+  const save = (next: ProfileEdits): Promise<void> => {
     writeStorage(STORAGE_KEYS.profile, next);
-    void saveProfile(next).catch((e) => console.error("profile sync failed", e));
+    return saveProfile(next);
   };
   return { edits, save };
 }

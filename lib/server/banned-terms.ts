@@ -28,6 +28,11 @@ export const BANNED: readonly string[] = [
   "concha de su madre", "la concha de tu madre", "la concha de su madre", "chuchatumadre",
   "chucha tu madre", "chucha de tu madre", "pichula", "pichulas", "follar", "follando",
   "follada", "ramera", "rameras",
+  // --- Spanish insults (unambiguous as whole words; "mamón"/"pajero"/"zorra"/
+  // "mariquita"/"babosa" stay off the list — they have innocent uses) ---
+  "estupido", "estupida", "estupidos", "estupidas", "imbecil", "imbeciles",
+  "idiota", "idiotas", "tarado", "tarada", "tarados", "taradas",
+  "boludo", "boluda", "boludos", "boludas", "marica", "maricas",
   // --- Spanish slurs (homophobic / transphobic / ethnic / ableist) ---
   "maricon", "maricones", "maricona", "mariconazo", "mariconada", "trolo", "trolos", "joto",
   "jotos", "fleto", "fletos", "travelo", "marimacho", "marimacha", "tortillera", "bollera",

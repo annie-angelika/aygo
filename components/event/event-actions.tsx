@@ -107,6 +107,9 @@ export function EventActions({ event }: { event: AygoEvent }) {
             Cancel
           </button>
         </div>
+        {/* Paid events: once you're in (instant reserve or approved request),
+            the host's pay channels stay one tap away until you check in. */}
+        {paid && !collected && <TicketContact event={event} />}
       </div>
     );
   }

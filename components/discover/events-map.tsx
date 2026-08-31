@@ -3,9 +3,7 @@
 import { useMemo, useState } from "react";
 import { Map, Marker } from "@vis.gl/react-maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { LuMapPinned } from "react-icons/lu";
 
-import { EmptyState } from "@/components/ui/empty-state";
 import { EventPreviewDialog } from "@/components/event/event-preview-dialog";
 import { CATEGORY_META } from "@/lib/events-data";
 import { findCityByName, HOME_CENTER } from "@/lib/cities-seed";
@@ -70,16 +68,8 @@ export function EventsMap({
     [],
   );
 
-  if (events.length === 0) {
-    return (
-      <EmptyState
-        icon={LuMapPinned}
-        title="Nothing to map yet"
-        subtitle="No events match these filters — try a different interest or date."
-      />
-    );
-  }
-
+  // The map itself always shows (centered on the city) — an empty filter
+  // result floats its message over the tiles instead of replacing them.
   return (
     <>
       <div
@@ -124,11 +114,22 @@ export function EventsMap({
         {/* Soft vignette so the pins and badge read over any tile. */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/10" />
 
-        <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm ring-1 ring-border backdrop-blur">
-          {mapped.length === events.length
-            ? `${events.length} ${events.length === 1 ? "event" : "events"}`
-            : `${mapped.length} of ${events.length} events on the map`}
-        </span>
+        {events.length === 0 ? (
+          <div className="pointer-events-none absolute inset-x-4 top-4 rounded-2xl bg-background/95 px-4 py-3 text-center shadow-sm ring-1 ring-border backdrop-blur">
+            <p className="text-[13.5px] font-semibold text-foreground">
+              Nothing to map yet
+            </p>
+            <p className="text-[12px] leading-snug text-muted-foreground">
+              No events match these filters — try a different interest or date.
+            </p>
+          </div>
+        ) : (
+          <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm ring-1 ring-border backdrop-blur">
+            {mapped.length === events.length
+              ? `${events.length} ${events.length === 1 ? "event" : "events"}`
+              : `${mapped.length} of ${events.length} events on the map`}
+          </span>
+        )}
       </div>
 
       <EventPreviewDialog event={selected} onClose={() => setSelected(null)} />

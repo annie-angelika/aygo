@@ -4,13 +4,13 @@
 // so a host sees a new registration without reloading. Marking read is
 // optimistic (the badge clears instantly, the server catches up).
 
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useAsyncData } from "@/hooks/use-async-data";
 import { useAuth } from "@/hooks/use-auth";
+import { usePollWhileVisible } from "@/hooks/use-poll";
 import { fetchNotifications, markNotificationsRead } from "@/lib/api";
 import type { AppNotification } from "@/types";
 
-const POLL_MS = 45_000;
 const NONE: AppNotification[] = [];
 
 export function useNotifications() {
@@ -21,13 +21,7 @@ export function useNotifications() {
     { cacheKey: "notifications", enabled: isAuthenticated },
   );
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const id = setInterval(() => {
-      if (document.visibilityState === "visible") refetch();
-    }, POLL_MS);
-    return () => clearInterval(id);
-  }, [isAuthenticated, refetch]);
+  usePollWhileVisible(refetch, undefined, isAuthenticated);
 
   const markAllRead = useCallback(async () => {
     await markNotificationsRead().catch((e) =>

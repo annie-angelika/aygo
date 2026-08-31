@@ -36,9 +36,12 @@ export function ProfileForm() {
   const [handleStatus, setHandleStatus] = useState<UsernameStatus>({ kind: "idle" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The user has touched the form; their in-progress edits must survive.
+  const [dirty, setDirty] = useState(false);
   // Re-sync when the stored value loads (hydration) or changes elsewhere —
-  // the "reset state during render" pattern, not an effect.
-  if (synced !== merged) {
+  // the "reset state during render" pattern, not an effect. Never while the
+  // form is dirty: a background sync landing mid-edit must not wipe typing.
+  if (!dirty && synced !== merged) {
     setSynced(merged);
     setDraft(merged);
     setHandle(merged.username ?? "");
@@ -46,6 +49,7 @@ export function ProfileForm() {
 
   const set = (patch: Partial<ProfileEdits>) => {
     setDraft((d) => ({ ...d, ...patch }));
+    setDirty(true);
     setSaved(false);
   };
 
@@ -64,12 +68,15 @@ export function ProfileForm() {
     setError(null);
     try {
       // The handle is unique, so it goes through its own endpoint first; the
-      // rest of the profile is local-first and syncs in the background.
+      // rest of the profile writes locally right away and "Saved" waits for
+      // the server to accept it, so a refused field can't silently stay
+      // local-only (it would vanish with the next sign-out).
       const username = handleChanged ? await setUsername(handle) : merged.username ?? undefined;
       const { username: _current, ...edits } = draft;
       void _current;
-      save({ ...edits, name: draft.name.trim(), ...(username ? { username } : null) });
+      await save({ ...edits, name: draft.name.trim(), ...(username ? { username } : null) });
       setSaved(true);
+      setDirty(false);
     } catch (err) {
       setError(
         err instanceof ApiError && err.status < 500 ? err.message : "Couldn't save — try again.",
@@ -116,6 +123,7 @@ export function ProfileForm() {
           value={handle}
           onChange={(v) => {
             setHandle(v);
+            setDirty(true);
             setSaved(false);
           }}
           current={merged.username}

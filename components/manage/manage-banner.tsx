@@ -8,11 +8,13 @@ import Link from "next/link";
 import { LuArrowUpRight } from "react-icons/lu";
 
 import { useHydrated } from "@/hooks/use-storage";
+import { useAuth } from "@/hooks/use-auth";
 import { ownsEventLocally } from "@/hooks/use-manage-event";
 
 export function ManageBanner({ eventId }: { eventId: string }) {
   const hydrated = useHydrated();
-  if (!hydrated || !ownsEventLocally(eventId)) return null;
+  const { isAuthenticated } = useAuth();
+  if (!hydrated || !isAuthenticated || !ownsEventLocally(eventId)) return null;
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-[18px] bg-card px-4 py-3 ring-1 ring-foreground/8">
