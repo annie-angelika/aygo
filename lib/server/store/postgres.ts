@@ -20,6 +20,7 @@ import type {
   Attendee,
   FeedbackReply,
   AppNotification,
+  MetricShare,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { FeedbackKind } from "@/types";
@@ -28,6 +29,7 @@ import type {
   Store,
   Registrations,
   AdminStats,
+  MetricsSource,
   AdminEventInput,
   AdminCalendarInput,
   EventReport,
@@ -90,6 +92,11 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS accounts_session_idx ON accounts (session_id)`,
   // Public handles: one per session, unique across the app (/u/<username>).
   `CREATE TABLE IF NOT EXISTS usernames (username text PRIMARY KEY, session_id text NOT NULL UNIQUE, created_at timestamptz NOT NULL DEFAULT now())`,
+  // Traction metrics: public, revocable links to the live report. (Every
+  // number in the report is counted from the tables above — nothing is typed
+  // in, so the short-lived manual table is gone.)
+  `DROP TABLE IF EXISTS metric_weeks`,
+  `CREATE TABLE IF NOT EXISTS metric_shares (id text PRIMARY KEY, label text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz, revoked_at timestamptz)`,
 ];
 
 export class PostgresStore implements Store {
@@ -181,7 +188,12 @@ export class PostgresStore implements Store {
     return value;
   }
 
-  private async loadEvents(): Promise<AygoEvent[]> {
+  /** Admin: every event, private ones included and flagged. Never memoised. */
+  async listAllEvents(): Promise<AygoEvent[]> {
+    return this.loadEvents(true);
+  }
+
+  private async loadEvents(includePrivate = false): Promise<AygoEvent[]> {
     // Created events lead (newest first), projected into the catalog shape with
     // the creator's saved profile as the host. Attendance is overlaid live from
     // real RSVPs — never from stored numbers.
@@ -201,18 +213,20 @@ export class PostgresStore implements Store {
                       p.data AS profile
                FROM created_events ce
                LEFT JOIN profiles p ON p.session_id = ce.session_id
-               WHERE coalesce(ce.data->>'visibility', 'public') <> 'private'
+               WHERE ${includePrivate}::boolean OR coalesce(ce.data->>'visibility', 'public') <> 'private'
                ORDER BY ce.created_at DESC`,
       this.sql`SELECT data FROM events`,
       this.goingByEvent(),
     ]);
     return withLiveAttendance(
       [
-        ...created.map((r) =>
-          draftToEvent(r.draft as EventDraft, (r.profile ?? undefined) as Creator | undefined, {
+        ...created.map((r) => {
+          const draft = r.draft as EventDraft;
+          const event = draftToEvent(draft, (r.profile ?? undefined) as Creator | undefined, {
             light: true,
-          }),
-        ),
+          });
+          return includePrivate ? { ...event, visibility: draft.visibility ?? "public" } : event;
+        }),
         ...catalog.map((r) => r.data as AygoEvent),
       ],
       going,
@@ -808,4 +822,73 @@ export class PostgresStore implements Store {
         .sql`UPDATE notifications SET read = true WHERE session_id = ${sid} AND read = false`;
     }
   }
+
+  // --- Metrics ---
+
+  async metricsSource(): Promise<MetricsSource> {
+    const iso = (v: unknown) => new Date(v as string).toISOString();
+    const dated = (rows: Record<string, unknown>[]) =>
+      rows.map((r) => ({ at: iso(r.created_at), sid: r.session_id as string }));
+    const [usernames, accounts, events, going, applications, stamps, reports, open] = await Promise.all([
+      this.sql`SELECT session_id, created_at FROM usernames`,
+      // One row per session: a Google id and the same person's email are one login.
+      this.sql`SELECT min(created_at) AS created_at FROM accounts GROUP BY session_id`,
+      this.sql`SELECT session_id, created_at, data->>'startsAt' AS starts_at, data->>'city' AS city, data->>'category' AS category FROM created_events`,
+      this.sql`SELECT session_id, created_at FROM going`,
+      this.sql`SELECT session_id, created_at FROM applications`,
+      this.sql`SELECT session_id, created_at FROM stamps`,
+      this.sql`SELECT session_id, created_at FROM reports`,
+      this.sql`SELECT count(*) AS n FROM reports WHERE status = 'open'`,
+    ]);
+    return {
+      usernames: dated(usernames),
+      accountsAt: accounts.map((r) => iso(r.created_at)),
+      events: events.map((r) => ({
+        sid: r.session_id as string,
+        createdAt: iso(r.created_at),
+        startsAt: (r.starts_at as string) ?? "",
+        city: (r.city as string) || undefined,
+        category: (r.category as string) || undefined,
+      })),
+      going: dated(going),
+      applications: dated(applications),
+      stamps: dated(stamps),
+      reports: dated(reports),
+      openReports: Number(open[0]?.n ?? 0),
+    };
+  }
+
+  private shareRow(r: Record<string, unknown>): MetricShare {
+    const iso = (v: unknown) => (v == null ? null : new Date(v as string).toISOString());
+    return {
+      id: r.id as string,
+      label: r.label as string,
+      createdAt: iso(r.created_at) as string,
+      expiresAt: iso(r.expires_at),
+      revokedAt: iso(r.revoked_at),
+    };
+  }
+
+  async listMetricShares(): Promise<MetricShare[]> {
+    const rows = await this.sql`SELECT * FROM metric_shares ORDER BY created_at DESC`;
+    return rows.map((r) => this.shareRow(r));
+  }
+
+  async createMetricShare(id: string, label: string, expiresAt: string | null): Promise<MetricShare> {
+    const rows = await this
+      .sql`INSERT INTO metric_shares (id, label, expires_at) VALUES (${id}, ${label}, ${expiresAt}) RETURNING *`;
+    return this.shareRow(rows[0]);
+  }
+
+  async getMetricShare(id: string): Promise<MetricShare | null> {
+    const rows = await this.sql`SELECT * FROM metric_shares WHERE id = ${id}`;
+    return rows.length ? this.shareRow(rows[0]) : null;
+  }
+
+  async revokeMetricShare(id: string): Promise<boolean> {
+    const rows = await this
+      .sql`UPDATE metric_shares SET revoked_at = now() WHERE id = ${id} AND revoked_at IS NULL RETURNING id`;
+    return rows.length > 0;
+  }
+
 }

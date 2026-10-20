@@ -4,11 +4,13 @@
 // artwork, interest) and add new ones. Owns the form sheet.
 
 import { useState } from "react";
-import { LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
+import { LuPencil, LuPlus, LuTrash2, LuLayers } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarForm } from "@/components/admin/calendar-form";
+import { ActionError } from "@/components/admin/action-error";
 import { useCalendars } from "@/hooks/use-discover";
 import { adminDeleteCalendar } from "@/lib/api/admin";
 import type { CalendarInfo } from "@/types";
@@ -18,13 +20,17 @@ export function ManageCalendars() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CalendarInfo | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function remove(c: CalendarInfo) {
     if (!window.confirm(`Delete the "${c.name}" calendar?`)) return;
     setBusyId(c.id);
+    setError(null);
     try {
       await adminDeleteCalendar(c.id);
       refetch();
+    } catch {
+      setError(`Couldn't delete "${c.name}" — try again.`);
     } finally {
       setBusyId(null);
     }
@@ -48,8 +54,15 @@ export function ManageCalendars() {
         </Button>
       </div>
 
+      <ActionError message={error} />
       {loading && calendars.length === 0 ? (
         <Skeleton className="h-32 rounded-2xl" />
+      ) : calendars.length === 0 ? (
+        <EmptyState
+          icon={LuLayers}
+          title="No featured calendars yet"
+          subtitle="A calendar is a curated collection shown on Discover. Create the first one with the button above."
+        />
       ) : (
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
           {calendars.map((c, i) => (

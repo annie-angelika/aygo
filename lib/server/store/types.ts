@@ -17,6 +17,7 @@ import type {
   FeedbackKind,
   FeedbackReply,
   AppNotification,
+  MetricShare,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { Registrations } from "@/lib/api/registrations";
@@ -129,6 +130,24 @@ export type AdminStats = {
   recentCreated: CreatedEventSummary[];
 };
 
+/** A dated action by a session — what the metrics report is bucketed from. */
+export type MetricEvent = { at: string; sid: string };
+
+/** Raw records the metrics report is computed from (see lib/metrics.ts). */
+export type MetricsSource = {
+  /** When each person picked their username (= finished sign-up). */
+  usernames: MetricEvent[];
+  /** When each verified login was first bound to a session. */
+  accountsAt: string[];
+  events: { createdAt: string; startsAt: string; city?: string; category?: string; sid: string }[];
+  going: MetricEvent[];
+  applications: MetricEvent[];
+  stamps: MetricEvent[];
+  /** Questions and reports sent to hosts / the admin. */
+  reports: MetricEvent[];
+  openReports: number;
+};
+
 export interface Store {
   /** Create tables if missing. No-op for the memory store. */
   init(): Promise<void>;
@@ -137,6 +156,8 @@ export interface Store {
 
   // --- Catalog (shared, read-only) ---
   listEvents(): Promise<AygoEvent[]>;
+  /** Admin only: every event, private ones included (and flagged). */
+  listAllEvents(): Promise<AygoEvent[]>;
   getEvent(id: string): Promise<AygoEvent | null>;
   getEventByCode(code: string): Promise<AygoEvent | null>;
   /** Real RSVPs for an event (goer name + avatar when they saved a profile). */
@@ -238,4 +259,12 @@ export interface Store {
   countUnreadNotifications(sid: string): Promise<number>;
   /** Mark the given ids read — or everything when `ids` is omitted. */
   markNotificationsRead(sid: string, ids?: string[]): Promise<void>;
+
+  // --- Metrics (admin dashboard + public traction reports) ---
+  metricsSource(): Promise<MetricsSource>;
+  listMetricShares(): Promise<MetricShare[]>;
+  createMetricShare(id: string, label: string, expiresAt: string | null): Promise<MetricShare>;
+  getMetricShare(id: string): Promise<MetricShare | null>;
+  /** Returns false when there is no such share. */
+  revokeMetricShare(id: string): Promise<boolean>;
 }

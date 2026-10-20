@@ -1,8 +1,10 @@
 "use client";
 
-// The admin dashboard, split into four tabs so it stays usable at scale:
-// Overview (pulse + latest creations + maintenance), Events (search/manage),
-// Calendars, and Inbox (questions + reports, with an open-count badge).
+// The admin dashboard, split into five tabs so it stays usable at scale:
+// Overview (pulse + latest creations + maintenance), Metrics (the traction
+// report, weekly series and public links), Events (search/manage), Calendars,
+// and Inbox (questions + reports, with an open-count badge). Phone-first,
+// widening to a desktop grid at `lg`.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -17,10 +19,11 @@ import { AdminInbox } from "@/components/admin/admin-inbox";
 import { RecentCreated } from "@/components/admin/recent-created";
 import { ManageEvents } from "@/components/admin/manage-events";
 import { ManageCalendars } from "@/components/admin/manage-calendars";
+import { MetricsPanel } from "@/components/admin/metrics-panel";
 import { useAdminStats, useAdminReports, reseed } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
 
-type Tab = "overview" | "events" | "calendars" | "inbox";
+type Tab = "overview" | "metrics" | "events" | "calendars" | "inbox";
 
 export function AdminScreen() {
   return (
@@ -72,6 +75,9 @@ function Dashboard({ onExit }: { onExit: () => Promise<void> }) {
           <TabsTrigger value="overview" className="flex-1">
             Overview
           </TabsTrigger>
+          <TabsTrigger value="metrics" className="flex-1">
+            Metrics
+          </TabsTrigger>
           <TabsTrigger value="events" className="flex-1">
             Events
           </TabsTrigger>
@@ -97,6 +103,7 @@ function Dashboard({ onExit }: { onExit: () => Promise<void> }) {
       )}
 
       {tab === "overview" && <Overview stats={stats} onRefresh={refreshAll} />}
+      {tab === "metrics" && <MetricsPanel />}
       {tab === "events" && <ManageEvents onChanged={refreshAll} />}
       {tab === "calendars" && <ManageCalendars />}
       {tab === "inbox" && (
@@ -136,7 +143,7 @@ function Overview({
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="flex flex-col gap-2.5">
+      <section className="flex flex-col gap-2.5 lg:col-span-2">
         <div className="flex items-center justify-between">
           <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
             Right now
@@ -154,6 +161,7 @@ function Overview({
         <AdminStatsGrid stats={stats} />
       </section>
 
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
       <section className="flex flex-col gap-2.5">
         <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
           Latest creations
@@ -184,6 +192,7 @@ function Overview({
           )}
         </div>
       </section>
+      </div>
     </div>
   );
 }

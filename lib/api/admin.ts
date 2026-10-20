@@ -8,10 +8,17 @@ import type {
   AdminCalendarInput,
   EventReport,
 } from "@/lib/server/store/types";
-import type { AygoEvent, CalendarInfo } from "@/types";
+import type {
+  AygoEvent,
+  CalendarInfo,
+  MetricsReport,
+  MetricShare,
+} from "@/types";
 import { api } from "@/lib/api/client";
 
 export type { AdminStats, AdminEventInput, AdminCalendarInput, EventReport };
+/** A public report link as the admin sees it: the row plus its absolute URL. */
+export type MetricShareLink = MetricShare & { url: string };
 
 /** Is this browser an admin right now? → `GET /admin/session` */
 export async function fetchAdminSession(): Promise<boolean> {
@@ -41,6 +48,11 @@ export async function adminSeed(): Promise<{
 }
 
 // --- Content management (all admin-cookie gated) -----------------------------
+
+/** Every event, private ones included (flagged via `visibility`). → `GET /admin/events` */
+export async function fetchAdminEvents(signal?: AbortSignal): Promise<AygoEvent[]> {
+  return api.get<AygoEvent[]>("/admin/events", undefined, signal);
+}
 
 /** Create (no `id`) or update a catalog event. → `POST /admin/events` */
 export async function adminUpsertEvent(
@@ -79,4 +91,29 @@ export async function setReportStatus(
   status: "open" | "resolved",
 ): Promise<void> {
   await api.patch(`/admin/reports/${id}`, { status });
+}
+
+// --- Traction metrics (admin-cookie gated) -----------------------------------
+
+/** Totals + weekly series, computed live. → `GET /admin/metrics` */
+export async function fetchMetrics(signal?: AbortSignal): Promise<MetricsReport> {
+  return api.get<MetricsReport>("/admin/metrics", undefined, signal);
+}
+
+/** Every public report link, newest first. → `GET /admin/metrics/shares` */
+export async function fetchMetricShares(signal?: AbortSignal): Promise<MetricShareLink[]> {
+  return api.get<MetricShareLink[]>("/admin/metrics/shares", undefined, signal);
+}
+
+/** Mint a public report link. → `POST /admin/metrics/shares` */
+export async function createMetricShare(
+  label: string,
+  expiresInDays?: number,
+): Promise<MetricShareLink> {
+  return api.post<MetricShareLink>("/admin/metrics/shares", { label, expiresInDays });
+}
+
+/** Revoke a public report link; it 404s from then on. → `DELETE /admin/metrics/shares/:id` */
+export async function revokeMetricShare(id: string): Promise<void> {
+  await api.delete(`/admin/metrics/shares/${id}`);
 }

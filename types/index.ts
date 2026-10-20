@@ -57,6 +57,8 @@ export type AygoEvent = {
   blurb: string;
   /** Host reviews each join request before granting a spot. Absent → instant. */
   requiresApproval?: boolean;
+  /** Only set on admin listings: private events are link-only and hidden from Discover. */
+  visibility?: "public" | "private";
   /** Max guests; registration closes at this many `attendees`. Absent/null → unlimited. */
   capacity?: number | null;
 };
@@ -219,4 +221,75 @@ export type Level = {
   index: number;
   name: string;
   min: number;
+};
+
+// --- Metrics (admin dashboard + public traction reports) -------------------
+
+/** One week since launch: cumulative totals as of the end of that week, what
+ * was new in it, and how many people did anything in it. Every number is
+ * counted from the app's own records — nothing is typed in. */
+export type MetricWeek = {
+  /** 1-based week number since launch. */
+  week: number;
+  /** First day of the week, YYYY-MM-DD (La Paz time). */
+  start: string;
+  /** Whether this week is still running (its numbers are partial). */
+  current: boolean;
+  users: number;
+  newUsers: number;
+  hosts: number;
+  newHosts: number;
+  events: number;
+  newEvents: number;
+  rsvps: number;
+  newRsvps: number;
+  requests: number;
+  newRequests: number;
+  checkins: number;
+  newCheckins: number;
+  /** Distinct people who did something this week: signed up, created an
+   * event, took a spot, asked to join, checked in, or wrote to a host. */
+  active: number;
+  /** Questions + reports sent this week. */
+  inbox: number;
+  /** Cities with at least one event created by the end of the week. */
+  cities: string[];
+};
+
+export type MetricsTotals = {
+  /** People who finished sign-up (picked a username). */
+  users: number;
+  /** Verified logins bound to a session (Google / email code). */
+  accounts: number;
+  /** People who created at least one event. */
+  hosts: number;
+  events: number;
+  upcomingEvents: number;
+  pastEvents: number;
+  rsvps: number;
+  requests: number;
+  checkins: number;
+  /** Distinct people active in the last 7 days. */
+  activeWeek: number;
+  cities: string[];
+  categories: { category: string; count: number }[];
+  openReports: number;
+};
+
+export type MetricsReport = {
+  /** ISO timestamp the numbers were computed at (every load recomputes). */
+  generatedAt: string;
+  /** YYYY-MM-DD the product launched — week 1 starts here. */
+  launchedAt: string;
+  totals: MetricsTotals;
+  weeks: MetricWeek[];
+};
+
+/** A public, revocable link to the live report (aygo.app/m/<id>). */
+export type MetricShare = {
+  id: string;
+  label: string;
+  createdAt: string;
+  expiresAt: string | null;
+  revokedAt: string | null;
 };

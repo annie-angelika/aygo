@@ -3,7 +3,9 @@
 // signed, httpOnly cookie, so the key itself never sits in browser storage.
 // Server routes accept either the cookie (dashboard) or the raw key in the
 // `x-admin-token` header (scripts / curl). The cookie payload is prefixed with
-// "admin:" before signing so a guest-session cookie can never be replayed here.
+// "admin:" before signing so a guest-session cookie can never be replayed here,
+// and carries its own expiry inside the signed part — so a copied cookie value
+// stops working after 12h even if the browser's max-age is tampered with.
 
 import "server-only";
 import { cookies } from "next/headers";
@@ -14,8 +16,8 @@ import { HttpError } from "@/lib/server/http";
 const COOKIE = "aygo_admin";
 const MAX_AGE = 60 * 60 * 12; // 12h — an admin session, not a login
 
-const sign = (id: string) =>
-  createHmac("sha256", SESSION_SECRET).update(`admin:${id}`).digest("base64url");
+const sign = (payload: string) =>
+  createHmac("sha256", SESSION_SECRET).update(`admin:${payload}`).digest("base64url");
 
 function constantTimeEqual(a: string, b: string): boolean {
   const ba = Buffer.from(a);
@@ -30,8 +32,9 @@ export function isValidAdminKey(key: string): boolean {
 
 /** Mint the admin cookie after a successful key exchange. */
 export async function grantAdmin(): Promise<void> {
-  const id = randomUUID();
-  (await cookies()).set(COOKIE, `${id}.${sign(id)}`, {
+  // payload = "<expiry epoch seconds>.<random id>", signed as a whole.
+  const payload = `${Math.floor(Date.now() / 1000) + MAX_AGE}.${randomUUID()}`;
+  (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -50,7 +53,10 @@ export async function hasAdminCookie(): Promise<boolean> {
   if (!token) return false;
   const dot = token.lastIndexOf(".");
   if (dot < 0) return false;
-  return constantTimeEqual(token.slice(dot + 1), sign(token.slice(0, dot)));
+  const payload = token.slice(0, dot);
+  if (!constantTimeEqual(token.slice(dot + 1), sign(payload))) return false;
+  const exp = Number(payload.split(".")[0]);
+  return Number.isFinite(exp) && exp > Math.floor(Date.now() / 1000);
 }
 
 /** Gate an admin route: valid cookie, or the raw key in `x-admin-token`. */

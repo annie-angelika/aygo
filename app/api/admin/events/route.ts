@@ -14,6 +14,12 @@ import type { AdminEventInput } from "@/lib/server/store/types";
 
 const DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
+/** Every event, private ones included — the admin's manage list. */
+export const GET = handler(async (req: Request) => {
+  await requireAdmin(req);
+  return json(await getStore().listAllEvents());
+});
+
 export const POST = handler(async (req: Request) => {
   await requireAdmin(req);
   const b = expectObject(await readJson<unknown>(req, 256 * 1024), "event");

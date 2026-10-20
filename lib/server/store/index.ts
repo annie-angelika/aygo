@@ -15,7 +15,20 @@ import { MemoryStore } from "@/lib/server/store/memory";
 import { PostgresStore } from "@/lib/server/store/postgres";
 import type { Store } from "@/lib/server/store/types";
 
+// A production build bundles the store once per route, so the SAME class can
+// have a different identity in every route chunk — the globalThis cache is
+// what keeps one instance shared across them (the memory store would otherwise
+// fragment into one state per route).
+//
+// In development the Postgres store is NOT cached on globalThis: a hot reload
+// that changes the store module would otherwise keep serving the old instance
+// (old method bodies, missing methods, schema statements never run). A
+// module-scoped cache is fresh on every reload of this module and still
+// avoids rebuilding the Neon client per request. The memory store stays on
+// globalThis in dev on purpose — its whole state lives in the instance.
 const globalForStore = globalThis as unknown as { __aygoStore?: Store };
+const DEV = process.env.NODE_ENV !== "production";
+let devPostgres: Store | null = null;
 
 function withReadiness(store: Store): Store {
   let ready: Promise<void> | null = null;
@@ -41,11 +54,12 @@ function withReadiness(store: Store): Store {
 }
 
 export function getStore(): Store {
+  if (DATA_SOURCE === "postgres" && DEV) {
+    return (devPostgres ??= withReadiness(new PostgresStore()));
+  }
   if (!globalForStore.__aygoStore) {
     globalForStore.__aygoStore =
-      DATA_SOURCE === "postgres"
-        ? withReadiness(new PostgresStore())
-        : new MemoryStore();
+      DATA_SOURCE === "postgres" ? withReadiness(new PostgresStore()) : new MemoryStore();
   }
   return globalForStore.__aygoStore;
 }
