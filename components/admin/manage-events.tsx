@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventForm } from "@/components/admin/event-form";
-import { useEvents } from "@/hooks/use-events";
+import { ActionError } from "@/components/admin/action-error";
+import { useAdminEvents } from "@/hooks/use-admin";
 import { adminDeleteEvent } from "@/lib/api/admin";
 import type { AygoEvent } from "@/types";
 
@@ -20,13 +21,14 @@ const PAGE = 25;
 type When = "all" | "upcoming" | "past";
 
 export function ManageEvents({ onChanged }: { onChanged: () => void }) {
-  const { data: events, loading, refetch } = useEvents();
+  const { data: events, loading, refetch } = useAdminEvents();
   const [query, setQuery] = useState("");
   const [when, setWhen] = useState<When>("all");
   const [limit, setLimit] = useState(PAGE);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AygoEvent | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
   const filtered = events
@@ -49,9 +51,12 @@ export function ManageEvents({ onChanged }: { onChanged: () => void }) {
     if (!window.confirm(`Delete "${e.title}"? RSVPs and aygos for it go too.`))
       return;
     setBusyId(e.id);
+    setError(null);
     try {
       await adminDeleteEvent(e.id);
       changed();
+    } catch {
+      setError(`Couldn't delete "${e.title}" — try again.`);
     } finally {
       setBusyId(null);
     }
@@ -99,6 +104,7 @@ export function ManageEvents({ onChanged }: { onChanged: () => void }) {
         </TabsList>
       </Tabs>
 
+      <ActionError message={error} />
       <p className="text-[11.5px] text-muted-foreground">
         {filtered.length} {filtered.length === 1 ? "event" : "events"}
         {q ? ` matching “${query.trim()}”` : ""}
@@ -127,7 +133,8 @@ export function ManageEvents({ onChanged }: { onChanged: () => void }) {
                 </p>
                 <p className="truncate text-[11px] text-muted-foreground">
                   {e.category} · {e.city} · {e.dayLabel} {e.timeLabel}
-                  {e.isPast ? " · past" : ""} · {e.attendees} going
+                  {e.isPast ? " · past" : ""}
+                  {e.visibility === "private" ? " · private (link only)" : ""} · {e.attendees} going
                 </p>
               </div>
               <Button

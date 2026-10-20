@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 /** The operator dashboard — full-bleed like an event page, no app chrome. */
 export default function AdminPage() {
   return (
-    <main className="mx-auto min-h-svh w-full max-w-md bg-background">
+    <main className="mx-auto min-h-svh w-full max-w-md bg-background lg:max-w-6xl">
       <AdminScreen />
     </main>
   );

@@ -10,6 +10,7 @@ import { LuCalendarPlus, LuChevronRight, LuTrash2 } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ActionError } from "@/components/admin/action-error";
 import { eventCode } from "@/lib/events-data";
 import { adminDeleteEvent, type AdminStats } from "@/lib/api/admin";
 
@@ -21,6 +22,7 @@ export function RecentCreated({
   onChanged: () => void;
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   if (!stats) return <Skeleton className="h-40 rounded-2xl" />;
 
@@ -28,9 +30,12 @@ export function RecentCreated({
     if (!window.confirm(`Remove "${title}"? This takes it off the app for everyone.`))
       return;
     setBusyId(id);
+    setError(null);
     try {
       await adminDeleteEvent(id);
       onChanged();
+    } catch {
+      setError(`Couldn't remove "${title}" — try again.`);
     } finally {
       setBusyId(null);
     }
@@ -47,6 +52,8 @@ export function RecentCreated({
   }
 
   return (
+    <div className="flex flex-col gap-2">
+    <ActionError message={error} />
     <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
       {stats.recentCreated.map((e, i) => (
         <div
@@ -85,6 +92,7 @@ export function RecentCreated({
           </Button>
         </div>
       ))}
+    </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useAsyncData } from "@/hooks/use-async-data";
+import type { AygoEvent } from "@/types";
 import {
   adminLogin,
   adminLogout,
@@ -13,10 +14,16 @@ import {
   fetchAdminSession,
   fetchAdminStats,
   fetchReports,
+  fetchMetrics,
+  fetchMetricShares,
+  fetchAdminEvents,
   type EventReport,
+  type MetricShareLink,
 } from "@/lib/api/admin";
 
 const NO_REPORTS: EventReport[] = [];
+const NO_EVENTS: AygoEvent[] = [];
+const NO_SHARES: MetricShareLink[] = [];
 
 export function useAdminSession() {
   // null = still checking with the server.
@@ -61,6 +68,36 @@ export function useAdminReports(enabled: boolean) {
     { cacheKey: "admin-reports", enabled },
   );
   return { reports: data ?? NO_REPORTS, loading, error, refetch };
+}
+
+/** Every event for the manage list — private ones too, unlike the public catalog. */
+export function useAdminEvents(enabled = true) {
+  const { data, loading, error, refetch } = useAsyncData(
+    (signal) => fetchAdminEvents(signal),
+    [],
+    { cacheKey: "admin-events", enabled },
+  );
+  return { data: data ?? NO_EVENTS, loading, error, refetch };
+}
+
+/** The traction report (totals + weekly series), recomputed on every fetch. */
+export function useAdminMetrics(enabled: boolean) {
+  const { data, loading, error, refetch } = useAsyncData(
+    (signal) => fetchMetrics(signal),
+    [],
+    { cacheKey: "admin-metrics", enabled },
+  );
+  return { report: data, loading, error, refetch };
+}
+
+/** The public report links. */
+export function useMetricShares(enabled: boolean) {
+  const { data, loading, error, refetch } = useAsyncData(
+    (signal) => fetchMetricShares(signal),
+    [],
+    { cacheKey: "admin-metric-shares", enabled },
+  );
+  return { shares: data ?? NO_SHARES, loading, error, refetch };
 }
 
 /** Re-run the catalog seed; resolves to the seeded counts. */

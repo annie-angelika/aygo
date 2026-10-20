@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatTile } from "@/components/ui/stat-tile";
 import type { AdminStats } from "@/lib/api/admin";
 
 const TILES: {
@@ -33,7 +34,7 @@ const TILES: {
 export function AdminStatsGrid({ stats }: { stats?: AdminStats }) {
   if (!stats) {
     return (
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         {TILES.map((t) => (
           <Skeleton key={t.key} className="h-20 rounded-2xl" />
         ))}
@@ -42,20 +43,9 @@ export function AdminStatsGrid({ stats }: { stats?: AdminStats }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {TILES.map(({ key, label, Icon }) => (
-        <div
-          key={key}
-          className="flex flex-col gap-1 rounded-2xl bg-card px-3.5 py-3 ring-1 ring-border"
-        >
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Icon className="size-3.5 text-gold-deep" aria-hidden />
-            {label}
-          </span>
-          <span className="text-[20px] font-semibold leading-none tracking-tight tabular-nums text-foreground">
-            {stats.totals[key].toLocaleString()}
-          </span>
-        </div>
+        <StatTile key={key} label={label} icon={Icon} value={stats.totals[key]} />
       ))}
     </div>
   );

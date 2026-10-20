@@ -83,4 +83,6 @@ export const LIMITS = {
   geocode: { max: 30, windowMs: 60_000 },
   adminLogin: { max: 5, windowMs: 15 * 60_000 },
   hostAction: { max: 120, windowMs: 60 * 60_000 },
+  // Public traction reports (per IP): a page view is one call.
+  publicMetrics: { max: 60, windowMs: 60_000 },
 } as const satisfies Record<string, Limit>;

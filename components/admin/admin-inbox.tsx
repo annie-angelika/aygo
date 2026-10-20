@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ActionError } from "@/components/admin/action-error";
 import { eventCode } from "@/lib/events-data";
 import { setReportStatus, type EventReport } from "@/lib/api/admin";
 import { cn } from "@/lib/utils";
@@ -28,13 +29,17 @@ export function AdminInbox({
 }) {
   const [view, setView] = useState<"open" | "all">("open");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const shown = view === "open" ? reports.filter((r) => r.status === "open") : reports;
 
   async function toggle(r: EventReport) {
     setBusyId(r.id);
+    setError(null);
     try {
       await setReportStatus(r.id, r.status === "open" ? "resolved" : "open");
       onChanged();
+    } catch {
+      setError("Couldn't update that item — try again.");
     } finally {
       setBusyId(null);
     }
@@ -56,6 +61,7 @@ export function AdminInbox({
         </TabsList>
       </Tabs>
 
+      <ActionError message={error} />
       {shown.length === 0 ? (
         <EmptyState
           icon={LuInbox}

@@ -11,6 +11,7 @@ import type {
   Stamp,
   FeedbackReply,
   AppNotification,
+  MetricShare,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type {
@@ -25,6 +26,8 @@ import type {
   Store,
   Registrations,
   AdminStats,
+  MetricsSource,
+  MetricEvent,
   AdminEventInput,
   AdminCalendarInput,
   EventReport,
@@ -79,6 +82,10 @@ export class MemoryStore implements Store {
   private notifications = new Map<string, AppNotification[]>();
   private createdEvents: { sid: string; draft: EventDraft; createdAt: string }[] =
     [];
+  // When a session finished sign-up / first bound a login — the metrics source.
+  private usernameAt = new Map<string, string>();
+  private accountAt = new Map<string, string>();
+  private metricShares = new Map<string, MetricShare>();
 
   constructor() {
     void this.seed();
@@ -141,6 +148,14 @@ export class MemoryStore implements Store {
     return withLiveAttendance([...listed, ...this.events.values()], this.goingByEvent());
   }
 
+  async listAllEvents(): Promise<AygoEvent[]> {
+    const all = this.createdEvents.map(({ sid, draft }) => ({
+      ...draftToEvent(draft, this.guests.get(sid)?.profile, { light: true }),
+      visibility: draft.visibility ?? ("public" as const),
+    }));
+    return withLiveAttendance([...all, ...this.events.values()], this.goingByEvent());
+  }
+
   async getEvent(id: string): Promise<AygoEvent | null> {
     const event =
       this.events.get(id) ?? this.created(false).find((e) => e.id === id);
@@ -166,6 +181,7 @@ export class MemoryStore implements Store {
 
   async bindAccount(accountKey: string, sid: string): Promise<void> {
     if (!this.accounts.has(accountKey)) this.accounts.set(accountKey, sid);
+    if (!this.accountAt.has(sid)) this.accountAt.set(sid, new Date().toISOString());
   }
 
   async rebindAccount(accountKey: string, sid: string): Promise<void> {
@@ -324,6 +340,7 @@ export class MemoryStore implements Store {
     const previous = this.usernameOf(sid);
     if (previous) this.usernames.delete(previous);
     this.usernames.set(username, sid);
+    if (!this.usernameAt.has(sid)) this.usernameAt.set(sid, new Date().toISOString());
     return "ok";
   }
 
@@ -530,4 +547,55 @@ export class MemoryStore implements Store {
       if (!ids || ids.includes(n.id)) n.read = true;
     }
   }
+
+  // --- Metrics ---
+
+  async metricsSource(): Promise<MetricsSource> {
+    const going: MetricEvent[] = [];
+    const applications: MetricEvent[] = [];
+    const stamps: MetricEvent[] = [];
+    for (const [sid, g] of this.guests) {
+      for (const at of g.going.values()) going.push({ at, sid });
+      for (const a of g.applied.values()) applications.push({ at: a.at, sid });
+      for (const st of g.stamps.values()) stamps.push({ at: st.earnedAt ?? new Date().toISOString(), sid });
+    }
+    return {
+      usernames: [...this.usernameAt].map(([sid, at]) => ({ at, sid })),
+      accountsAt: [...this.accountAt.values()],
+      events: this.createdEvents.map((c) => ({
+        sid: c.sid,
+        createdAt: c.createdAt,
+        startsAt: c.draft.startsAt,
+        city: c.draft.city,
+        category: c.draft.category,
+      })),
+      going,
+      applications,
+      stamps,
+      reports: this.reports.map((r) => ({ at: r.createdAt, sid: r.sid })),
+      openReports: this.reports.filter((r) => r.status === "open").length,
+    };
+  }
+
+  async listMetricShares(): Promise<MetricShare[]> {
+    return [...this.metricShares.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async createMetricShare(id: string, label: string, expiresAt: string | null): Promise<MetricShare> {
+    const share: MetricShare = { id, label, createdAt: new Date().toISOString(), expiresAt, revokedAt: null };
+    this.metricShares.set(id, share);
+    return share;
+  }
+
+  async getMetricShare(id: string): Promise<MetricShare | null> {
+    return this.metricShares.get(id) ?? null;
+  }
+
+  async revokeMetricShare(id: string): Promise<boolean> {
+    const share = this.metricShares.get(id);
+    if (!share || share.revokedAt) return false;
+    share.revokedAt = new Date().toISOString();
+    return true;
+  }
+
 }
