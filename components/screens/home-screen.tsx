@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { LuTicket, LuMountain } from "react-icons/lu";
 
 import { useEvents } from "@/hooks/use-events";
-import { useRegistrations } from "@/hooks/use-registrations";
+import { useRegistrations, useRegistrationRefresh } from "@/hooks/use-registrations";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ export function HomeScreen({ period }: { period: Period }) {
   const router = useRouter();
   const { data, loading } = useEvents();
   const { going, stamps, isGoing } = useRegistrations();
+  // Your tickets reflect the host's latest decisions while this screen is open.
+  useRegistrationRefresh();
 
   // Upcoming: what you're registered for and hasn't ended. Past: events you
   // checked in to (an aygo) plus registrations whose event already ended —

@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { useStorageValue, useHydrated } from "@/hooks/use-storage";
+import { usePollWhileVisible } from "@/hooks/use-poll";
+import { refreshRegistrations, trackRegistrationWrite } from "@/hooks/use-server-sync";
 import { STORAGE_KEYS, readStorage, writeStorage, type StorageKey } from "@/lib/storage";
 import { LEVELS } from "@/lib/events-data";
 import {
@@ -29,10 +33,32 @@ function syncList<T>(
 ): void {
   const before = readStorage<T[]>(key, fallback);
   writeStorage(key, next);
-  void op.catch((e) => {
+  void trackRegistrationWrite(op).catch((e) => {
     console.error("registration sync failed", e);
     writeStorage(key, before);
   });
+}
+
+/** How often a screen showing your status re-checks it with the server. */
+const REFRESH_MS = 30_000;
+
+/**
+ * Keep the local registration state honest while a screen that shows it is
+ * open: re-read it from the server on mount, whenever the tab comes back to
+ * the foreground, and every half minute — so the host's approve / decline /
+ * remove is reflected without a reload or a withdraw-and-retry.
+ */
+export function useRegistrationRefresh(enabled = true): void {
+  useEffect(() => {
+    if (!enabled) return;
+    void refreshRegistrations();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshRegistrations();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [enabled]);
+  usePollWhileVisible(refreshRegistrations, REFRESH_MS, enabled);
 }
 
 /**
@@ -65,7 +91,7 @@ export function useRegistrations() {
     if (isApplied(id)) return;
     writeStorage(STORAGE_KEYS.applied, [...applied, id]);
     try {
-      await applyToEvent(id, message);
+      await trackRegistrationWrite(applyToEvent(id, message));
     } catch (e) {
       writeStorage(
         STORAGE_KEYS.applied,
@@ -88,7 +114,7 @@ export function useRegistrations() {
     if (isGoing(id)) return;
     writeStorage(STORAGE_KEYS.going, [...going, id]);
     try {
-      await rsvp(id);
+      await trackRegistrationWrite(rsvp(id));
     } catch (e) {
       writeStorage(
         STORAGE_KEYS.going,

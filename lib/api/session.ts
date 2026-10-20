@@ -11,21 +11,34 @@ export class NonceChallenge extends Error {
   }
 }
 
+/** What the server says about this browser's session. */
+export type SessionState = {
+  /** The session belongs to a verified account (vs. an anonymous guest). */
+  account: boolean;
+  /** Short tag of the session id in force — changes when the session does. */
+  fingerprint: string;
+};
+
+/** Is this browser's session an account's, and which session is it? → `GET /me/session` */
+export async function fetchSessionState(signal?: AbortSignal): Promise<SessionState> {
+  return api.get<SessionState>("/me/session", undefined, signal);
+}
+
 /**
  * Prove the login to the server (a Pollar access token plus a DPoP proof for
  * Pollar's own session check, which the server relays) so this browser's
  * session becomes the one that belongs to the verified account — on any
- * device. Resolves `{ changed }`: when true the caller reloads so every
- * local-first cache re-hydrates from the right account. Throws
- * `NonceChallenge` when the proof must be rebuilt with a nonce.
+ * device. Resolves `{ changed, fingerprint }`: when `changed` the caller
+ * reloads so every local-first cache re-hydrates from the right account.
+ * Throws `NonceChallenge` when the proof must be rebuilt with a nonce.
  * → `POST /me/session`
  */
 export async function linkAccountSession(input: {
   accessToken: string;
   dpop: string;
-}): Promise<{ changed: boolean }> {
+}): Promise<{ changed: boolean; fingerprint: string }> {
   try {
-    return await api.post<{ changed: boolean }>("/me/session", input);
+    return await api.post<{ changed: boolean; fingerprint: string }>("/me/session", input);
   } catch (e) {
     const nonce =
       e instanceof ApiError && e.status === 428 && e.body && typeof e.body === "object"

@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   preferences: "aygo.preferences", // Preferences — interests + home city
   created: "aygo.created", // EventDraft[] — events you created (Luma-style create flow)
   onboarded: "aygo.onboarded", // boolean — the welcome tour was seen/dismissed
+  owner: "aygo.owner", // { fingerprint, account } — the server session these caches were filled from
+  linked: "aygo.linked", // string — the Pollar login (user id) already proven to the server for this session
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

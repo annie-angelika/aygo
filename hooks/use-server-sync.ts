@@ -1,14 +1,19 @@
 "use client";
 
-// Hydrates the local-first cache from the backend, once per full page load.
-// This closes the loop of the local-first model (see lib/api/README.md): writes
-// go localStorage → background sync; this brings server state back down so a
-// new browser (or a cleared one) sees the account's RSVPs, stamps, profile and
-// preferences.
+// Hydrates the local-first cache from the backend, once per full page load —
+// after the server has said WHICH session this is (hooks/use-session-state),
+// so caches filled from another session are dropped first, never pushed up.
+// This closes the loop of the local-first model (see lib/api/README.md):
+// writes go localStorage → background sync; this brings server state back
+// down so a new browser (or a cleared one) sees the account's RSVPs, stamps,
+// profile and preferences.
 //
 // Merge policy (no timestamps, so keep it predictable):
-// - Lists (going / applied / stamps): union. Server rows are adopted locally;
-//   local-only rows are treated as unsynced offline writes and pushed up.
+// - Registrations (going / applied / stamps): the SERVER is authoritative. The
+//   host decides who is on the list (declines, removals), so a local row the
+//   server no longer has is gone — it is never re-sent as if it were an
+//   offline write. (That re-send used to put a declined guest back to
+//   "Pending" and a removed guest back on the list.)
 // - Profile / preferences: a local copy wins (it may hold unsynced edits) and
 //   is pushed up when it differs; with no local copy, the server's is adopted.
 
@@ -19,12 +24,11 @@ import {
   fetchProfile,
   fetchPreferences,
   fetchMyEvents,
-  rsvp,
-  applyToEvent,
-  collectStamp,
   saveProfile,
   savePreferences,
+  type Registrations,
 } from "@/lib/api";
+import { loadSessionState } from "@/hooks/use-session-state";
 import { replaceDrafts } from "@/lib/create-event";
 import type { Preferences, ProfileEdits, Stamp } from "@/types";
 
@@ -37,35 +41,53 @@ const changed = (a: unknown, b: unknown) =>
 const push = (op: Promise<void>) =>
   void op.catch((e) => console.error("aygo sync push failed", e));
 
-async function syncRegistrations(): Promise<void> {
-  const server = await fetchRegistrations();
+// Optimistic registration writes in flight (use-registrations): a refresh
+// that landed between the local write and the server's answer would wipe the
+// optimistic row, so a refresh waits for them first.
+const writes = new Set<Promise<unknown>>();
+export function trackRegistrationWrite<T>(op: Promise<T>): Promise<T> {
+  writes.add(op);
+  const done = () => writes.delete(op);
+  // Both branches handled here: the caller owns the rejection, this chain
+  // must never surface it as a second, unhandled one.
+  op.then(done, done);
+  return op;
+}
 
+/** Mirror the server's registrations into the local cache (server wins). */
+export function applyRegistrations(server: Registrations): void {
   const going = readStorage<string[]>(STORAGE_KEYS.going, []);
   const applied = readStorage<string[]>(STORAGE_KEYS.applied, []);
   const stamps = readStorage<Stamp[]>(STORAGE_KEYS.stamps, []);
 
-  const mergedGoing = [...new Set([...server.going, ...going])];
-  const mergedApplied = [...new Set([...server.applied, ...applied])];
-  const seen = new Set(server.stamps.map((s) => s.eventId));
-  const localOnlyStamps = stamps.filter((s) => !seen.has(s.eventId));
-  const mergedStamps = [...server.stamps, ...localOnlyStamps];
+  // A stamped event is done — it never shows as going/applied again.
+  const stamped = new Set(server.stamps.map((s) => s.eventId));
+  const nextGoing = server.going.filter((id) => !stamped.has(id));
+  const nextApplied = server.applied.filter((id) => !stamped.has(id));
 
-  // A stamped event is done — it never re-enters going/applied via the merge.
-  const stamped = new Set(mergedStamps.map((s) => s.eventId));
-  const finalGoing = mergedGoing.filter((id) => !stamped.has(id));
-  const finalApplied = mergedApplied.filter((id) => !stamped.has(id));
+  if (changed(going, nextGoing)) writeStorage(STORAGE_KEYS.going, nextGoing);
+  if (changed(applied, nextApplied)) writeStorage(STORAGE_KEYS.applied, nextApplied);
+  if (changed(stamps, server.stamps)) writeStorage(STORAGE_KEYS.stamps, server.stamps);
+}
 
-  if (changed(going, finalGoing)) writeStorage(STORAGE_KEYS.going, finalGoing);
-  if (changed(applied, finalApplied))
-    writeStorage(STORAGE_KEYS.applied, finalApplied);
-  if (changed(stamps, mergedStamps))
-    writeStorage(STORAGE_KEYS.stamps, mergedStamps);
+async function syncRegistrations(): Promise<void> {
+  applyRegistrations(await fetchRegistrations());
+}
 
-  for (const id of finalGoing.filter((id) => !server.going.includes(id)))
-    push(rsvp(id));
-  for (const id of finalApplied.filter((id) => !server.applied.includes(id)))
-    push(applyToEvent(id));
-  for (const s of localOnlyStamps) push(collectStamp(s.eventId));
+/**
+ * Re-read registrations from the server now — the event page and the tickets
+ * list call this on mount and while visible, so a host's decision (approve,
+ * decline, remove) shows up without a reload. Failures are silent (the cache
+ * simply stays as it was).
+ */
+export async function refreshRegistrations(): Promise<void> {
+  try {
+    await loadSessionState();
+    if (writes.size > 0) await Promise.allSettled([...writes]);
+    applyRegistrations(await fetchRegistrations());
+  } catch (e) {
+    console.error("registrations refresh failed", e);
+  }
 }
 
 async function syncProfile(): Promise<void> {
@@ -109,15 +131,19 @@ export function useServerSync(): void {
   useEffect(() => {
     if (started) return;
     started = true;
-    void Promise.allSettled([
-      syncRegistrations(),
-      syncProfile(),
-      syncPreferences(),
-      syncHostedEvents(),
-    ]).then((results) => {
-      for (const r of results)
-        if (r.status === "rejected")
-          console.error("aygo server sync failed", r.reason);
-    });
+    void loadSessionState()
+      .then(() =>
+        Promise.allSettled([
+          syncRegistrations(),
+          syncProfile(),
+          syncPreferences(),
+          syncHostedEvents(),
+        ]),
+      )
+      .then((results) => {
+        for (const r of results)
+          if (r.status === "rejected")
+            console.error("aygo server sync failed", r.reason);
+      });
   }, []);
 }

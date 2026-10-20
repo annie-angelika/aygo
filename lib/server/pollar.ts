@@ -54,6 +54,7 @@ const TIMEOUT_MS = 6_000;
 export async function verifyPollarSession(
   accessToken: string,
   dpopProof: string,
+  origin: string,
 ): Promise<VerifiedProfile> {
   if (!API_KEY) throw new HttpError(503, "Login isn't configured on this server");
   const controller = new AbortController();
@@ -67,6 +68,11 @@ export async function verifyPollarSession(
         Authorization: `DPoP ${accessToken}`,
         DPoP: dpopProof,
         Accept: "application/json",
+        // The publishable key is locked to the app's domains: Pollar answers
+        // ORIGIN_NOT_ALLOWED (403) to any request without a browser Origin —
+        // which is every server-to-server call. Relaying the app's own origin
+        // is what makes this verification pass at all.
+        Origin: origin,
       },
       signal: controller.signal,
       cache: "no-store",
@@ -78,19 +84,32 @@ export async function verifyPollarSession(
   }
 
   // Pollar answers 401 (with a nonce challenge when it wants one) or 403 for a
-  // token/proof it doesn't accept; both mean "not verified" to us.
+  // token/proof it doesn't accept; both mean "not verified" to us. Its error
+  // code rides along in the message and the server log so a failing relay is
+  // diagnosable from a QA report instead of a silent "sign in again".
   if (res.status === 401 || res.status === 403) {
     const challenge = res.headers.get("www-authenticate") ?? "";
     const nonce = res.headers.get("dpop-nonce");
     if (nonce && challenge.includes("use_dpop_nonce")) throw new DpopNonceRequired(nonce);
-    throw new HttpError(401, "Your login couldn't be verified — sign in again.");
+    const code = await errorCode(res);
+    console.error("Pollar session verification refused", { status: res.status, code });
+    throw new HttpError(401, `Your login couldn't be verified — sign in again. (${code})`);
   }
-  if (!res.ok) throw new HttpError(502, "The login provider had a problem — try again.");
+  if (!res.ok) {
+    console.error("Pollar session verification failed", { status: res.status, code: await errorCode(res) });
+    throw new HttpError(502, "The login provider had a problem — try again.");
+  }
 
   const body = (await res.json().catch(() => null)) as { content?: VerifiedProfile } | null;
   const profile = body?.content;
   if (!profile || typeof profile !== "object") throw new HttpError(502, "Unexpected login provider response");
   return profile;
+}
+
+/** Pollar's `{ code }` from an error body, or the HTTP status when there is none. */
+async function errorCode(res: Response): Promise<string> {
+  const body = (await res.json().catch(() => null)) as { code?: unknown } | null;
+  return typeof body?.code === "string" && body.code ? body.code : `HTTP ${res.status}`;
 }
 
 /**

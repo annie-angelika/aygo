@@ -21,6 +21,7 @@ const META: Record<NotificationKind, { Icon: IconType; tint: string }> = {
   request: { Icon: LuUserCheck, tint: "bg-secondary text-foreground" },
   approved: { Icon: LuCheck, tint: "bg-gold text-navy" },
   rejected: { Icon: LuX, tint: "bg-muted text-muted-foreground" },
+  removed: { Icon: LuX, tint: "bg-muted text-muted-foreground" },
   question: { Icon: LuMessageCircle, tint: "bg-secondary text-foreground" },
   reply: { Icon: LuReply, tint: "bg-secondary text-foreground" },
   report_update: { Icon: LuFlag, tint: "bg-muted text-muted-foreground" },
