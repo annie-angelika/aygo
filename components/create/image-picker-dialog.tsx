@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LuUpload, LuLoaderCircle } from "react-icons/lu";
+import { LuUpload, LuLoaderCircle, LuCamera } from "react-icons/lu";
 
 import {
   Sheet,
@@ -32,6 +32,10 @@ export function ImagePickerDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // A separate single-file input with `capture`: Android's chooser offers the
+  // camera only for a single capture, so the multi-select "upload" input
+  // alone leaves phones with the gallery and nothing else.
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   function pick(srcs: string[]) {
     if (srcs.length === 0) return;
@@ -96,8 +100,17 @@ export function ImagePickerDialog({
               <LuUpload className="size-5" aria-hidden />
             )}
             <span className="text-[12.5px] font-medium">
-              {busy ? "Preparing photos…" : "Tap here to upload"}
+              {busy ? "Preparing photos…" : "Choose from your photos"}
             </span>
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => cameraRef.current?.click()}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-card text-[13.5px] font-semibold text-foreground ring-1 ring-border transition-colors hover:bg-muted disabled:opacity-60"
+          >
+            <LuCamera className="size-4" aria-hidden />
+            Take a photo
           </button>
           {error && (
             <p className="text-center text-[12px] font-medium text-destructive">{error}</p>
@@ -107,6 +120,14 @@ export function ImagePickerDialog({
             type="file"
             accept="image/*"
             multiple={remaining > 1}
+            onChange={onFiles}
+            className="hidden"
+          />
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
             onChange={onFiles}
             className="hidden"
           />

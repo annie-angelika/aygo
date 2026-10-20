@@ -76,7 +76,9 @@ export const LIMITS = {
   // Dev access code guesses (per IP; there's no session yet at the gate).
   devAccess: { max: 10, windowMs: 10 * 60_000 },
   preferences: { max: 60, windowMs: 60 * 60_000 },
-  session: { max: 20, windowMs: 10 * 60_000 },
+  // Per IP (there is no account yet when linking): a QA session with a PC,
+  // an incognito window and a phone on one Wi-Fi relinks on every page load.
+  session: { max: 60, windowMs: 10 * 60_000 },
   stamps: { max: 20, windowMs: 60 * 60_000 },
   geocode: { max: 30, windowMs: 60_000 },
   adminLogin: { max: 5, windowMs: 15 * 60_000 },

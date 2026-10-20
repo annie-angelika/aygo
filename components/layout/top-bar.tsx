@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LuTicket, LuCompass, LuPlus } from "react-icons/lu";
+import { LuTicket, LuCompass, LuPlus, LuLoaderCircle, LuRefreshCw } from "react-icons/lu";
 
 import { Logo } from "@/components/layout/logo";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
   // `usePathname` can be null while rendering the global not-found page.
   const pathname = usePathname() ?? "";
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, linking, linkError, retryLink } = useAuth();
   // Full-screen detail views (e.g. the collection) own their own back button.
   if (pathname.endsWith("/collection")) return null;
   const dark = tone === "dark";
@@ -75,6 +75,29 @@ export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
 
               <ProfileMenu active={onProfile} dark={dark} />
             </>
+          ) : linking ? (
+            // The Pollar login is being proven to the server (a few seconds
+            // after sign-in). Nothing of the account shows until it is.
+            <span
+              role="status"
+              className={cn(
+                "inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-[12.5px] font-semibold ring-1",
+                dark ? "bg-white/10 text-cream ring-white/15" : "bg-card text-foreground ring-border",
+              )}
+            >
+              <LuLoaderCircle className="size-4 animate-spin" aria-hidden />
+              Signing in…
+            </span>
+          ) : linkError ? (
+            <button
+              type="button"
+              onClick={retryLink}
+              title={linkError}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-destructive px-3.5 text-[12.5px] font-semibold text-white"
+            >
+              <LuRefreshCw className="size-3.5" aria-hidden />
+              Sign-in failed · Retry
+            </button>
           ) : (
             <SignInButton
               className={cn(

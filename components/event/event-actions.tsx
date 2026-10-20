@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { LuCheck, LuClock, LuArrowUpRight, LuQrCode } from "react-icons/lu";
 
-import { useRegistrations } from "@/hooks/use-registrations";
+import { useRegistrations, useRegistrationRefresh } from "@/hooks/use-registrations";
 import { useAuth } from "@/hooks/use-auth";
 import { useHydrated } from "@/hooks/use-storage";
 import { ownsEventLocally } from "@/hooks/use-manage-event";
 import { Button } from "@/components/ui/button";
 import { RegisterDialog } from "@/components/event/register-dialog";
-import { TicketContact } from "@/components/event/ticket-contact";
+import { TicketContact, PayHostButtons } from "@/components/event/ticket-contact";
 import { applyConfigFor } from "@/lib/apply";
 import type { AygoEvent } from "@/types";
 
@@ -27,6 +27,9 @@ export function EventActions({ event }: { event: AygoEvent }) {
   const { isGoing, isApplied, toggleGoing, withdraw, hasStamp, hydrated } =
     useRegistrations();
   const { isAuthenticated, openLoginModal } = useAuth();
+  // The host's decision (approve / decline / remove) lands here without a
+  // reload: your status is re-read while this page is open.
+  useRegistrationRefresh(isAuthenticated);
   const mounted = useHydrated();
   // The registration sheet is controlled here and always mounted, so it
   // survives the flip from "tap to register" to "pending"/"going" beneath it.
@@ -108,8 +111,22 @@ export function EventActions({ event }: { event: AygoEvent }) {
           </button>
         </div>
         {/* Paid events: once you're in (instant reserve or approved request),
-            the host's pay channels stay one tap away until you check in. */}
-        {paid && !collected && <TicketContact event={event} />}
+            the host's pay channels stay front and centre until you check in —
+            a reserved spot is only yours once the host has the money. */}
+        {paid && !collected && (
+          <div className="flex w-full flex-col items-center gap-1.5 pt-1">
+            {cfg.canPayHost ? (
+              <>
+                <PayHostButtons event={event} prominent className="w-full" />
+                <p className="text-[11px] text-muted-foreground">
+                  Pay Bs {event.price} to {event.host.name} to keep your spot · they confirm it by hand
+                </p>
+              </>
+            ) : (
+              <TicketContact event={event} />
+            )}
+          </div>
+        )}
       </div>
     );
   }

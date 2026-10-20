@@ -1,8 +1,11 @@
-// Free-text location → coordinates, via OpenStreetMap's Nominatim (free, no
-// key; usage policy = 1 req/s + a descriptive User-Agent, which fits our
-// write-time-only usage: we geocode ONCE when an event is created/edited and
-// store the result — never per request or per render). A failure just returns
-// null; the event stays un-mapped rather than blocking the write.
+// Free-text location → coordinates, via OpenStreetMap data from two services:
+// Nominatim (addresses, plazas, streets; usage policy = 1 req/s + a
+// descriptive User-Agent) and Photon (komoot's typeahead index over the same
+// data, which is what finds a café or a shop by its name — Nominatim wants a
+// full address and returns nothing for "typica" or "alexander coffee"). Both
+// are free and keyless. We geocode at write time and on the picker's
+// debounced keystrokes, never per render. A failure just returns null; the
+// event stays un-mapped rather than blocking the write.
 //
 // aygo is Bolivia-first: every lookup is bounded to Bolivia unless the host
 // picked a city abroad, and a chosen city ranks its own box first. The search
@@ -32,6 +35,8 @@ export type PlaceHit = {
 export type SearchScope = {
   countryCode?: string;
   bbox?: [number, number, number, number];
+  /** The city's centre — the typeahead ranks places by distance from it. */
+  center?: Coords;
   /** Words the host may type that name the scope itself (dropped when cleaning). */
   aliases?: string[];
   /** The device's position, when the host allowed it: searched first, tightly. */
@@ -58,9 +63,13 @@ export function scopeForCity(city?: string | null): SearchScope {
   return {
     countryCode: info.countryCode,
     bbox: info.bbox,
+    center: info.lat != null && info.lng != null ? { lat: info.lat, lng: info.lng } : undefined,
     aliases: [info.name, ...(info.aliases ?? []), info.country, "bolivia"],
   };
 }
+
+/** Bolivia, generously — the typeahead is bounded to this when no city box applies. */
+const BOLIVIA_BBOX: [number, number, number, number] = [-69.7, -22.95, -57.4, -9.6];
 
 type Row = {
   lat: string;
@@ -103,6 +112,84 @@ async function nominatim(
     });
     if (!res.ok) return [];
     return (await res.json()) as Row[];
+  } catch {
+    return [];
+  }
+}
+
+type PhotonFeature = {
+  geometry: { coordinates: [number, number] };
+  properties: {
+    name?: string;
+    street?: string;
+    housenumber?: string;
+    district?: string;
+    city?: string;
+    county?: string;
+    state?: string;
+    country?: string;
+    countrycode?: string;
+    osm_key?: string;
+    osm_value?: string;
+  };
+};
+
+/**
+ * Photon: name-first search over OSM — venues, shops, cafés — ranked by
+ * distance from `bias` and kept inside `box`. Mapped onto Nominatim's row
+ * shape so one ranking handles both.
+ */
+async function photon(
+  q: string,
+  limit: number,
+  scope: SearchScope | undefined,
+  box: [number, number, number, number] | undefined,
+  bias: Coords | undefined,
+): Promise<Row[]> {
+  const params = new URLSearchParams({ q, limit: String(limit), lang: "default" });
+  if (box) params.set("bbox", box.join(","));
+  if (bias) {
+    params.set("lat", String(bias.lat));
+    params.set("lon", String(bias.lng));
+  }
+  try {
+    const res = await fetch(`https://photon.komoot.io/api/?${params}`, {
+      headers: HEADERS,
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return [];
+    const body = (await res.json()) as { features?: PhotonFeature[] };
+    const rows: Row[] = [];
+    for (const f of body.features ?? []) {
+      const p = f.properties;
+      // Never leak another country: Photon's bbox is a box, not a border.
+      if (scope?.countryCode && p.countrycode && p.countrycode.toLowerCase() !== scope.countryCode) continue;
+      // Skip pure address rows (a street or a house number without a name):
+      // they only come back here when the name index found nothing better.
+      if (!p.name || p.osm_key === "highway" || p.osm_key === "place" && p.osm_value === "house") continue;
+      const [lon, lat] = f.geometry.coordinates;
+      const parts = [
+        p.name,
+        [p.street, p.housenumber].filter(Boolean).join(" "),
+        p.district,
+        p.city ?? p.county,
+        p.state,
+        p.country,
+      ].filter((x): x is string => !!x && x.trim().length > 0);
+      rows.push({
+        lat: String(lat),
+        lon: String(lon),
+        name: p.name,
+        display_name: [...new Set(parts)].join(", "),
+        address: {
+          ...(p.city ? { city: p.city } : null),
+          ...(p.county ? { county: p.county } : null),
+          ...(p.state ? { state: p.state } : null),
+          ...(p.country ? { country: p.country } : null),
+        },
+      });
+    }
+    return rows;
   } catch {
     return [];
   }
@@ -181,11 +268,21 @@ function candidates(query: string, scope?: SearchScope): string[] {
 function dedupe(rows: Row[]): Row[] {
   const seen = new Set<string>();
   return rows.filter((r) => {
-    const key = `${r.lat},${r.lon}`;
+    // Nominatim and Photon describe the same OSM object with slightly
+    // different precision; ~10 m is "the same place".
+    const key = `${Number(r.lat).toFixed(4)},${Number(r.lon).toFixed(4)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+}
+
+function inBox(r: Row, box: [number, number, number, number] | undefined): boolean {
+  if (!box) return false;
+  const lat = Number(r.lat);
+  const lon = Number(r.lon);
+  const [w, s, e, n] = box;
+  return lon >= w && lon <= e && lat >= s && lat <= n;
 }
 
 /**
@@ -194,18 +291,35 @@ function dedupe(rows: Row[]): Row[] {
  * in another city (Uyuni while La Paz is selected) still shows up after it.
  */
 async function lookup(q: string, limit: number, scope?: SearchScope): Promise<Row[]> {
-  // The three passes run together (one round-trip, not three) and merge in
-  // priority order: near the device, the city's box, the whole country.
+  // Every pass runs together (one round-trip, not five) and merges in
+  // priority order: near the device, the city's box, the whole country —
+  // Photon (venues by name) and Nominatim (addresses, squares) side by side.
+  const bias = scope?.near ?? scope?.center;
+  const countryBox = scope?.bbox ?? (scope?.countryCode === "bo" ? BOLIVIA_BBOX : undefined);
   const passes = await Promise.all([
+    scope?.near ? photon(q, limit, scope, boxAround(scope.near), scope.near) : Promise.resolve([]),
     scope?.near ? nominatim(q, limit, scope, true, boxAround(scope.near)) : Promise.resolve([]),
+    scope?.bbox ? photon(q, limit, scope, scope.bbox, bias) : Promise.resolve([]),
     scope?.bbox ? nominatim(q, limit, scope, true) : Promise.resolve([]),
+    photon(q, limit, scope, scope?.countryCode === "bo" ? BOLIVIA_BBOX : undefined, bias),
     nominatim(q, limit, scope, false),
   ]);
   const rows = dedupe(passes.flat()).filter((r) => mentions(r, q));
   // Venues whose own name matches outrank places that only match by address
-  // (a plaza in "Provincia Villarroel" vs. Plaza Villarroel itself).
+  // (a plaza in "Provincia Villarroel" vs. Plaza Villarroel itself); within
+  // each group, what is near the device or inside the chosen city comes first.
   const byName = (r: Row) => (mentions({ ...r, display_name: r.name ?? "" }, q) ? 0 : 1);
-  return rows.sort((a, b) => byName(a) - byName(b)).slice(0, limit);
+  const byPlace = (r: Row) =>
+    scope?.near && inBox(r, boxAround(scope.near)) ? 0 : inBox(r, scope?.bbox) ? 1 : inBox(r, countryBox) ? 2 : 3;
+  // Among places elsewhere in the country, a city we list beats a village
+  // (Plaza 24 de Septiembre in Santa Cruz before the one in Mairana).
+  const byCity = (r: Row) => {
+    const a = r.address ?? {};
+    return findCityByName(a.city || a.town || a.municipality || "") ? 0 : 1;
+  };
+  return rows
+    .sort((a, b) => byName(a) - byName(b) || byPlace(a) - byPlace(b) || byCity(a) - byCity(b))
+    .slice(0, limit);
 }
 
 /**

@@ -1,21 +1,31 @@
 "use client";
 
-// Keeps the server session in step with the Pollar login. On sign-in the
-// browser PROVES the login to our server (Pollar access token + a DPoP proof
-// for Pollar's session check, signed with the SDK's per-session key), and the
-// server makes this browser's session the one that belongs to that verified
-// account — restoring its events, RSVPs, stamps and inbox on any device. When
-// the active session actually changes, every local-first cache is cleared and
-// the page reloads so it re-hydrates from the right account. `signOut` does
-// the reverse.
+// Proves the Pollar login to our server, once per login, and keeps the
+// server's answer (hooks/use-session-state) current. On sign-in the browser
+// PROVES the login (Pollar access token + a DPoP proof for Pollar's session
+// check, signed with the SDK's per-session key), and the server makes this
+// browser's session the one that belongs to that verified account —
+// restoring its events, RSVPs, stamps and inbox on any device. When the
+// active session actually changes, every local-first cache is cleared and
+// the page reloads so it re-hydrates from the right account. A login already
+// proven for this session (remembered per browser) is not re-proven on every
+// page load. `signOutEverywhere` does the reverse.
 
 import { useEffect, useRef, useState } from "react";
 import { usePollar } from "@pollar/react";
-import { buildProof, WebCryptoKeyManager } from "@pollar/core";
+import { buildProof, WebCryptoKeyManager, type AuthState } from "@pollar/core";
 
-import { useAuth } from "@/hooks/use-auth";
-import { linkAccountSession, endAccountSession, NonceChallenge } from "@/lib/api";
-import { clearAllStorage } from "@/lib/storage";
+import { pollarMarker } from "@/hooks/use-auth";
+import {
+  adoptSession,
+  loadSessionState,
+  markLinked,
+  patchSessionState,
+  revalidateSession,
+  useSessionState,
+} from "@/hooks/use-session-state";
+import { linkAccountSession, endAccountSession, NonceChallenge, ApiError } from "@/lib/api";
+import { STORAGE_KEYS, clearAllStorage, writeStorage } from "@/lib/storage";
 
 const POLLAR_KEY = process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY ?? "";
 /** Same default as `@pollar/core` and lib/server/pollar.ts (`basePath` = `${baseUrl}/v1`). */
@@ -28,14 +38,14 @@ function restart(to?: string) {
   else window.location.reload();
 }
 
-// If the server keeps answering `changed: true` (a browser that refuses the
-// cookie), reloading forever would be worse than a stale session: allow one
-// relink reload per tab session.
+// If the server keeps answering `changed: true` for the same login (a browser
+// that refuses the cookie), reloading forever would be worse than a stale
+// session: allow one relink reload per login per tab session.
 const RELOAD_GUARD = "aygo.relinked";
-function mayReload(): boolean {
+function mayReload(marker: string): boolean {
   try {
-    if (sessionStorage.getItem(RELOAD_GUARD)) return false;
-    sessionStorage.setItem(RELOAD_GUARD, "1");
+    if (sessionStorage.getItem(RELOAD_GUARD) === marker) return false;
+    sessionStorage.setItem(RELOAD_GUARD, marker);
     return true;
   } catch {
     return true;
@@ -61,7 +71,7 @@ function keys(): WebCryptoKeyManager {
 }
 
 /** Prove the current login to our server, honouring one nonce round-trip. */
-async function link(accessToken: string): Promise<{ changed: boolean }> {
+async function link(accessToken: string): Promise<{ changed: boolean; fingerprint: string }> {
   const km = keys();
   await km.init();
   const proof = (nonce?: string) =>
@@ -77,40 +87,82 @@ async function link(accessToken: string): Promise<{ changed: boolean }> {
 const MAX_LINK_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 4_000;
 
+function describe(e: unknown): string {
+  if (e instanceof ApiError && e.status < 500 && e.message) return e.message;
+  return "We couldn't finish signing you in. Check your connection and retry.";
+}
+
 export function useAccountSession() {
-  const auth = useAuth();
   const { getClient } = usePollar();
-  const linked = useRef<string | null>(null);
+  const [pollar, setPollar] = useState<AuthState>(() => getClient().getAuthState());
+  useEffect(() => getClient().onAuthStateChange(setPollar), [getClient]);
+  const session = useSessionState();
+  const inflight = useRef<string | null>(null);
   const attempts = useRef(0);
   // Bumped to re-run the effect for a bounded retry: a link that fails
-  // silently leaves the UI signed in as one person while the server session
-  // still belongs to another (or to no one).
+  // silently would leave the UI signed in as one person while the server
+  // session still belongs to another (or to no one).
   const [retryTick, setRetryTick] = useState(0);
 
+  // Ask the server who we are, once per page load — and again whenever the
+  // tab comes back to the foreground (a sign-out or account switch in another
+  // tab must not leave this one showing the old person).
   useEffect(() => {
-    if (!POLLAR_KEY || !auth.isAuthenticated || !auth.profile) return;
-    const state = getClient().getAuthState();
-    if (state.step !== "authenticated") return;
-    const { accessToken } = state.session.token;
-    // One link per sign-in: re-run only when the token identity changes (a
-    // refresh mints a new token for the same person; the server dedupes).
-    const marker = state.session.userId ?? auth.profile.mail;
-    if (!accessToken || !marker || linked.current === marker) return;
-    linked.current = marker;
+    void loadSessionState();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void revalidateSession();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
+  // A manual retry from the UI starts the attempt budget over.
+  useEffect(() => {
+    attempts.current = 0;
+  }, [session.retryTick]);
+
+  useEffect(() => {
+    if (!POLLAR_KEY || !session.loaded || pollar.step !== "authenticated") return;
+    const { accessToken } = pollar.session.token;
+    const marker = pollarMarker(pollar, getClient().getUserProfile());
+    if (!accessToken || !marker) return;
+    // Already proven for this very session: nothing to do (a refresh mints a
+    // new token for the same person; the server would just answer "no change").
+    if (session.account && session.linkedTo === marker) return;
+    if (inflight.current === marker || session.linkError) return;
+    inflight.current = marker;
+    patchSessionState({ linking: true, linkError: null });
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     void (async () => {
       try {
-        const { changed } = await link(accessToken);
+        const { changed, fingerprint } = await link(accessToken);
         attempts.current = 0;
-        if (changed && !cancelled && mayReload()) restart();
+        if (cancelled) return;
+        if (changed) {
+          // Everything cached locally belongs to the previous session. Drop
+          // it, remember the new session + login, and reload so every hook
+          // re-hydrates from the right account.
+          clearAllStorage();
+          writeStorage(STORAGE_KEYS.owner, { fingerprint, account: true });
+          writeStorage(STORAGE_KEYS.linked, marker);
+          if (mayReload(marker)) {
+            restart();
+            return;
+          }
+        }
+        adoptSession({ account: true, fingerprint });
+        markLinked(marker);
         if (!changed) clearReloadGuard();
       } catch (e) {
         console.error("account link failed", e);
-        linked.current = null;
-        if (!cancelled && attempts.current < MAX_LINK_ATTEMPTS) {
+        inflight.current = null;
+        if (cancelled) return;
+        if (attempts.current < MAX_LINK_ATTEMPTS - 1) {
           attempts.current += 1;
           timer = setTimeout(() => setRetryTick((n) => n + 1), RETRY_DELAY_MS);
+        } else {
+          patchSessionState({ linking: false, linkError: describe(e) });
         }
       }
     })();
@@ -118,7 +170,16 @@ export function useAccountSession() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [auth.isAuthenticated, auth.profile, getClient, retryTick]);
+  }, [
+    pollar,
+    session.loaded,
+    session.account,
+    session.linkedTo,
+    session.linkError,
+    session.retryTick,
+    retryTick,
+    getClient,
+  ]);
 }
 
 /** Sign out everywhere: Pollar, the server session, and every local cache.
@@ -129,10 +190,12 @@ export async function signOutEverywhere(
 ): Promise<void> {
   const results = await Promise.allSettled([
     Promise.resolve(logout()),
-    endAccountSession(),
+    // The server session is the one that matters: give it a second try.
+    endAccountSession().catch(() => endAccountSession()),
   ]);
   for (const r of results)
     if (r.status === "rejected") console.error("sign out step failed", r.reason);
   clearReloadGuard();
+  patchSessionState({ account: false, linkedTo: null, linking: false, linkError: null });
   restart("/discover");
 }

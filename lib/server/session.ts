@@ -27,6 +27,18 @@ function sign(id: string): string {
   return createHmac("sha256", SESSION_SECRET).update(id).digest("base64url");
 }
 
+/**
+ * A short, non-reversible tag for a session id — safe to hand to the browser.
+ * The client keeps the tag of the session its local caches were filled from;
+ * when the tag changes (another account linked, cookies cleared, sign-out in a
+ * second tab) it knows those caches belong to someone else and drops them.
+ * Not derivable from the cookie's signature (different HMAC input), so it
+ * can't be used to forge one.
+ */
+export function sessionFingerprint(id: string): string {
+  return createHmac("sha256", SESSION_SECRET).update(`fp:${id}`).digest("base64url").slice(0, 16);
+}
+
 /** `id.signature`, verified constant-time. Returns the id, or null if tampered. */
 function verify(token: string): string | null {
   const dot = token.lastIndexOf(".");
@@ -71,6 +83,14 @@ export async function getSessionId(): Promise<string> {
   const fresh = randomUUID();
   setSession(store, fresh);
   return fresh;
+}
+
+/** What the browser may know about its own session: whether it is an
+ * account's (vs. anonymous) and the fingerprint of the id in force. */
+export async function getSessionState(): Promise<{ account: boolean; fingerprint: string }> {
+  const sid = await getSessionId();
+  const account = (await getStore().getSessionAccount(sid)) !== null;
+  return { account, fingerprint: sessionFingerprint(sid) };
 }
 
 /**
