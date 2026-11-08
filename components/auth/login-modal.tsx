@@ -33,6 +33,10 @@ const ERRORS: Record<string, string> = {
   EMAIL_VERIFY_FAILED: "We couldn't verify the code. Try again.",
   AUTH_FAILED: "Sign-in didn't go through. Try again.",
   SESSION_CREATE_FAILED: "We couldn't start a session. Check your connection.",
+  LOGIN_TIMEOUT: "Sign-in took too long, so we stopped waiting. Try again.",
+  SESSION_EXPIRED: "That sign-in expired. Try again.",
+  SESSION_INVALID: "That sign-in is no longer valid. Try again.",
+  EXTERNAL_AUTH_FAILED: "Google didn't confirm the sign-in. Try again.",
 };
 
 const EMPTY_CODE = ["", "", "", "", "", ""];
@@ -64,6 +68,9 @@ function LoginFlow() {
   const [auth, setAuth] = useState<AuthState>(() => getClient().getAuthState());
   const [email, setEmail] = useState("");
   const [code, setCode] = useState<string[]>(EMPTY_CODE);
+  // Which door this attempt went through: the SDK's "authenticating" step is
+  // shared by both, and only Google's can sit there waiting on another tab.
+  const [via, setVia] = useState<"google" | "email" | null>(null);
 
   // Mirror the SDK's state; close as soon as a session exists.
   useEffect(() => {
@@ -98,11 +105,21 @@ function LoginFlow() {
   const error =
     auth.step === "error" ? (ERRORS[auth.errorCode] ?? auth.message ?? ERRORS.AUTH_FAILED) : null;
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  // Google signs in on its own tab while this one waits for the result. That
+  // wait can be long (or never end: the tab was blocked, closed, or left
+  // behind), so it gets its own screen with a way forward instead of a
+  // spinner over disabled buttons.
+  const waitingOnGoogle =
+    via === "google" &&
+    (auth.step === "creating_session" ||
+      auth.step === "opening_oauth" ||
+      auth.step === "authenticating");
 
   function sendCode(e: React.FormEvent) {
     e.preventDefault();
     if (!validEmail || busy) return;
     setCode(EMPTY_CODE);
+    setVia("email");
     getClient().login({ provider: "email", email: email.trim() });
   }
   function submitCode(next = code) {
@@ -111,11 +128,19 @@ function LoginFlow() {
   }
   function google() {
     if (busy) return;
+    setVia("google");
     getClient().login({ provider: "google" });
+  }
+  /** Drop the pending Google attempt and open a fresh one (the tab never showed up, or was closed). */
+  function reopenGoogle() {
+    const client = getClient();
+    client.cancelLogin();
+    client.login({ provider: "google" });
   }
   function back() {
     getClient().cancelLogin();
     setCode(EMPTY_CODE);
+    setVia(null);
   }
 
   return (
@@ -171,6 +196,42 @@ function LoginFlow() {
               Send a new code
             </button>
           </>
+        ) : waitingOnGoogle ? (
+          <>
+            <div className="flex flex-col gap-1 text-center">
+              <DialogTitle className="text-[22px] font-bold tracking-[-0.03em]">
+                Finish in the Google tab
+              </DialogTitle>
+              <DialogDescription className="text-[13px] leading-snug">
+                We opened Google in a new tab. Pick your account there and come back — this page
+                signs you in on its own.
+              </DialogDescription>
+            </div>
+            <p
+              role="status"
+              className="flex items-center justify-center gap-2 text-[12.5px] font-medium text-muted-foreground"
+            >
+              <LuLoaderCircle className="size-4 animate-spin" aria-hidden />
+              Waiting for Google…
+            </p>
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              onClick={reopenGoogle}
+              className="h-12 w-full gap-2.5 rounded-full bg-card text-[14px] font-semibold"
+            >
+              <FcGoogle className="size-5" aria-hidden />
+              Open Google again
+            </Button>
+            <button
+              type="button"
+              onClick={back}
+              className="text-center text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Use email instead
+            </button>
+          </>
         ) : (
           <>
             <div className="flex flex-col gap-1 text-center">
@@ -189,7 +250,7 @@ function LoginFlow() {
               onClick={google}
               className="h-12 w-full gap-2.5 rounded-full text-[14px] font-semibold"
             >
-              {auth.step === "opening_oauth" ? (
+              {busy && via === "google" ? (
                 <LuLoaderCircle className="size-4 animate-spin" aria-hidden />
               ) : (
                 <FcGoogle className="size-5" aria-hidden />
