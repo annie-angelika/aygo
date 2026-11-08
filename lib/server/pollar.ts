@@ -4,7 +4,7 @@
 // with a proof signed by the browser's per-session key, so a stolen token is
 // useless and — the flip side — our server can't call Pollar with the token
 // alone. What we do instead: the browser builds a DPoP proof for ONE specific
-// Pollar request (`GET /v1/auth/session/resume`) and hands us token + proof;
+// Pollar request (`GET /v3/auth/session/resume`) and hands us token + proof;
 // we relay exactly that request. Pollar checks the signature, the bound key,
 // the `htu`/`htm`/`ath` claims and the proof's freshness, and answers with the
 // verified profile. That profile — never anything the client typed — is the
@@ -15,12 +15,34 @@ import "server-only";
 import { createHash } from "crypto";
 import { HttpError } from "@/lib/server/http";
 
-/** Same default as `@pollar/core` (its `basePath` = `${baseUrl}/v1`). */
+/** Same default as `@pollar/core` 0.12 (its `basePath` = `${baseUrl}/v3`). */
 const BASE_URL = (process.env.NEXT_PUBLIC_POLLAR_BASE_URL || "https://sdk.api.pollar.xyz").replace(/\/$/, "");
 const API_KEY = process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY ?? "";
 
 /** The request the browser's proof is bound to (relayed verbatim). */
-export const RESUME_URL = `${BASE_URL}/v1/auth/session/resume`;
+export const RESUME_URL = `${BASE_URL}/v3/auth/session/resume`;
+
+/**
+ * A proof names the URL it was signed for (`htu`), and Pollar refuses it
+ * anywhere else. A tab opened before a deploy still runs the previous SDK and
+ * signs for the API version of its day, so the relay follows the proof — but
+ * only to Pollar's session check on a version we know, never to an arbitrary
+ * URL. `v1` is retired by Pollar on 2026-11-30; drop it from the list then.
+ */
+const RELAYABLE = new Set(["v3", "v1"].map((v) => `${BASE_URL}/${v}/auth/session/resume`));
+
+/** The session-check URL this proof was signed for, or the current one when it names nothing we relay. */
+export function resumeUrlOf(dpopProof: string): string {
+  try {
+    const claims = JSON.parse(Buffer.from(dpopProof.split(".")[1] ?? "", "base64url").toString("utf8")) as {
+      htu?: unknown;
+    };
+    if (typeof claims.htu === "string" && RELAYABLE.has(claims.htu)) return claims.htu;
+  } catch {
+    /* not a readable proof — Pollar will refuse it at the current URL */
+  }
+  return RESUME_URL;
+}
 
 /** What Pollar returns for a live session — the same shape as `PollarUserProfile`. */
 export type VerifiedProfile = {
@@ -61,7 +83,7 @@ export async function verifyPollarSession(
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch(RESUME_URL, {
+    res = await fetch(resumeUrlOf(dpopProof), {
       method: "GET",
       headers: {
         "x-pollar-api-key": API_KEY,

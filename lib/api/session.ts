@@ -19,8 +19,17 @@ export type SessionState = {
   fingerprint: string;
 };
 
+// Both calls gate the sign-in UI ("Signing in…" shows until they answer), so
+// neither may wait on a stalled connection forever: a request that outlives
+// its budget fails like any network error and the caller retries or reports.
+const STATE_TIMEOUT_MS = 10_000;
+/** Covers the server's own relay to Pollar (6 s) plus the account lookup. */
+const LINK_TIMEOUT_MS = 12_000;
+
 /** Is this browser's session an account's, and which session is it? → `GET /me/session` */
-export async function fetchSessionState(signal?: AbortSignal): Promise<SessionState> {
+export async function fetchSessionState(
+  signal: AbortSignal = AbortSignal.timeout(STATE_TIMEOUT_MS),
+): Promise<SessionState> {
   return api.get<SessionState>("/me/session", undefined, signal);
 }
 
@@ -38,7 +47,11 @@ export async function linkAccountSession(input: {
   dpop: string;
 }): Promise<{ changed: boolean; fingerprint: string }> {
   try {
-    return await api.post<{ changed: boolean; fingerprint: string }>("/me/session", input);
+    return await api.post<{ changed: boolean; fingerprint: string }>(
+      "/me/session",
+      input,
+      AbortSignal.timeout(LINK_TIMEOUT_MS),
+    );
   } catch (e) {
     const nonce =
       e instanceof ApiError && e.status === 428 && e.body && typeof e.body === "object"

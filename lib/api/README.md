@@ -123,7 +123,7 @@ The handle is never inside the profile JSON.
 
 Pollar's access tokens are DPoP-bound, so the server can't use one by itself.
 On sign-in the browser builds a DPoP proof for Pollar's own session check
-(`GET /v1/auth/session/resume`) with the SDK's per-session key and sends
+(`GET /v3/auth/session/resume`) with the SDK's per-session key and sends
 token + proof to `POST /me/session`; the server relays that exact request
 (`lib/server/pollar.ts`), Pollar verifies signature, bound key and claims, and
 returns the profile. The **verified** identity (provider id, else email) is

@@ -28,8 +28,12 @@ import { linkAccountSession, endAccountSession, NonceChallenge, ApiError } from 
 import { STORAGE_KEYS, clearAllStorage, writeStorage } from "@/lib/storage";
 
 const POLLAR_KEY = process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY ?? "";
-/** Same default as `@pollar/core` and lib/server/pollar.ts (`basePath` = `${baseUrl}/v1`). */
-const RESUME_URL = `${(process.env.NEXT_PUBLIC_POLLAR_BASE_URL || "https://sdk.api.pollar.xyz").replace(/\/$/, "")}/v1/auth/session/resume`;
+/**
+ * Same default as `@pollar/core` 0.12 (`basePath` = `${baseUrl}/v3`). The
+ * server relays the proof to exactly this URL (lib/server/pollar.ts), so the
+ * API version here and the SDK's must move together.
+ */
+const RESUME_URL = `${(process.env.NEXT_PUBLIC_POLLAR_BASE_URL || "https://sdk.api.pollar.xyz").replace(/\/$/, "")}/v3/auth/session/resume`;
 
 /** Wipe local-first caches and reload so hooks re-hydrate from the server. */
 function restart(to?: string) {
@@ -63,11 +67,18 @@ function clearReloadGuard() {
  * The DPoP key is the SDK's per-session P-256 pair, persisted in IndexedDB
  * under the api-key hash — a second `WebCryptoKeyManager` for the same key
  * loads that exact pair, so proofs we build carry the thumbprint Pollar bound
- * the token to. Created lazily, once.
+ * the token to.
+ *
+ * The SDK replaces that pair whenever it clears a session (sign-out, a failed
+ * refresh, an abandoned login), so the copy held here is dropped before every
+ * use: a proof signed with the pair of an earlier login is refused by Pollar,
+ * and would keep being refused until the page was reloaded.
  */
 let keyManager: WebCryptoKeyManager | null = null;
 function keys(): WebCryptoKeyManager {
-  return (keyManager ??= new WebCryptoKeyManager(POLLAR_KEY));
+  keyManager ??= new WebCryptoKeyManager(POLLAR_KEY);
+  keyManager.resync();
+  return keyManager;
 }
 
 /** Prove the current login to our server, honouring one nonce round-trip. */
@@ -86,10 +97,18 @@ async function link(accessToken: string): Promise<{ changed: boolean; fingerprin
 
 const MAX_LINK_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 4_000;
+/**
+ * Longest a login may sit unproven before the UI says so. Three attempts at
+ * their full request budget fit inside it; anything slower is a stall (no
+ * identity on the login, a request that never settles) and gets the same
+ * "Sign-in failed · Retry" as a refused proof instead of an endless spinner.
+ */
+const LINK_DEADLINE_MS = 45_000;
+const GENERIC_FAILURE = "We couldn't finish signing you in. Check your connection and retry.";
 
 function describe(e: unknown): string {
   if (e instanceof ApiError && e.status < 500 && e.message) return e.message;
-  return "We couldn't finish signing you in. Check your connection and retry.";
+  return GENERIC_FAILURE;
 }
 
 export function useAccountSession() {
@@ -97,12 +116,21 @@ export function useAccountSession() {
   const [pollar, setPollar] = useState<AuthState>(() => getClient().getAuthState());
   useEffect(() => getClient().onAuthStateChange(setPollar), [getClient]);
   const session = useSessionState();
+  // WHO the Pollar login is, not the state object carrying it: the SDK emits
+  // a new state for the same person several times (restored, then verified;
+  // a token rotated in another tab; the wallet finishing set-up), and none of
+  // those is a reason to start, restart or abandon a proof.
+  const marker = pollarMarker(pollar, getClient().getUserProfile());
+  /** The login this browser holds right now; a proof that settles for any other is stale. */
+  const live = useRef<string | null>(null);
   const inflight = useRef<string | null>(null);
   const attempts = useRef(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Bumped to re-run the effect for a bounded retry: a link that fails
   // silently would leave the UI signed in as one person while the server
   // session still belongs to another (or to no one).
   const [retryTick, setRetryTick] = useState(0);
+  useEffect(() => () => clearTimeout(retryTimer.current), []);
 
   // Ask the server who we are, once per page load — and again whenever the
   // tab comes back to the foreground (a sign-out or account switch in another
@@ -122,23 +150,31 @@ export function useAccountSession() {
   }, [session.retryTick]);
 
   useEffect(() => {
-    if (!POLLAR_KEY || !session.loaded || pollar.step !== "authenticated") return;
-    const { accessToken } = pollar.session.token;
-    const marker = pollarMarker(pollar, getClient().getUserProfile());
-    if (!accessToken || !marker) return;
+    live.current = marker;
+    if (!POLLAR_KEY || !session.loaded || !marker) return;
     // Already proven for this very session: nothing to do (a refresh mints a
     // new token for the same person; the server would just answer "no change").
     if (session.account && session.linkedTo === marker) return;
     if (inflight.current === marker || session.linkError) return;
     inflight.current = marker;
+    clearTimeout(retryTimer.current);
     patchSessionState({ linking: true, linkError: null });
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    // The attempt outlives this effect run on purpose. Its outcome is applied
+    // as long as the same person is still signed in to Pollar — it used to be
+    // dropped whenever the effect re-ran mid-flight, which the SDK's second
+    // "authenticated" emission on every page load did routinely: the server
+    // had linked the account, the browser never recorded it, and the top bar
+    // stayed on "Signing in…" until a reload.
     void (async () => {
+      const client = getClient();
       try {
-        const { changed, fingerprint } = await link(accessToken);
+        // Read the token at the last moment: it may have been rotated since
+        // this attempt was scheduled.
+        const state = client.getAuthState();
+        if (state.step !== "authenticated") return;
+        const { changed, fingerprint } = await link(state.session.token.accessToken);
+        if (live.current !== marker) return;
         attempts.current = 0;
-        if (cancelled) return;
         if (changed) {
           // Everything cached locally belongs to the previous session. Drop
           // it, remember the new session + login, and reload so every hook
@@ -156,22 +192,25 @@ export function useAccountSession() {
         if (!changed) clearReloadGuard();
       } catch (e) {
         console.error("account link failed", e);
-        inflight.current = null;
-        if (cancelled) return;
+        if (live.current !== marker) return;
         if (attempts.current < MAX_LINK_ATTEMPTS - 1) {
           attempts.current += 1;
-          timer = setTimeout(() => setRetryTick((n) => n + 1), RETRY_DELAY_MS);
+          // Refused: the token may simply have expired. Mint a fresh one for
+          // the next attempt; if Pollar won't, it ends the session itself and
+          // the Sign In button comes back.
+          if (e instanceof ApiError && e.status === 401) await client.refresh().catch(() => {});
+          retryTimer.current = setTimeout(() => setRetryTick((n) => n + 1), RETRY_DELAY_MS);
         } else {
           patchSessionState({ linking: false, linkError: describe(e) });
         }
+      } finally {
+        // Released last: the state patches above re-run this effect, and it
+        // must still see the attempt as taken until they have landed.
+        if (inflight.current === marker) inflight.current = null;
       }
     })();
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-    };
   }, [
-    pollar,
+    marker,
     session.loaded,
     session.account,
     session.linkedTo,
@@ -180,6 +219,21 @@ export function useAccountSession() {
     retryTick,
     getClient,
   ]);
+
+  // A login that stays unproven past the deadline is reported, never left
+  // spinning. A proof that lands afterwards still clears the error.
+  const pending =
+    pollar.step === "authenticated" &&
+    !(session.account && marker !== null && session.linkedTo === marker) &&
+    !session.linkError;
+  useEffect(() => {
+    if (!POLLAR_KEY || !pending) return;
+    const deadline = setTimeout(
+      () => patchSessionState({ linking: false, linkError: GENERIC_FAILURE }),
+      LINK_DEADLINE_MS,
+    );
+    return () => clearTimeout(deadline);
+  }, [pending, session.retryTick]);
 }
 
 /** Sign out everywhere: Pollar, the server session, and every local cache.
