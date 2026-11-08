@@ -199,6 +199,7 @@ export type NotificationKind =
   | "approved" // the host approved your request
   | "rejected" // the host declined your request
   | "removed" // the host took you off the guest list
+  | "cancelled" // the host deleted an event you were going to (or had asked to join)
   | "question" // a guest asked you something
   | "reply" // the other side answered in a thread
   | "report_update"; // your report was resolved / reopened
