@@ -92,6 +92,7 @@ time (`lib/server/store/draft-event.ts`): they come back from `GET /events`
 host, resolve by id and by share code, and their `/<code>` page renders
 server-side for anyone with the link.
 | `fetchRegistrations()` | `GET /me/registrations` | → `{ going, applied, stamps }` |
+| `fetchTicketEvents()` | `GET /me/tickets` | → `AygoEvent[]` — the events behind your tickets, private ones included |
 | `fetchProfile()` | `GET /me/profile` | → `Partial<ProfileEdits>` (+ `username`) |
 | `fetchPreferences()` | `GET /me/preferences` | → `Preferences \| null` |
 | `fetchMyEvents()` | `GET /me/events` | → `EventDraft[]` (what you host) |

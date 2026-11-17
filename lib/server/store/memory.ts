@@ -165,7 +165,7 @@ export class MemoryStore implements Store {
 
   async getEventByCode(code: string): Promise<AygoEvent | null> {
     return (
-      (await this.listEvents()).find((e) => eventCode(e.id) === code) ?? null
+      (await this.listAllEvents()).find((e) => eventCode(e.id) === code) ?? null
     );
   }
 
@@ -471,8 +471,9 @@ export class MemoryStore implements Store {
   private async projectReports(
     rows: typeof this.reports,
   ): Promise<EventReport[]> {
+    // Private (link-only) events included — their threads keep the title.
     const titles = new Map(
-      (await this.listEvents()).map((e) => [e.id, e.title]),
+      (await this.listAllEvents()).map((e) => [e.id, e.title]),
     );
     return rows.map(({ sid, ...r }) => ({
       ...r,

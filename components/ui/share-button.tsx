@@ -38,7 +38,9 @@ export function ShareButton({
       return;
     }
     try {
-      await navigator.clipboard?.writeText(`${text} ${url}`.trim());
+      // The link alone: it gets pasted into address bars and chats, where a
+      // sentence in front of it turns the paste into a web search.
+      await navigator.clipboard?.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {

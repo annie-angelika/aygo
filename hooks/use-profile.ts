@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useStorageValue } from "@/hooks/use-storage";
 import { STORAGE_KEYS, writeStorage } from "@/lib/storage";
 import { saveProfile } from "@/lib/api";
+import { pushLocalEdit } from "@/lib/unsynced";
 import { realAvatar } from "@/lib/utils";
 import type { ProfileEdits } from "@/types";
 
@@ -40,7 +41,7 @@ export function useProfileEdits() {
   // instead of living only in localStorage until the next sign-out wipes it.
   const save = (next: ProfileEdits): Promise<void> => {
     writeStorage(STORAGE_KEYS.profile, next);
-    return saveProfile(next);
+    return pushLocalEdit("profile", () => saveProfile(next));
   };
   return { edits, save };
 }

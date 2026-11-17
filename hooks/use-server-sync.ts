@@ -8,14 +8,19 @@
 // down so a new browser (or a cleared one) sees the account's RSVPs, stamps,
 // profile and preferences.
 //
-// Merge policy (no timestamps, so keep it predictable):
-// - Registrations (going / applied / stamps): the SERVER is authoritative. The
-//   host decides who is on the list (declines, removals), so a local row the
-//   server no longer has is gone — it is never re-sent as if it were an
-//   offline write. (That re-send used to put a declined guest back to
-//   "Pending" and a removed guest back on the list.)
-// - Profile / preferences: a local copy wins (it may hold unsynced edits) and
-//   is pushed up when it differs; with no local copy, the server's is adopted.
+// Merge policy (no timestamps, so keep it predictable) — the SERVER is the
+// source of truth for everything an account owns:
+// - Registrations (going / applied / stamps): the host decides who is on the
+//   list (declines, removals), so a local row the server no longer has is
+//   gone — it is never re-sent as if it were an offline write. (That re-send
+//   used to put a declined guest back to "Pending" and a removed guest back
+//   on the list.)
+// - Profile / preferences: the server's copy replaces the local one, so what
+//   you saved on one device is what every other device shows. The local copy
+//   is pushed up only when it holds an edit the server never accepted
+//   (lib/unsynced — a save that failed offline) or the server has nothing
+//   yet. A device's merely OLD copy is never pushed: that is what erased a
+//   bio saved on the PC as soon as the phone loaded (QA AY-18 / AY-26).
 
 import { useEffect } from "react";
 import { STORAGE_KEYS, readStorage, writeStorage } from "@/lib/storage";
@@ -30,6 +35,7 @@ import {
 } from "@/lib/api";
 import { loadSessionState } from "@/hooks/use-session-state";
 import { replaceDrafts } from "@/lib/create-event";
+import { editedSince, isUnsynced, pushLocalEdit } from "@/lib/unsynced";
 import type { Preferences, ProfileEdits, Stamp } from "@/types";
 
 let started = false; // module-level: one sync per page load, across mounts
@@ -91,13 +97,12 @@ export async function refreshRegistrations(): Promise<void> {
 }
 
 async function syncProfile(): Promise<void> {
+  const startedAt = Date.now();
   const server = await fetchProfile();
+  // Saved on this page while the request was in flight: that write is newer
+  // than what we just read, and its own push is already on the way.
+  if (editedSince("profile", startedAt)) return;
   const local = readStorage<Partial<ProfileEdits>>(STORAGE_KEYS.profile, {});
-  if (Object.keys(local).length === 0) {
-    if (Object.keys(server).length > 0)
-      writeStorage(STORAGE_KEYS.profile, server);
-    return;
-  }
   // The handle is server-owned (unique, set through its own endpoint): the
   // server's copy always wins — including its ABSENCE. A cached handle from a
   // previous account must not survive onto a session that has none, or the
@@ -105,18 +110,47 @@ async function syncProfile(): Promise<void> {
   const { username: serverName, ...serverEdits } = server;
   const { username: _localName, ...localEdits } = local;
   void _localName;
-  const merged = { ...localEdits, ...(serverName ? { username: serverName } : null) };
-  if (changed(local, merged)) writeStorage(STORAGE_KEYS.profile, merged);
-  if (changed(localEdits, serverEdits)) push(saveProfile(local as ProfileEdits));
+  const hasLocal = Object.keys(localEdits).length > 0;
+  const hasServer = Object.keys(serverEdits).length > 0;
+
+  if (hasLocal && (isUnsynced("profile") || !hasServer)) {
+    const merged = { ...localEdits, ...(serverName ? { username: serverName } : null) };
+    if (changed(local, merged)) writeStorage(STORAGE_KEYS.profile, merged);
+    if (changed(localEdits, serverEdits))
+      push(pushLocalEdit("profile", () => saveProfile(merged as ProfileEdits)));
+    return;
+  }
+  if (changed(local, server)) writeStorage(STORAGE_KEYS.profile, server);
 }
 
 async function syncPreferences(): Promise<void> {
+  const startedAt = Date.now();
   const server = await fetchPreferences();
+  if (editedSince("preferences", startedAt)) return;
   const local = readStorage<Preferences | null>(STORAGE_KEYS.preferences, null);
-  if (!local) {
-    if (server) writeStorage(STORAGE_KEYS.preferences, server);
-  } else if (changed(local, server)) {
-    push(savePreferences(local));
+  if (local && (isUnsynced("preferences") || !server)) {
+    if (changed(local, server ?? {}))
+      push(pushLocalEdit("preferences", () => savePreferences(local)));
+    return;
+  }
+  if (server && changed(local, server)) writeStorage(STORAGE_KEYS.preferences, server);
+}
+
+/**
+ * Re-read profile + preferences from the server — the tab came back to the
+ * foreground, and they may have been edited on another device meanwhile.
+ * At most once a minute; failures are silent (the cache stays as it was).
+ */
+let lastAccountRefresh = 0;
+export async function refreshAccountData(): Promise<void> {
+  const now = Date.now();
+  if (!started || now - lastAccountRefresh < 60_000) return;
+  lastAccountRefresh = now;
+  try {
+    await loadSessionState();
+    await Promise.allSettled([syncProfile(), syncPreferences()]);
+  } catch (e) {
+    console.error("account refresh failed", e);
   }
 }
 
@@ -128,9 +162,20 @@ async function syncHostedEvents(): Promise<void> {
 
 /** Mount once (see components/layout/server-sync.tsx). */
 export function useServerSync(): void {
+  // Another device may have edited the account while this tab sat in the
+  // background: pick the changes up when it comes back.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshAccountData();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
   useEffect(() => {
     if (started) return;
     started = true;
+    lastAccountRefresh = Date.now();
     void loadSessionState()
       .then(() =>
         Promise.allSettled([

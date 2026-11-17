@@ -695,8 +695,11 @@ export class PostgresStore implements Store {
   ): Promise<EventReport[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((r) => r.id as string);
+    // Private (link-only) events count too: a thread about one is still about
+    // a live event, never "(deleted event)" — so read every event, not the
+    // public list.
     const [events, replies] = await Promise.all([
-      this.listEvents(),
+      this.listAllEvents(),
       this.sql`SELECT id, report_id, author, message, created_at FROM report_replies
                WHERE report_id = ANY(${ids}) ORDER BY created_at ASC`,
     ]);

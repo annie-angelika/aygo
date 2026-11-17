@@ -116,7 +116,7 @@ export function ActionDialog({
             </div>
             <Button
               nativeButton={false}
-              render={<Link href="/inbox" />}
+              render={<Link href="/inbox?tab=messages" />}
               variant="outline"
               className="h-10 rounded-full bg-card px-5 text-[13px] font-semibold ring-1 ring-border"
             >

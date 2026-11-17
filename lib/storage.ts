@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   onboarded: "aygo.onboarded", // boolean — the welcome tour was seen/dismissed
   owner: "aygo.owner", // { fingerprint, account } — the server session these caches were filled from
   linked: "aygo.linked", // string — the Pollar login (user id) already proven to the server for this session
+  unsynced: "aygo.unsynced", // { profile?, preferences? } — local edits the server hasn't accepted yet (lib/unsynced)
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
