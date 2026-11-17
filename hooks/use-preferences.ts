@@ -3,6 +3,7 @@
 import { useStorageValue } from "@/hooks/use-storage";
 import { STORAGE_KEYS, writeStorage } from "@/lib/storage";
 import { savePreferences } from "@/lib/api";
+import { pushLocalEdit } from "@/lib/unsynced";
 import type { Category, Preferences } from "@/types";
 
 // Stable module-level default (required by useSyncExternalStore).
@@ -22,7 +23,7 @@ export function usePreferences() {
   const update = (patch: Partial<Preferences>) => {
     const next = { ...prefs, ...patch };
     writeStorage(STORAGE_KEYS.preferences, next);
-    void savePreferences(next).catch((e) =>
+    void pushLocalEdit("preferences", () => savePreferences(next)).catch((e) =>
       console.error("preferences sync failed", e),
     );
   };

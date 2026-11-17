@@ -21,9 +21,10 @@ export function CityHero({ city, mapHref }: { city: City; mapHref?: string }) {
           <Link
             href={mapHref}
             aria-label="View on map"
-            className="grid size-9 place-items-center rounded-full bg-white/10 text-cream ring-1 ring-white/15 transition-colors hover:bg-white/15"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 pl-3 pr-3.5 text-[13px] font-semibold text-cream ring-1 ring-white/15 transition-colors hover:bg-white/15"
           >
-            <LuMap className="size-[18px]" aria-hidden />
+            <LuMap className="size-[18px] text-gold" aria-hidden />
+            Map
           </Link>
         )}
       </div>

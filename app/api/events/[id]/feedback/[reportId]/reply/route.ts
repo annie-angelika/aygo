@@ -5,7 +5,7 @@
 import { getStore } from "@/lib/server/store";
 import { requireEventOwner } from "@/lib/server/manage";
 import { validateMessage } from "@/lib/server/validate-draft";
-import { notifyGuest } from "@/lib/server/notify";
+import { notifyGuest, threadHref } from "@/lib/server/notify";
 import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
 import { pathId, expectObject, UUID } from "@/lib/server/validate";
 import { handler, noContent, readJson, HttpError } from "@/lib/server/http";
@@ -36,7 +36,9 @@ export const POST = handler(
       kind: "reply",
       title: `${event?.host.name ?? "The host"} replied about ${event?.title ?? "your event"}`,
       body: text.length > 120 ? `${text.slice(0, 117)}…` : text,
-      href: "/inbox",
+      // Straight to the conversation — "/inbox" alone lands on Activity, which
+      // is where the guest already is when they tap this.
+      href: threadHref(reportId),
     });
     return noContent();
   },

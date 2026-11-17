@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { LuMessageSquare } from "react-icons/lu";
 
 import { EmptyState } from "@/components/ui/empty-state";
@@ -9,8 +10,16 @@ import { useMyThreads } from "@/hooks/use-inbox";
 import { replyToMyThread } from "@/lib/api";
 
 /** The guest's threads: questions to hosts and reports, with replies. */
-export function ThreadList() {
+export function ThreadList({ focus }: { focus?: string }) {
   const { threads, loading, refetch } = useMyThreads();
+
+  // Arriving from a notification: bring that conversation into view once it
+  // has loaded (the list may still be fetching when the screen mounts).
+  const found = focus ? threads.some((t) => t.id === focus) : false;
+  useEffect(() => {
+    if (!focus || !found) return;
+    document.getElementById(`thread-${focus}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focus, found]);
 
   if (loading && threads.length === 0) {
     return (
@@ -37,6 +46,7 @@ export function ThreadList() {
           key={t.id}
           thread={t}
           role="guest"
+          highlighted={t.id === focus}
           onReply={async (text) => {
             await replyToMyThread(t.id, text);
             refetch();
