@@ -22,9 +22,12 @@ export function ThreadCard({
   role,
   onReply,
   action,
+  highlighted = false,
 }: {
   thread: EventReport;
   role: "host" | "guest";
+  /** The thread a notification linked to — ringed in gold. */
+  highlighted?: boolean;
   /** Send a reply as `role`. Omit to make the thread read-only. */
   onReply?: (message: string) => Promise<void>;
   /** Host-side controls (Resolve/Reopen) rendered in the footer. */
@@ -36,9 +39,11 @@ export function ThreadCard({
 
   return (
     <article
+      id={`thread-${thread.id}`}
       className={cn(
-        "flex flex-col gap-3 rounded-[18px] bg-card p-3.5 ring-1 ring-foreground/8",
+        "flex scroll-mt-20 flex-col gap-3 rounded-[18px] bg-card p-3.5 ring-1 ring-foreground/8",
         closed && "opacity-70",
+        highlighted && "ring-2 ring-gold",
       )}
     >
       <div className="flex items-center gap-2">

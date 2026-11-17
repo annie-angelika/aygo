@@ -4,7 +4,8 @@
 // opened with hosts, and your reports). Opening the screen marks
 // notifications read.
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,10 +13,22 @@ import { NotificationList } from "@/components/inbox/notification-list";
 import { ThreadList } from "@/components/inbox/thread-list";
 import { useNotifications } from "@/hooks/use-notifications";
 
-type Tab = "activity" | "messages";
+export type InboxTab = "activity" | "messages";
 
-export function InboxScreen() {
-  const [tab, setTab] = useState<Tab>("activity");
+/**
+ * The tab lives in the URL (`/inbox?tab=messages&thread=<id>`), so a
+ * notification about a reply can link straight to the conversation — even
+ * when it is tapped from this very screen's Activity tab.
+ */
+export function InboxScreen({
+  tab,
+  thread,
+}: {
+  tab: InboxTab;
+  /** The thread a notification pointed at: scrolled to and highlighted. */
+  thread?: string;
+}) {
+  const router = useRouter();
   const { items, unread, loading, markAllRead } = useNotifications();
 
   // Seen is read: once the list is on screen, clear the badge.
@@ -28,7 +41,12 @@ export function InboxScreen() {
       <ScreenHeader
         title="Inbox"
         trailing={
-          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+          <Tabs
+            value={tab}
+            onValueChange={(v) =>
+              router.replace(v === "messages" ? "/inbox?tab=messages" : "/inbox", { scroll: false })
+            }
+          >
             <TabsList>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>
@@ -39,7 +57,7 @@ export function InboxScreen() {
       {tab === "activity" ? (
         <NotificationList items={items} loading={loading} />
       ) : (
-        <ThreadList />
+        <ThreadList focus={thread} />
       )}
     </div>
   );

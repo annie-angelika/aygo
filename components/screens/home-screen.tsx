@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { LuTicket, LuMountain } from "react-icons/lu";
 
 import { useEvents } from "@/hooks/use-events";
+import { useAsyncData } from "@/hooks/use-async-data";
+import { fetchTicketEvents } from "@/lib/api";
 import { useRegistrations, useRegistrationRefresh } from "@/hooks/use-registrations";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,12 +29,22 @@ export function HomeScreen({ period }: { period: Period }) {
   // Upcoming: what you're registered for and hasn't ended. Past: events you
   // checked in to (an aygo) plus registrations whose event already ended —
   // an event you went to without scanning the QR still belongs to your history.
-  const mine = data.filter((e) => going.includes(e.id));
+  // Private (link-only) events never ride in the public catalog, so the ones
+  // you hold a ticket for come from their own endpoint and are merged in.
+  const ticketKey = [...going, ...stamps.map((s) => s.eventId)].sort().join(",");
+  const { data: ticketEvents } = useAsyncData(
+    (signal) => fetchTicketEvents(signal),
+    [ticketKey],
+    { cacheKey: "ticket-events" },
+  );
+  const listed = new Set(data.map((e) => e.id));
+  const all = [...data, ...(ticketEvents ?? []).filter((e) => !listed.has(e.id))];
+  const mine = all.filter((e) => going.includes(e.id));
   const upcoming = mine
     .filter((e) => !e.isPast)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   const attended = new Set(stamps.map((s) => s.eventId));
-  const past = data
+  const past = all
     .filter((e) => attended.has(e.id) || (going.includes(e.id) && e.isPast))
     .sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 

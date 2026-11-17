@@ -37,3 +37,6 @@ export async function notifyGuest(
 export const eventHref = (id: string) => `/${eventCode(id)}`;
 export const manageHref = (id: string, tab?: string) =>
   `/manage/${id}${tab ? `?tab=${tab}` : ""}`;
+/** The guest's own thread in their inbox (Messages tab, scrolled to it). */
+export const threadHref = (reportId: string) =>
+  `/inbox?tab=messages&thread=${reportId}`;

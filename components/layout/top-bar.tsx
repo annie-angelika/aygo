@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * The top app bar — the whole navigation, in the brand's navy with the cream
- * mark. Wordmark and the ticket open your events (Home), the compass opens
- * Discover, and the avatar opens your profile (with a small aygo-count badge).
+ * mark. The logo and the compass open Discover (the app's front door, signed
+ * in or not), the ticket opens your events (Home), and the avatar opens your
+ * profile (with a small aygo-count badge).
  * `tone="light"` is kept for the rare light canvas (e.g. a light create theme).
  */
 export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
@@ -37,7 +38,7 @@ export function TopBar({ tone = "dark" }: { tone?: "light" | "dark" }) {
       )}
     >
       <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4 lg:h-16 lg:max-w-6xl lg:px-8">
-        <Link href={isAuthenticated ? "/home" : "/discover"} aria-label="aygo, home">
+        <Link href="/discover" aria-label="aygo, Discover">
           <Logo tone={dark ? "dark" : "light"} />
         </Link>
 

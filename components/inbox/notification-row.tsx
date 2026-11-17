@@ -32,9 +32,16 @@ const META: Record<NotificationKind, { Icon: IconType; tint: string }> = {
 /** One notification: icon by kind, title/body, relative time, tap → target. */
 export function NotificationRow({ item }: { item: AppNotification }) {
   const { Icon, tint } = META[item.kind] ?? META.reply;
+  // Notifications stored before threads had their own link point at "/inbox",
+  // i.e. the Activity tab they are listed in — tapping one did nothing. A
+  // reply or a status change is about a conversation: open Messages.
+  const href =
+    item.href === "/inbox" && (item.kind === "reply" || item.kind === "report_update")
+      ? "/inbox?tab=messages"
+      : item.href;
   return (
     <Link
-      href={item.href}
+      href={href}
       className={cn(
         "flex items-start gap-3 px-3.5 py-3 transition-colors hover:bg-accent/40",
         !item.read && "bg-gold-soft/60",

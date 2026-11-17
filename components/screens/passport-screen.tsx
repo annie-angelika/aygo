@@ -198,7 +198,9 @@ function CollectionHero({ count, view }: { count: number; view: CollectionView }
   return (
     <div className="relative">
       <CollectionBanner className="lg:mx-4 lg:mt-4 lg:h-52 lg:overflow-hidden lg:rounded-3xl" />
-      <BackButton className="absolute left-4 top-4 size-9 border-0 bg-white text-navy shadow-[0_6px_16px_-8px_rgba(9,25,53,0.5)] hover:bg-white lg:left-8 lg:top-8" />
+      <BackButton
+        fallback={view.isSelf ? "/profile" : username ? `/u/${username}` : "/discover"}
+        className="absolute left-4 top-4 size-9 border-0 bg-white text-navy shadow-[0_6px_16px_-8px_rgba(9,25,53,0.5)] hover:bg-white lg:left-8 lg:top-8" />
 
       <div className="relative px-4 lg:px-8">
         {/* Your photo, lifted onto the banner's lower edge. */}

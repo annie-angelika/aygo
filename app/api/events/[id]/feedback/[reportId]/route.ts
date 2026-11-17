@@ -4,7 +4,7 @@
 
 import { getStore } from "@/lib/server/store";
 import { requireEventOwner } from "@/lib/server/manage";
-import { notifyGuest } from "@/lib/server/notify";
+import { notifyGuest, threadHref } from "@/lib/server/notify";
 import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
 import { pathId, expectObject, enumOf, UUID } from "@/lib/server/validate";
 import { handler, noContent, readJson, HttpError } from "@/lib/server/http";
@@ -32,7 +32,7 @@ export const PATCH = handler(
             ? `Your ${report.kind} about ${event?.title ?? "an event"} was resolved`
             : `Your ${report.kind} about ${event?.title ?? "an event"} was reopened`,
         body: "Open your inbox to see the thread.",
-        href: "/inbox",
+        href: threadHref(reportId),
       });
     }
     return noContent();

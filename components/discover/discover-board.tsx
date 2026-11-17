@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LuArrowRight, LuCalendarX, LuSearch, LuX } from "react-icons/lu";
+import { LuArrowRight, LuCalendarX, LuChevronLeft, LuSearch, LuX } from "react-icons/lu";
 
 import { useEventFilter } from "@/hooks/use-event-filter";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -24,6 +24,7 @@ import { CityExplorer } from "@/components/city/city-explorer";
 import { findCityByName, HOME_CITY } from "@/lib/cities-seed";
 import { cityMeta } from "@/lib/cities-data";
 import { cn } from "@/lib/utils";
+import type { AygoEvent } from "@/types";
 
 const TODAY_LABEL = new Intl.DateTimeFormat("en-US", {
   weekday: "long",
@@ -63,7 +64,19 @@ export function DiscoverBoard() {
       ? list
       : [...list].sort((a, b) => Number(interests.has(b.category)) - Number(interests.has(a.category)));
   const today = byInterest(filtered.filter((e) => e.dayLabel === "Today")).slice(0, 3);
-  const soon = today.length > 0 ? today : byInterest(filtered).slice(0, 3);
+  // "Coming up" always has its own section (what's next after today), so the
+  // interest-first order is visible even on a day that has events of its own.
+  const comingUp = byInterest(filtered.filter((e) => e.dayLabel !== "Today")).slice(0, 3);
+  const seeAll = (
+    <button
+      type="button"
+      onClick={() => setListAll(true)}
+      className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+    >
+      See all
+      <LuArrowRight className="size-3.5" aria-hidden />
+    </button>
+  );
 
   return (
     <>
@@ -112,6 +125,16 @@ export function DiscoverBoard() {
 
       {searching ? (
         <section className="flex flex-col gap-3 px-4 pt-5 lg:pt-8">
+          {/* A visible way back to the browse view — the X inside the search
+              box does the same, but nobody looks for "back" there. */}
+          <button
+            type="button"
+            onClick={clear}
+            className="-ml-1 inline-flex h-8 w-fit items-center gap-1 rounded-full pl-1.5 pr-3 text-[13px] font-semibold text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+          >
+            <LuChevronLeft className="size-4" aria-hidden />
+            Back to Discover
+          </button>
           <div className="flex items-baseline justify-between px-0.5">
             <h2 className="text-[16px] font-semibold tracking-tight text-foreground">
               {query.trim() ? (
@@ -148,47 +171,31 @@ export function DiscoverBoard() {
             <InterestRow />
           </section>
 
-          <section>
-            <SectionTitle
-              action={
-                <button
-                  type="button"
-                  onClick={() => setListAll(true)}
-                  className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  See all
-                  <LuArrowRight className="size-3.5" aria-hidden />
-                </button>
-              }
-            >
-              {today.length > 0 ? "Today" : "Coming up"}
-            </SectionTitle>
-            {loading ? (
-              <RowSkeletons />
-            ) : soon.length === 0 ? (
-              <EmptyState
-                icon={LuCalendarX}
-                title="Nothing on yet"
-                subtitle="More events are on the way."
-              />
-            ) : (
-              <div className="relative flex flex-col gap-2.5 pl-5 md:grid md:grid-cols-2 md:pl-0 lg:grid-cols-3">
-                <span
-                  aria-hidden
-                  className="absolute bottom-3.5 left-[4.5px] top-3.5 w-px bg-border md:hidden"
+          {today.length > 0 && (
+            <section>
+              <SectionTitle action={seeAll}>Today</SectionTitle>
+              <EventPicks events={today} isGoing={isGoing} />
+            </section>
+          )}
+
+          {/* With nothing today this is the only "what's on" block, so it also
+              carries the loading and empty states. */}
+          {(loading || comingUp.length > 0 || today.length === 0) && (
+            <section>
+              <SectionTitle action={seeAll}>Coming up</SectionTitle>
+              {loading ? (
+                <RowSkeletons />
+              ) : comingUp.length === 0 ? (
+                <EmptyState
+                  icon={LuCalendarX}
+                  title="Nothing on yet"
+                  subtitle="More events are on the way."
                 />
-                {soon.map((e) => (
-                  <div key={e.id} className="relative">
-                    <span
-                      aria-hidden
-                      className="absolute -left-5 top-1/2 size-2.5 -translate-y-1/2 rounded-full bg-gold ring-4 ring-background md:hidden"
-                    />
-                    <EventRow event={e} going={isGoing(e.id)} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+              ) : (
+                <EventPicks events={comingUp} isGoing={isGoing} />
+              )}
+            </section>
+          )}
 
           <section>
             <SectionTitle
@@ -211,6 +218,33 @@ export function DiscoverBoard() {
         </div>
       )}
     </>
+  );
+}
+
+/** Up to three event rows on the gold-dotted rail (a grid from tablet up). */
+function EventPicks({
+  events,
+  isGoing,
+}: {
+  events: AygoEvent[];
+  isGoing: (id: string) => boolean;
+}) {
+  return (
+    <div className="relative flex flex-col gap-2.5 pl-5 md:grid md:grid-cols-2 md:pl-0 lg:grid-cols-3">
+      <span
+        aria-hidden
+        className="absolute bottom-3.5 left-[4.5px] top-3.5 w-px bg-border md:hidden"
+      />
+      {events.map((e) => (
+        <div key={e.id} className="relative">
+          <span
+            aria-hidden
+            className="absolute -left-5 top-1/2 size-2.5 -translate-y-1/2 rounded-full bg-gold ring-4 ring-background md:hidden"
+          />
+          <EventRow event={e} going={isGoing(e.id)} />
+        </div>
+      ))}
+    </div>
   );
 }
 
