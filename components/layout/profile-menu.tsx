@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { LuUser, LuStamp, LuSettings, LuLogOut, LuInbox } from "react-icons/lu";
+import { LuUser, LuStamp, LuSettings, LuLogOut, LuInbox, LuWallet, LuBanknote } from "react-icons/lu";
+import { usePollar } from "@pollar/react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -27,6 +28,9 @@ export function ProfileMenu({
 }) {
   const { stamps, hydrated } = useRegistrations();
   const auth = useAuth();
+  // The wallet behind in-app payments. Only with a live Pollar login — its
+  // windows have nothing to show otherwise.
+  const { isAuthenticated: walletReady, openWalletBalanceModal, openRampModal } = usePollar();
   // One identity everywhere (lib/identity): the top-bar photo always matches
   // the profile page.
   const { me, email } = useMe();
@@ -113,6 +117,16 @@ export function ProfileMenu({
         <MenuItem render={<Link href="/settings" />}>
           <LuSettings /> Settings
         </MenuItem>
+        {walletReady && (
+          <>
+            <MenuItem onClick={openWalletBalanceModal}>
+              <LuWallet /> Wallet
+            </MenuItem>
+            <MenuItem onClick={openRampModal}>
+              <LuBanknote /> Add or cash out
+            </MenuItem>
+          </>
+        )}
 
         <MenuSeparator />
 

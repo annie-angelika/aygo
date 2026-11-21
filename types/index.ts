@@ -53,7 +53,12 @@ export type AygoEvent = {
   // what
   price: number | null; // null/0 → free (BOB otherwise)
   /** Where guests pay a paid event (aygo doesn't process payments yet). */
-  payment?: { whatsapp?: string; link?: string };
+  payment?: {
+    whatsapp?: string;
+    link?: string;
+    /** The host's Stellar wallet: set → guests can pay in the app (bank QR → USDC). */
+    wallet?: string;
+  };
   blurb: string;
   /** Host reviews each join request before granting a spot. Absent → instant. */
   requiresApproval?: boolean;
@@ -61,6 +66,15 @@ export type AygoEvent = {
   visibility?: "public" | "private";
   /** Max guests; registration closes at this many `attendees`. Absent/null → unlimited. */
   capacity?: number | null;
+};
+
+/** A guest's in-app payment for an event, as verified on the Stellar ledger. */
+export type PaymentReceipt = {
+  txHash: string;
+  /** Decimal USDC that reached the host's wallet. */
+  amount: string;
+  asset: "USDC";
+  at: string;
 };
 
 /** The identity fields you can change from "Edit profile" (stored locally). */

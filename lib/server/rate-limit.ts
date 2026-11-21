@@ -80,6 +80,8 @@ export const LIMITS = {
   // an incognito window and a phone on one Wi-Fi relinks on every page load.
   session: { max: 60, windowMs: 10 * 60_000 },
   stamps: { max: 20, windowMs: 60 * 60_000 },
+  // Reporting a payment polls while the ledger confirms it.
+  payment: { max: 60, windowMs: 10 * 60_000 },
   geocode: { max: 30, windowMs: 60_000 },
   adminLogin: { max: 5, windowMs: 15 * 60_000 },
   hostAction: { max: 120, windowMs: 60 * 60_000 },

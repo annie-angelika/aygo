@@ -69,15 +69,16 @@ export function TicketContact({ event }: { event: AygoEvent }) {
   const { isAuthenticated, openLoginModal } = useAuth();
   if (event.price == null || event.price <= 0) return null;
   const hasChannel = !!(event.payment?.whatsapp || event.payment?.link);
+  const inApp = !!event.payment?.wallet;
 
   return (
     <div className="flex flex-col items-center gap-1.5">
       {/* Signed out, every path leads to the login modal first: paying rides
           on a registration, and the host's WhatsApp number isn't for anonymous
           visitors to harvest. */}
-      {hasChannel && isAuthenticated ? (
+      {inApp && !hasChannel && isAuthenticated ? null : hasChannel && isAuthenticated ? (
         <PayHostButtons event={event} />
-      ) : hasChannel ? (
+      ) : hasChannel || inApp ? (
         <button type="button" onClick={openLoginModal} className={LINK}>
           <LuTicket className="size-4" aria-hidden />
           Sign in to reserve &amp; pay
@@ -108,7 +109,9 @@ export function TicketContact({ event }: { event: AygoEvent }) {
         </button>
       )}
       <p className="text-[11px] text-muted-foreground">
-        You pay the host directly · they confirm it by hand
+        {inApp
+          ? "Reserve first, then pay by bank QR in the app"
+          : "You pay the host directly · they confirm it by hand"}
       </p>
     </div>
   );

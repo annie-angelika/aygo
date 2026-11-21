@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { initials, realAvatar } from "@/lib/utils";
+import { formatUsdc, txExplorerUrl } from "@/lib/stellar";
 import type { GuestRow as GuestRowData } from "@/lib/api/manage";
 
 export function GuestRow({
@@ -32,6 +33,17 @@ export function GuestRow({
             .join(" · ")}
         </p>
       </div>
+      {guest.payment && (
+        <a
+          href={txExplorerUrl(guest.payment.txHash)}
+          target="_blank"
+          rel="noreferrer"
+          title="Paid in the app — open the receipt"
+          className="inline-flex h-[22px] shrink-0 items-center rounded-full bg-gold px-2 text-[11px] font-bold text-navy"
+        >
+          Paid · {formatUsdc(guest.payment.amount)} USDC
+        </a>
+      )}
       {action}
     </div>
   );

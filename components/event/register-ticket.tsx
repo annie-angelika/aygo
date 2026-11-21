@@ -13,7 +13,7 @@ import type { AygoEvent } from "@/types";
  * a saved spot (a clock while the host reviews), a one-line title, your
  * ticket stub, and Done. Paid events show the host's pay buttons only once
  * you're actually in; while a request is pending there's nothing to pay yet.
- * The host confirms payments by hand — there's no in-app checkout.
+ * In-app payment (bank QR) happens on the event page, outside this sheet.
  */
 export function RegisterTicket({
   event,
@@ -86,7 +86,14 @@ export function RegisterTicket({
         </div>
       </div>
 
-      {canPay && <PayHostButtons event={event} prominent className="w-full" />}
+      {canPay &&
+        (event.payment?.wallet ? (
+          <p className="text-[12px] leading-snug text-muted-foreground">
+            Next: pay Bs {event.price} by bank QR — it&apos;s right under your ticket on the event page.
+          </p>
+        ) : (
+          <PayHostButtons event={event} prominent className="w-full" />
+        ))}
 
       <Button
         size="lg"

@@ -1,6 +1,6 @@
-// How a paid event gets paid. aygo doesn't move money (yet): the host tells
-// guests where to pay — a WhatsApp number (QR simple / transfer arranged in
-// chat) and/or a payment link — and the app makes that one tap away. Shared
+// How a paid event gets paid. The host tells guests where to pay — a WhatsApp
+// number (QR simple / transfer arranged in chat), a payment link, and/or their
+// wallet for paying in the app (bank QR → USDC, see hooks/use-qr-pay). Shared
 // by the create flow (validation hints), the server (hard validation) and the
 // event page (deep links).
 
@@ -33,8 +33,12 @@ export function whatsappLink(digits: string, text: string): string {
 }
 
 /** Paid events must tell guests how to pay: at least one channel. */
-export function hasPaymentChannel(d: { payWhatsapp?: string | null; payLink?: string | null }): boolean {
-  return !!(d.payWhatsapp || d.payLink);
+export function hasPaymentChannel(d: {
+  payWhatsapp?: string | null;
+  payLink?: string | null;
+  payWallet?: string | null;
+}): boolean {
+  return !!(d.payWhatsapp || d.payLink || d.payWallet);
 }
 
 /** What a guest says when they open the chat to pay. */
