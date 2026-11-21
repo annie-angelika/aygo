@@ -12,6 +12,7 @@ import type {
   FeedbackReply,
   AppNotification,
   MetricShare,
+  PaymentReceipt,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type {
@@ -33,6 +34,7 @@ import type {
   EventReport,
   ReportRecord,
   NotificationInput,
+  GuestRow,
 } from "@/lib/server/store/types";
 import {
   CATALOG_CITIES,
@@ -80,6 +82,8 @@ export class MemoryStore implements Store {
     sid: string;
   })[] = [];
   private notifications = new Map<string, AppNotification[]>();
+  /** Verified in-app payments, keyed "sid|eventId". */
+  private payments = new Map<string, PaymentReceipt>();
   private createdEvents: { sid: string; draft: EventDraft; createdAt: string }[] =
     [];
   // When a session finished sign-up / first bound a login — the metrics source.
@@ -301,6 +305,18 @@ export class MemoryStore implements Store {
     else g.going.delete(eventId);
   }
 
+  async getPayment(sid: string, eventId: string): Promise<PaymentReceipt | null> {
+    return this.payments.get(`${sid}|${eventId}`) ?? null;
+  }
+
+  async recordPayment(sid: string, eventId: string, receipt: PaymentReceipt): Promise<"ok" | "duplicate"> {
+    const key = `${sid}|${eventId}`;
+    if (this.payments.has(key)) return "ok";
+    for (const p of this.payments.values()) if (p.txHash === receipt.txHash) return "duplicate";
+    this.payments.set(key, receipt);
+    return "ok";
+  }
+
   async setApplied(
     sid: string,
     eventId: string,
@@ -410,7 +426,7 @@ export class MemoryStore implements Store {
   async manageEvent(eventId: string) {
     const event = await this.getEvent(eventId);
     if (!event) return null;
-    const going: { requestId: string; name: string; avatar?: string; at: string }[] = [];
+    const going: GuestRow[] = [];
     const requests: {
       requestId: string;
       name: string;
@@ -427,7 +443,8 @@ export class MemoryStore implements Store {
         ...(this.usernameOf(sid) ? { username: this.usernameOf(sid) } : null),
       };
       const goingAt = g.going.get(eventId);
-      if (goingAt) going.push({ ...identity, at: goingAt });
+      const payment = this.payments.get(`${sid}|${eventId}`);
+      if (goingAt) going.push({ ...identity, at: goingAt, ...(payment ? { payment } : null) });
       const applied = g.applied.get(eventId);
       if (applied)
         requests.push({ ...identity, at: applied.at, message: applied.message });

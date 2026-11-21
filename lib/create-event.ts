@@ -54,6 +54,8 @@ export type EventDraft = {
   /** Required when price > 0 (at least one): how guests pay the host. */
   payWhatsapp?: string; // international digits, e.g. "59171234567"
   payLink?: string; // https payment link
+  /** The host's Stellar wallet ("G…") — guests pay it in the app by bank QR. */
+  payWallet?: string;
   requiresApproval: boolean;
   capacity: number | null; // null → unlimited
   createdAt: string;

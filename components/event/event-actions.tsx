@@ -10,7 +10,8 @@ import { useHydrated } from "@/hooks/use-storage";
 import { ownsEventLocally } from "@/hooks/use-manage-event";
 import { Button } from "@/components/ui/button";
 import { RegisterDialog } from "@/components/event/register-dialog";
-import { TicketContact, PayHostButtons } from "@/components/event/ticket-contact";
+import { TicketContact } from "@/components/event/ticket-contact";
+import { PaySection } from "@/components/payment/pay-section";
 import { applyConfigFor } from "@/lib/apply";
 import type { AygoEvent } from "@/types";
 
@@ -113,20 +114,14 @@ export function EventActions({ event }: { event: AygoEvent }) {
         {/* Paid events: once you're in (instant reserve or approved request),
             the host's pay channels stay front and centre until you check in —
             a reserved spot is only yours once the host has the money. */}
-        {paid && !collected && (
-          <div className="flex w-full flex-col items-center gap-1.5 pt-1">
-            {cfg.canPayHost ? (
-              <>
-                <PayHostButtons event={event} prominent className="w-full" />
-                <p className="text-[11px] text-muted-foreground">
-                  Pay Bs {event.price} to {event.host.name} to keep your spot · they confirm it by hand
-                </p>
-              </>
-            ) : (
+        {paid && !collected &&
+          (cfg.canPayHost ? (
+            <PaySection event={event} />
+          ) : (
+            <div className="flex w-full flex-col items-center gap-1.5 pt-1">
               <TicketContact event={event} />
-            )}
-          </div>
-        )}
+            </div>
+          ))}
       </div>
     );
   }

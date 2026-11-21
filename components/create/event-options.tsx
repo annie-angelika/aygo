@@ -6,6 +6,7 @@ import { LuTicket, LuUserCheck, LuArrowUpFromLine, LuPencil } from "react-icons/
 import { Switch } from "@/components/ui/switch";
 import { CapacityDialog } from "@/components/create/capacity-dialog";
 import { PriceDialog, type PriceSettings } from "@/components/create/price-dialog";
+import { WalletSetupNote } from "@/components/payment/wallet-setup-note";
 import { formatWhatsapp } from "@/lib/payment";
 
 /** The "Event Options" card: ticket price (paid to the host directly), approval
@@ -36,7 +37,9 @@ export function EventOptions({
           <EditButton onClick={() => setPriceOpen(true)}>
             {pricing.price != null && pricing.price > 0
               ? `Bs ${pricing.price} · ${
-                  pricing.payWhatsapp
+                  pricing.payWallet
+                    ? "in the app"
+                    : pricing.payWhatsapp
                     ? formatWhatsapp(pricing.payWhatsapp)
                     : pricing.payLink
                       ? "link"
@@ -45,6 +48,11 @@ export function EventOptions({
               : "Free"}
           </EditButton>
         </Row>
+        {pricing.price != null && pricing.price > 0 && pricing.payWallet && (
+          <div className="px-3.5 pb-3">
+            <WalletSetupNote wallet={pricing.payWallet} />
+          </div>
+        )}
         <Divider />
         <Row Icon={LuUserCheck} label="Require Approval">
           <Switch checked={requiresApproval} onCheckedChange={onApproval} />

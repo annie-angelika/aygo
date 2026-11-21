@@ -138,10 +138,11 @@ export function applyAdminInput(
 }
 
 /** The public `payment` block, only when there's something to show. */
-function paymentOf(whatsapp?: string | null, link?: string | null) {
+function paymentOf(whatsapp?: string | null, link?: string | null, wallet?: string | null) {
   const payment = {
     ...(whatsapp ? { whatsapp } : null),
     ...(link ? { link } : null),
+    ...(wallet ? { wallet } : null),
   };
   return Object.keys(payment).length ? { payment } : null;
 }
@@ -197,7 +198,7 @@ export function draftToEvent(
     attendeeAvatars: [],
     price: draft.price,
     ...(draft.capacity != null ? { capacity: draft.capacity } : null),
-    ...paymentOf(draft.payWhatsapp ?? draft.hostPhone?.replace(/\D/g, ""), draft.payLink),
+    ...paymentOf(draft.payWhatsapp ?? draft.hostPhone?.replace(/\D/g, ""), draft.payLink, draft.payWallet),
     blurb: draft.description,
     requiresApproval: draft.requiresApproval,
   };

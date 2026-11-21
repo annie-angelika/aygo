@@ -126,6 +126,7 @@ export function CreateEventScreen() {
         price: pricing.price,
         ...(pricing.price && pricing.payWhatsapp ? { payWhatsapp: pricing.payWhatsapp } : null),
         ...(pricing.price && pricing.payLink ? { payLink: pricing.payLink } : null),
+        ...(pricing.price && pricing.payWallet ? { payWallet: pricing.payWallet } : null),
         requiresApproval,
         capacity,
         createdAt: new Date().toISOString(),
