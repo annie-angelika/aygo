@@ -220,6 +220,22 @@ function BankQrPay({ event, pay }: { event: AygoEvent; pay: QrPay }) {
     );
   }
 
+  // Pollar asks some accounts to prove who they are before a first bank QR
+  // (its rule for the route, not ours). One time; then it's scan and pay.
+  if (qr.verify) {
+    return (
+      <>
+        <Button onClick={qr.verify.open} className="h-11 w-full rounded-full text-[13.5px] font-semibold">
+          Verify my identity
+        </Button>
+        <p className={CAPTION}>
+          The bank QR provider asks for a one-time identity check before your first payment. It takes a
+          few minutes; after that you just scan and pay.
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
       <Button
