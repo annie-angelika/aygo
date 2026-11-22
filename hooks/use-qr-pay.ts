@@ -86,7 +86,7 @@ function writeIntent(eventId: string, on: boolean) {
 }
 
 export function useQrPay(event: AygoEvent, enabled: boolean): QrPay {
-  const { isAuthenticated, wallets, getClient, sendPayment } = usePollar();
+  const { isAuthenticated, wallets, getClient, sendPayment, openKycModal } = usePollar();
   const hostWallet = event.payment?.wallet ?? null;
   // The host's wallet says where the money moves: Polygon ("0x…") is where
   // Bolivia's bank QR lands in one step; Stellar ("G…") is the older route.
@@ -266,7 +266,7 @@ export function useQrPay(event: AygoEvent, enabled: boolean): QrPay {
     if (delivered) setDue(delivered);
     setForwarding(true);
     void load();
-  });
+  }, openKycModal);
 
   // An order knows exactly what it delivers; before one exists, the quote.
   const owed = qr.amountOut ?? due;
