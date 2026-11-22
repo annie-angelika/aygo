@@ -9,7 +9,10 @@ import { api } from "@/lib/api/client";
 
 /** The shape the backend returns for "my registrations". */
 export type Registrations = {
-  going: string[]; // event ids the user is attending
+  going: string[]; // event ids the user holds a spot for
+  // The ones among `going` whose ticket is settled: paid in the app, or the
+  // host confirmed the money by hand. A paid event counts as "going" only then.
+  paid: string[];
   applied: string[]; // event ids with a request pending host approval
   stamps: Stamp[]; // collected aygos
 };

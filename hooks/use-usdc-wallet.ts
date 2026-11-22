@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePollar, addressForChain } from "@pollar/react";
 
+import { expectSignature, trustlineFor } from "@/lib/pollar-confirm";
 import { USDC, usdcAccount } from "@/lib/stellar";
+
+/** A browser's "Failed to fetch" means Pollar's server didn't answer properly. */
+function setupError(details?: string): string {
+  if (!details || /failed to fetch|networkerror|load failed/i.test(details))
+    return "The wallet service didn't respond, so nothing changed. Try again in a minute.";
+  return details;
+}
 
 /**
  * The signed-in person's own Stellar wallet (the one Pollar created at login)
@@ -41,9 +49,11 @@ export function useUsdcWallet() {
     setBusy(true);
     setError(null);
     try {
+      // The button said what this does; skip Pollar's second prompt for it.
+      expectSignature(trustlineFor(USDC));
       const outcome = await setTrustline({ code: USDC.code, issuer: USDC.issuer });
       if (outcome.status === "error") {
-        setError(outcome.details || "Couldn't set up USDC on your wallet. Try again.");
+        setError(setupError(outcome.details));
         return;
       }
       if (outcome.status === "cosign_pending") {
@@ -54,11 +64,21 @@ export function useUsdcWallet() {
       await new Promise((r) => setTimeout(r, 6000));
       await check();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't set up USDC on your wallet.");
+      setError(setupError(e instanceof Error ? e.message : undefined));
     } finally {
       setBusy(false);
     }
   }, [setTrustline, check]);
 
   return { address, trusted, busy, error, enable, recheck: () => check() };
+}
+
+/**
+ * The wallet a host is paid into: their Polygon one, where Bolivia's bank QR
+ * delivers USDC in a single step and nothing has to be set up first. Null
+ * until Pollar has created it (it does at sign-in).
+ */
+export function usePayoutWallet(): string | null {
+  const { wallets } = usePollar();
+  return addressForChain(wallets, "POLYGON") || null;
 }

@@ -35,7 +35,7 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
     requirements.push(
       canPayHost
         ? event.payment?.wallet
-          ? `Cover is Bs ${event.price} — pay ${event.host.name} in the app by bank QR once your spot is reserved.`
+          ? `Cover is Bs ${event.price} — you pay it in the app by bank QR once your spot is reserved.`
           : `Cover is Bs ${event.price} — you pay ${event.host.name} directly (WhatsApp or payment link on the next step). They confirm it by hand.`
         : `Cover is Bs ${event.price}, arranged with ${event.host.name} — message them for how to pay.`,
     );
@@ -47,7 +47,9 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
   requirements.push(
     requiresApproval
       ? "Show up on time so the host can save your spot."
-      : "Your spot is held the moment you register.",
+      : paid
+        ? "Your spot is held when you register and confirmed once your payment is."
+        : "Your spot is held the moment you register.",
   );
 
   return { requiresApproval, canPayHost, requirements, asksMessage: requiresApproval };

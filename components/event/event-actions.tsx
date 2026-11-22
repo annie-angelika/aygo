@@ -25,7 +25,7 @@ const CTA =
  * approval (navy-soft). Smallest client island.
  */
 export function EventActions({ event }: { event: AygoEvent }) {
-  const { isGoing, isApplied, toggleGoing, withdraw, hasStamp, hydrated } =
+  const { isGoing, isPaid, isApplied, toggleGoing, withdraw, hasStamp, hydrated } =
     useRegistrations();
   const { isAuthenticated, openLoginModal } = useAuth();
   // The host's decision (approve / decline / remove) lands here without a
@@ -48,6 +48,9 @@ export function EventActions({ event }: { event: AygoEvent }) {
   const paid = event.price != null && event.price > 0;
   const soldOut = event.capacity != null && event.attendees >= event.capacity;
   const collected = hydrated && hasStamp(event.id);
+  // Paid events: a held spot only becomes "going" once the payment is
+  // confirmed — in the app (verified on the ledger) or by the host, by hand.
+  const settled = !paid || collected || (hydrated && isPaid(event.id));
   const cta = cfg.requiresApproval
     ? "Request to join"
     : paid
@@ -84,10 +87,17 @@ export function EventActions({ event }: { event: AygoEvent }) {
     return (
       <div className="flex flex-col items-center gap-2">
         <RegisterDialog event={event} open={sheet} onOpenChange={setSheet} />
-        <p className="inline-flex h-7 items-center gap-1.5 rounded-full bg-gold pl-2 pr-3 text-[12.5px] font-bold text-navy">
-          <LuCheck className="size-4" strokeWidth={2.5} aria-hidden />
-          You&apos;re going!
-        </p>
+        {settled ? (
+          <p className="inline-flex h-7 items-center gap-1.5 rounded-full bg-gold pl-2 pr-3 text-[12.5px] font-bold text-navy">
+            <LuCheck className="size-4" strokeWidth={2.5} aria-hidden />
+            You&apos;re going!
+          </p>
+        ) : (
+          <p className="inline-flex h-7 items-center gap-1.5 rounded-full bg-secondary pl-2 pr-3 text-[12.5px] font-semibold text-foreground">
+            <LuClock className="size-4" aria-hidden />
+            Spot reserved · pay to confirm
+          </p>
+        )}
         <div className="flex items-center gap-4">
           {collected ? (
             <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-gold-deep">
@@ -111,12 +121,12 @@ export function EventActions({ event }: { event: AygoEvent }) {
             Cancel
           </button>
         </div>
-        {/* Paid events: once you're in (instant reserve or approved request),
-            the host's pay channels stay front and centre until you check in —
-            a reserved spot is only yours once the host has the money. */}
-        {paid && !collected &&
+        {/* Paid events: once the spot is held (instant reserve or approved
+            request), paying stays front and centre — it's what turns the
+            reservation into "going". A settled in-app payment keeps its receipt. */}
+        {paid && !collected && (!settled || !!event.payment?.wallet) &&
           (cfg.canPayHost ? (
-            <PaySection event={event} />
+            <PaySection event={event} settled={settled} />
           ) : (
             <div className="flex w-full flex-col items-center gap-1.5 pt-1">
               <TicketContact event={event} />

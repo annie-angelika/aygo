@@ -20,6 +20,7 @@ import { CALENDARS, TIMEZONES, MAX_IMAGES, type EventDraft } from "@/lib/create-
 import { normalizeWhatsapp } from "@/lib/payment";
 import { httpsUrl } from "@/lib/server/validate";
 import { isStellarAddress } from "@/lib/stellar";
+import { isEvmAddress } from "@/lib/polygon";
 
 /** An event may start a little in the past when created live ("happening now"). */
 const GRACE_MS = 60 * 60 * 1000;
@@ -108,7 +109,7 @@ export function parseDraft(body: unknown, previous: EventDraft | null): EventDra
   const payLinkRaw = optStr(b.payLink, "payLink", { max: 2048 });
   const payLink = payLinkRaw ? httpsUrl(/^https?:\/\//i.test(payLinkRaw) ? payLinkRaw : `https://${payLinkRaw}`, "payLink") : undefined;
   const payWallet = optStr(b.payWallet, "payWallet", { max: 56 });
-  if (payWallet && !isStellarAddress(payWallet))
+  if (payWallet && !isStellarAddress(payWallet) && !isEvmAddress(payWallet))
     throw new HttpError(400, "That wallet address doesn't look right.");
   if (price != null && price > 0 && !payWhatsapp && !payLink && !payWallet)
     throw new HttpError(400, "Paid event: turn on in-app payments, or add a WhatsApp number or a payment link so guests can pay you.");

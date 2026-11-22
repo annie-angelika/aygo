@@ -76,7 +76,7 @@ export function TicketContact({ event }: { event: AygoEvent }) {
       {/* Signed out, every path leads to the login modal first: paying rides
           on a registration, and the host's WhatsApp number isn't for anonymous
           visitors to harvest. */}
-      {inApp && !hasChannel && isAuthenticated ? null : hasChannel && isAuthenticated ? (
+      {inApp && isAuthenticated ? null : hasChannel && isAuthenticated ? (
         <PayHostButtons event={event} />
       ) : hasChannel || inApp ? (
         <button type="button" onClick={openLoginModal} className={LINK}>

@@ -70,6 +70,8 @@ const SCHEMA = [
   // Registration timestamps for the host's manage view.
   `ALTER TABLE going ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()`,
   `ALTER TABLE applications ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()`,
+  // Paid events: when the host confirmed the guest's money by hand.
+  `ALTER TABLE going ADD COLUMN IF NOT EXISTS paid_at timestamptz`,
   // Threads under a question/report (host ↔ guest), and the in-app inbox.
   `CREATE TABLE IF NOT EXISTS report_replies (id text PRIMARY KEY, report_id text NOT NULL, author text NOT NULL, message text NOT NULL, created_at timestamptz NOT NULL DEFAULT now())`,
   `CREATE INDEX IF NOT EXISTS report_replies_report_idx ON report_replies (report_id)`,
@@ -481,12 +483,17 @@ export class PostgresStore implements Store {
 
   async getRegistrations(sid: string): Promise<Registrations> {
     const [going, applied, stamps] = await Promise.all([
-      this.sql`SELECT event_id FROM going WHERE session_id = ${sid}`,
+      this.sql`SELECT g.event_id,
+                      (g.paid_at IS NOT NULL OR EXISTS (
+                        SELECT 1 FROM payments p
+                        WHERE p.session_id = g.session_id AND p.event_id = g.event_id)) AS paid
+               FROM going g WHERE g.session_id = ${sid}`,
       this.sql`SELECT event_id FROM applications WHERE session_id = ${sid}`,
       this.sql`SELECT data, created_at FROM stamps WHERE session_id = ${sid}`,
     ]);
     return {
       going: going.map((r) => r.event_id as string),
+      paid: going.filter((r) => r.paid).map((r) => r.event_id as string),
       applied: applied.map((r) => r.event_id as string),
       stamps: stamps.map((r) => ({
         ...(r.data as Stamp),
@@ -505,6 +512,12 @@ export class PostgresStore implements Store {
       await this
         .sql`DELETE FROM going WHERE session_id = ${sid} AND event_id = ${eventId}`;
     }
+  }
+
+  async setPaid(sid: string, eventId: string, on: boolean): Promise<void> {
+    await this
+      .sql`UPDATE going SET paid_at = ${on ? new Date().toISOString() : null}
+           WHERE session_id = ${sid} AND event_id = ${eventId}`;
   }
 
   async getPayment(sid: string, eventId: string): Promise<PaymentReceipt | null> {
@@ -668,7 +681,7 @@ export class PostgresStore implements Store {
     if (!event) return null;
     const [draftRows, going, requests, stamps, feedback] = await Promise.all([
       this.sql`SELECT data FROM created_events WHERE id = ${eventId}`,
-      this.sql`SELECT g.session_id, g.created_at, p.data AS profile, u.username,
+      this.sql`SELECT g.session_id, g.created_at, g.paid_at AS confirmed_at, p.data AS profile, u.username,
                       pay.tx_hash, pay.amount, pay.paid_at FROM going g
                LEFT JOIN profiles p ON p.session_id = g.session_id
                LEFT JOIN usernames u ON u.session_id = g.session_id
@@ -690,6 +703,7 @@ export class PostgresStore implements Store {
         ...(r.username ? { username: r.username as string } : null),
         at: new Date(r.created_at as string).toISOString(),
         ...(r.tx_hash ? { payment: receiptOf(r) } : null),
+        ...(r.confirmed_at ? { paidAt: new Date(r.confirmed_at as string).toISOString() } : null),
       };
     };
     return {

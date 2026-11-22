@@ -63,6 +63,8 @@ export type GuestRow = {
   at: string;
   /** Their in-app payment, when one was verified on the ledger. */
   payment?: PaymentReceipt;
+  /** When the host confirmed by hand that this guest paid (WhatsApp / link). */
+  paidAt?: string;
 };
 
 /** A pending join request: a guest row plus their note to the host. */
@@ -197,6 +199,8 @@ export interface Store {
   getRegistrations(sid: string): Promise<Registrations>;
   /** Add (`on`) or remove the event from the guest's "going" list. */
   setGoing(sid: string, eventId: string, on: boolean): Promise<void>;
+  /** The host confirms (`on`) or takes back that a guest on the list paid. */
+  setPaid(sid: string, eventId: string, on: boolean): Promise<void>;
   /** Add (`on`) or remove a pending join request, with an optional note. */
   setApplied(
     sid: string,

@@ -5,8 +5,9 @@
 //
 // A guest pays the host's wallet in USDC from their own (bank QR → USDC is
 // Pollar's ramp, in the browser). The server takes nobody's word for it: the
-// transaction is read off the Stellar ledger and must have succeeded, carry
-// this guest's memo and have paid the host's wallet. 409 while the ledger
+// transaction is read off the network the host's wallet lives on — Polygon
+// ("0x…", where Bolivia's bank QR lands) or Stellar ("G…", with this guest's
+// memo) — and must have succeeded and paid the host's wallet. 409 while the ledger
 // hasn't confirmed it yet — the client asks again.
 
 import { getStore } from "@/lib/server/store";
@@ -16,6 +17,8 @@ import { rateLimit, LIMITS } from "@/lib/server/rate-limit";
 import { pathId, expectObject, str } from "@/lib/server/validate";
 import { handler, json, readJson, HttpError } from "@/lib/server/http";
 import { paymentMemo, verifyUsdcPayment, TX_HASH } from "@/lib/server/stellar";
+import { EVM_TX_HASH, verifyPolygonUsdcPayment } from "@/lib/server/polygon";
+import { isEvmAddress } from "@/lib/polygon";
 import { formatUsdc } from "@/lib/stellar";
 import type { PaymentReceipt } from "@/types";
 
@@ -33,7 +36,7 @@ export const POST = handler(async (req: Request, ctx: Ctx) => {
   const eventId = pathId((await ctx.params).eventId, "eventId");
   rateLimit(req, "payment", sid, LIMITS.payment);
   const body = expectObject(await readJson(req), "payment");
-  const txHash = str(body.txHash, "txHash", { max: 64, pattern: TX_HASH });
+  const txHash = str(body.txHash, "txHash", { max: 66 }).toLowerCase();
 
   const store = getStore();
   const existing = await store.getPayment(sid, eventId);
@@ -49,10 +52,18 @@ export const POST = handler(async (req: Request, ctx: Ctx) => {
 
   let verified;
   try {
-    verified = await verifyUsdcPayment(txHash, { to: wallet, memo: paymentMemo(sid, eventId) });
+    // The host's wallet says which network the money moves on.
+    if (isEvmAddress(wallet)) {
+      if (!EVM_TX_HASH.test(txHash)) throw new HttpError(400, "That isn't a valid transaction.");
+      verified = await verifyPolygonUsdcPayment(txHash, { to: wallet });
+    } else {
+      if (!TX_HASH.test(txHash)) throw new HttpError(400, "That isn't a valid transaction.");
+      verified = await verifyUsdcPayment(txHash, { to: wallet, memo: paymentMemo(sid, eventId) });
+    }
   } catch (e) {
+    if (e instanceof HttpError) throw e;
     console.error("Payment verification failed:", e);
-    throw new HttpError(502, "Couldn't reach the Stellar network to confirm your payment. Try again in a moment.");
+    throw new HttpError(502, "Couldn't reach the network to confirm your payment. Try again in a moment.");
   }
   if (verified.status === "unknown")
     throw new HttpError(409, "Your payment is still confirming.");

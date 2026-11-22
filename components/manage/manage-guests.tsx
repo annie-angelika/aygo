@@ -15,6 +15,7 @@ import { GuestRow } from "@/components/manage/guest-row";
 import {
   decideRequest,
   removeGuest,
+  setGuestPaid,
   type ManageData,
 } from "@/lib/api/manage";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export function ManageGuests({
 }) {
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const paidEvent = (data.event.price ?? 0) > 0;
   const q = query.trim().toLowerCase();
   const guests = data.going.filter(
     (g) => !q || g.name.toLowerCase().includes(q),
@@ -141,6 +143,33 @@ export function ManageGuests({
               >
                 <GuestRow
                   guest={g}
+                  paidControl={
+                    // Paid outside the app (WhatsApp, link, cash): the host
+                    // says so here, and the guest's spot turns into "going".
+                    paidEvent && !g.payment ? (
+                      <button
+                        type="button"
+                        disabled={busyId === g.requestId}
+                        aria-pressed={!!g.paidAt}
+                        title={g.paidAt ? "Tap to undo" : "Confirm you received their payment"}
+                        onClick={() =>
+                          void act(
+                            () => setGuestPaid(data.event.id, g.requestId, !g.paidAt),
+                            g.requestId,
+                          )
+                        }
+                        className={cn(
+                          "inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[11.5px] font-bold transition-colors disabled:opacity-50",
+                          g.paidAt
+                            ? "bg-gold text-navy"
+                            : "bg-card text-foreground ring-1 ring-border hover:bg-muted",
+                        )}
+                      >
+                        {g.paidAt && <LuCheck className="size-3" strokeWidth={2.5} aria-hidden />}
+                        {g.paidAt ? "Paid" : "Mark paid"}
+                      </button>
+                    ) : undefined
+                  }
                   action={
                     <ConfirmDialog
                       title={`Remove ${g.name}?`}

@@ -5,6 +5,7 @@
 
 export const STORAGE_KEYS = {
   going: "aygo.going", // string[] of event ids the user is attending
+  paid: "aygo.paid", // string[] — the ones in `going` whose payment is confirmed
   applied: "aygo.applied", // string[] of event ids with a request pending host approval
   stamps: "aygo.stamps", // Stamp[] collected in the passport
   profile: "aygo.profile", // ProfileEdits — your editable identity fields

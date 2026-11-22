@@ -2,18 +2,21 @@
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { initials, realAvatar } from "@/lib/utils";
-import { formatUsdc, txExplorerUrl } from "@/lib/stellar";
+import { txExplorerUrl, usdcLabel } from "@/lib/stellar";
 import type { GuestRow as GuestRowData } from "@/lib/api/manage";
 
 export function GuestRow({
   guest,
   subtitle,
   action,
+  paidControl,
 }: {
   guest: GuestRowData;
   /** Extra line under the name (e.g. the applicant's note). */
   subtitle?: string;
   action?: React.ReactNode;
+  /** Paid events: the host's "mark paid" control for a guest who paid outside the app. */
+  paidControl?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center gap-3 px-3.5 py-2.5">
@@ -41,9 +44,10 @@ export function GuestRow({
           title="Paid in the app — open the receipt"
           className="inline-flex h-[22px] shrink-0 items-center rounded-full bg-gold px-2 text-[11px] font-bold text-navy"
         >
-          Paid · {formatUsdc(guest.payment.amount)} USDC
+          Paid · {usdcLabel(guest.payment.amount)}
         </a>
       )}
+      {paidControl}
       {action}
     </div>
   );
