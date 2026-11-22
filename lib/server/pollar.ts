@@ -24,12 +24,12 @@ export const RESUME_URL = `${BASE_URL}/v3/auth/session/resume`;
 
 /**
  * A proof names the URL it was signed for (`htu`), and Pollar refuses it
- * anywhere else. A tab opened before a deploy still runs the previous SDK and
- * signs for the API version of its day, so the relay follows the proof — but
- * only to Pollar's session check on a version we know, never to an arbitrary
- * URL. `v1` is retired by Pollar on 2026-11-30; drop it from the list then.
+ * anywhere else, so the relay follows the proof — but only to Pollar's session
+ * check on an API version we know, never to an arbitrary URL. Only v3 is left:
+ * v1 answers 410 from 2026-11-30 and every deployed client has run SDK 0.12
+ * (v3) since 2026-11-17.
  */
-const RELAYABLE = new Set(["v3", "v1"].map((v) => `${BASE_URL}/${v}/auth/session/resume`));
+const RELAYABLE = new Set(["v3"].map((v) => `${BASE_URL}/${v}/auth/session/resume`));
 
 /** The session-check URL this proof was signed for, or the current one when it names nothing we relay. */
 export function resumeUrlOf(dpopProof: string): string {

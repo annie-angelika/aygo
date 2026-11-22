@@ -18,6 +18,7 @@ import type {
   FeedbackReply,
   AppNotification,
   MetricShare,
+  PaymentReceipt,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { Registrations } from "@/lib/api/registrations";
@@ -60,6 +61,10 @@ export type GuestRow = {
   username?: string;
   /** ISO timestamp of when they registered/applied. */
   at: string;
+  /** Their in-app payment, when one was verified on the ledger. */
+  payment?: PaymentReceipt;
+  /** When the host confirmed by hand that this guest paid (WhatsApp / link). */
+  paidAt?: string;
 };
 
 /** A pending join request: a guest row plus their note to the host. */
@@ -194,6 +199,8 @@ export interface Store {
   getRegistrations(sid: string): Promise<Registrations>;
   /** Add (`on`) or remove the event from the guest's "going" list. */
   setGoing(sid: string, eventId: string, on: boolean): Promise<void>;
+  /** The host confirms (`on`) or takes back that a guest on the list paid. */
+  setPaid(sid: string, eventId: string, on: boolean): Promise<void>;
   /** Add (`on`) or remove a pending join request, with an optional note. */
   setApplied(
     sid: string,
@@ -201,6 +208,13 @@ export interface Store {
     on: boolean,
     message?: string,
   ): Promise<void>;
+  /** The guest's verified in-app payment for an event, if any. */
+  getPayment(sid: string, eventId: string): Promise<PaymentReceipt | null>;
+  /**
+   * Keep a verified payment. One per guest per event, and a transaction counts
+   * once: "duplicate" when that hash already paid for something else.
+   */
+  recordPayment(sid: string, eventId: string, receipt: PaymentReceipt): Promise<"ok" | "duplicate">;
   /** Collect the aygo for an attended event (also clears going/applied). */
   addStamp(sid: string, stamp: Stamp): Promise<void>;
 

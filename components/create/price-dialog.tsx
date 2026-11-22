@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LuTicket, LuLink, LuCheck } from "react-icons/lu";
+import { LuTicket, LuLink, LuCheck, LuQrCode } from "react-icons/lu";
 import { FaWhatsapp } from "react-icons/fa6";
 
 import { Button } from "@/components/ui/button";
@@ -13,19 +13,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { usePayoutWallet } from "@/hooks/use-usdc-wallet";
 import { normalizeWhatsapp } from "@/lib/payment";
 
 export type PriceSettings = {
   price: number | null;
   payWhatsapp?: string;
   payLink?: string;
+  /** Your wallet — set when guests can pay in the app. */
+  payWallet?: string;
 };
 
 /**
- * "Ticket Price" modal. A paid event must say HOW guests pay — aygo doesn't
- * move money yet — so turning "Paid event" on asks for a WhatsApp number
- * (guests open a chat to arrange a QR/transfer) and/or a payment link, and
- * won't confirm until at least one is valid.
+ * "Ticket Price" modal. A paid event must say HOW guests pay: in the app
+ * (bank QR → USDC in the host's own wallet), a WhatsApp number (guests open a
+ * chat to arrange a QR/transfer) and/or a payment link — it won't confirm
+ * until at least one is set.
  */
 export function PriceDialog({
   open,
@@ -43,6 +46,10 @@ export function PriceDialog({
   const [amount, setAmount] = useState(isPaid ? String(value.price) : "50");
   const [whatsapp, setWhatsapp] = useState(value.payWhatsapp ?? "");
   const [link, setLink] = useState(value.payLink ?? "");
+  const address = usePayoutWallet();
+  const [inApp, setInApp] = useState(!!value.payWallet);
+  // Keep a wallet already saved on the event; otherwise it's the signed-in host's.
+  const wallet = inApp ? (value.payWallet ?? address ?? undefined) : undefined;
 
   const n = Number(amount);
   const amountOk = Number.isFinite(n) && n > 0;
@@ -50,7 +57,7 @@ export function PriceDialog({
   const waOk = whatsapp.trim() === "" || waDigits !== null;
   const linkTrim = link.trim();
   const linkOk = linkTrim === "" || /^(https?:\/\/)?[^\s]+\.[^\s]{2,}$/i.test(linkTrim);
-  const hasChannel = !!waDigits || (linkTrim !== "" && linkOk);
+  const hasChannel = !!wallet || !!waDigits || (linkTrim !== "" && linkOk);
   const canConfirm = !paid || (amountOk && waOk && linkOk && hasChannel);
 
   function confirm() {
@@ -61,6 +68,7 @@ export function PriceDialog({
             price: Math.round(n * 100) / 100,
             payWhatsapp: waDigits ?? undefined,
             payLink: linkTrim ? (/^https?:\/\//i.test(linkTrim) ? linkTrim : `https://${linkTrim}`) : undefined,
+            payWallet: wallet,
           }
         : { price: null },
     );
@@ -76,8 +84,8 @@ export function PriceDialog({
         <div>
           <DialogTitle className="text-[18px]">Ticket Price</DialogTitle>
           <DialogDescription className="mt-1.5">
-            Guests pay you directly — aygo doesn&apos;t process payments yet.
-            Tell them where: a WhatsApp number, a payment link, or both.
+            Guests pay you directly. Take it in the app by bank QR, or tell
+            them where: a WhatsApp number, a payment link.
           </DialogDescription>
         </div>
 
@@ -104,6 +112,25 @@ export function PriceDialog({
                 />
               </div>
             </label>
+
+            <div className="flex flex-col gap-1.5 rounded-xl bg-muted/40 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-foreground">
+                  <LuQrCode className="size-3.5" aria-hidden />
+                  Get paid in the app
+                </span>
+                <Switch
+                  checked={inApp}
+                  onCheckedChange={setInApp}
+                  disabled={!address && !value.payWallet}
+                />
+              </div>
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                {address || value.payWallet
+                  ? "Guests pay by bank QR and it lands in your aygo wallet as USDC (digital dollars), confirmed automatically. Cash out to your bank from Wallet in your profile menu."
+                  : "Sign out and back in to use this — your wallet isn't loaded."}
+              </span>
+            </div>
 
             <label className="flex flex-col gap-1.5">
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-foreground">
@@ -144,7 +171,7 @@ export function PriceDialog({
 
             {!hasChannel ? (
               <p className="text-[12px] font-medium text-amber-700">
-                Add a WhatsApp number or a link — otherwise guests can&apos;t pay you.
+                Turn on in-app payments, or add a WhatsApp number or a link — otherwise guests can&apos;t pay you.
               </p>
             ) : (
               <p className="inline-flex items-center gap-1 text-[12px] font-medium text-emerald-700">

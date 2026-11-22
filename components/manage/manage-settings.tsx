@@ -24,6 +24,8 @@ import { CoverCard } from "@/components/create/cover-card";
 import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { PhotoStrip } from "@/components/create/photo-strip";
 import { DeleteEvent } from "@/components/manage/delete-event";
+import { WalletSetupNote } from "@/components/payment/wallet-setup-note";
+import { usePayoutWallet } from "@/hooks/use-usdc-wallet";
 import { createEvent, ApiError } from "@/lib/api";
 import { MAX_IMAGES, type EventDraft, type Visibility } from "@/lib/create-event";
 import { hasPaymentChannel, normalizeWhatsapp, formatWhatsapp } from "@/lib/payment";
@@ -60,6 +62,7 @@ function SettingsForm({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; error?: boolean } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const myWallet = usePayoutWallet();
   const set = (patch: Partial<EventDraft>) =>
     setDraft((d) => ({ ...d, ...patch }));
   const images = draft.images ?? [];
@@ -169,14 +172,28 @@ function SettingsForm({
         </Field>
       </div>
       <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">
-        Paid events are settled directly with you — in-app payments are coming later.
+        Paid events are settled directly with you: in the app by bank QR, or through your own channels.
       </p>
       {draft.price != null && draft.price > 0 && (
         <div className="flex flex-col gap-2.5 rounded-xl bg-muted/40 p-3">
           <p className="text-[12px] font-semibold text-foreground">
             How guests pay you{" "}
-            <span className="font-medium text-muted-foreground">(WhatsApp and/or a link)</span>
+            <span className="font-medium text-muted-foreground">(in the app, WhatsApp and/or a link)</span>
           </p>
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-[12.5px] font-medium text-foreground">
+              In the app, by bank QR
+              <span className="block text-[11px] font-normal leading-snug text-muted-foreground">
+                Lands in your aygo wallet as USDC, confirmed automatically.
+              </span>
+            </span>
+            <Switch
+              checked={!!draft.payWallet}
+              disabled={!draft.payWallet && !myWallet}
+              onCheckedChange={(on) => set({ payWallet: on ? (initial.payWallet ?? myWallet ?? undefined) : undefined })}
+            />
+          </label>
+          <WalletSetupNote wallet={draft.payWallet} />
           <div className="grid grid-cols-2 gap-2.5">
             <Field label="WhatsApp">
               <Input

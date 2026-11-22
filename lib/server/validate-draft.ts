@@ -19,6 +19,8 @@ import { THEMES } from "@/lib/create-themes";
 import { CALENDARS, TIMEZONES, MAX_IMAGES, type EventDraft } from "@/lib/create-event";
 import { normalizeWhatsapp } from "@/lib/payment";
 import { httpsUrl } from "@/lib/server/validate";
+import { isStellarAddress } from "@/lib/stellar";
+import { isEvmAddress } from "@/lib/polygon";
 
 /** An event may start a little in the past when created live ("happening now"). */
 const GRACE_MS = 60 * 60 * 1000;
@@ -106,8 +108,11 @@ export function parseDraft(body: unknown, previous: EventDraft | null): EventDra
     throw new HttpError(400, "That WhatsApp number doesn't look right (e.g. +591 71234567).");
   const payLinkRaw = optStr(b.payLink, "payLink", { max: 2048 });
   const payLink = payLinkRaw ? httpsUrl(/^https?:\/\//i.test(payLinkRaw) ? payLinkRaw : `https://${payLinkRaw}`, "payLink") : undefined;
-  if (price != null && price > 0 && !payWhatsapp && !payLink)
-    throw new HttpError(400, "Paid event: add a WhatsApp number or a payment link so guests can pay you.");
+  const payWallet = optStr(b.payWallet, "payWallet", { max: 56 });
+  if (payWallet && !isStellarAddress(payWallet) && !isEvmAddress(payWallet))
+    throw new HttpError(400, "That wallet address doesn't look right.");
+  if (price != null && price > 0 && !payWhatsapp && !payLink && !payWallet)
+    throw new HttpError(400, "Paid event: turn on in-app payments, or add a WhatsApp number or a payment link so guests can pay you.");
   const lat = optNum(b.lat, "lat", { min: -90, max: 90 });
   const lng = optNum(b.lng, "lng", { min: -180, max: 180 });
 
@@ -138,6 +143,7 @@ export function parseDraft(body: unknown, previous: EventDraft | null): EventDra
     price: price && price > 0 ? Math.round(price * 100) / 100 : null,
     ...(price && price > 0 && payWhatsapp ? { payWhatsapp } : null),
     ...(price && price > 0 && payLink ? { payLink } : null),
+    ...(price && price > 0 && payWallet ? { payWallet } : null),
     requiresApproval,
     capacity,
     ...(category ? { category } : null),

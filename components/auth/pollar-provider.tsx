@@ -1,9 +1,12 @@
 "use client";
 
-import { PollarProvider } from "@pollar/react";
+import { useLayoutEffect } from "react";
+import { PollarProvider, usePollar } from "@pollar/react";
 import "@pollar/react/styles.css";
 
 import type { StellarNetwork } from "@pollar/core";
+
+import { takeExpected } from "@/lib/pollar-confirm";
 
 // Publishable key is read at build time and inlined into the client bundle
 // (NEXT_PUBLIC_*). Empty string when unconfigured: the provider still mounts so
@@ -28,7 +31,21 @@ if (!apiKey && process.env.NODE_ENV !== "production") {
 export function PollarAuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <PollarProvider client={{ apiKey, stellarNetwork }}>
+      <ExpectedSignatures />
       {children}
     </PollarProvider>
   );
+}
+
+/**
+ * Answers Pollar's "Confirm transaction" prompt for the signatures an aygo
+ * button just asked for (see lib/pollar-confirm) — in a layout effect, so the
+ * prompt never paints. Every other signature keeps Pollar's own prompt.
+ */
+function ExpectedSignatures() {
+  const { confirmations } = usePollar();
+  useLayoutEffect(() => {
+    for (const c of confirmations) if (takeExpected(c)) c.confirm();
+  }, [confirmations]);
+  return null;
 }

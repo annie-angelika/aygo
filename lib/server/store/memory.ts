@@ -12,6 +12,7 @@ import type {
   FeedbackReply,
   AppNotification,
   MetricShare,
+  PaymentReceipt,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type {
@@ -33,6 +34,7 @@ import type {
   EventReport,
   ReportRecord,
   NotificationInput,
+  GuestRow,
 } from "@/lib/server/store/types";
 import {
   CATALOG_CITIES,
@@ -80,6 +82,10 @@ export class MemoryStore implements Store {
     sid: string;
   })[] = [];
   private notifications = new Map<string, AppNotification[]>();
+  /** Verified in-app payments, keyed "sid|eventId". */
+  private payments = new Map<string, PaymentReceipt>();
+  /** Host-confirmed payments (WhatsApp / link): "sid|eventId" → when. */
+  private confirmed = new Map<string, string>();
   private createdEvents: { sid: string; draft: EventDraft; createdAt: string }[] =
     [];
   // When a session finished sign-up / first bound a login — the metrics source.
@@ -290,6 +296,9 @@ export class MemoryStore implements Store {
     const g = this.guest(sid);
     return {
       going: [...g.going.keys()],
+      paid: [...g.going.keys()].filter(
+        (id) => this.payments.has(`${sid}|${id}`) || this.confirmed.has(`${sid}|${id}`),
+      ),
       applied: [...g.applied.keys()],
       stamps: [...g.stamps.values()],
     };
@@ -298,7 +307,28 @@ export class MemoryStore implements Store {
   async setGoing(sid: string, eventId: string, on: boolean): Promise<void> {
     const g = this.guest(sid);
     if (on) g.going.set(eventId, new Date().toISOString());
-    else g.going.delete(eventId);
+    else {
+      g.going.delete(eventId);
+      this.confirmed.delete(`${sid}|${eventId}`);
+    }
+  }
+
+  async setPaid(sid: string, eventId: string, on: boolean): Promise<void> {
+    if (!this.guest(sid).going.has(eventId)) return;
+    if (on) this.confirmed.set(`${sid}|${eventId}`, new Date().toISOString());
+    else this.confirmed.delete(`${sid}|${eventId}`);
+  }
+
+  async getPayment(sid: string, eventId: string): Promise<PaymentReceipt | null> {
+    return this.payments.get(`${sid}|${eventId}`) ?? null;
+  }
+
+  async recordPayment(sid: string, eventId: string, receipt: PaymentReceipt): Promise<"ok" | "duplicate"> {
+    const key = `${sid}|${eventId}`;
+    if (this.payments.has(key)) return "ok";
+    for (const p of this.payments.values()) if (p.txHash === receipt.txHash) return "duplicate";
+    this.payments.set(key, receipt);
+    return "ok";
   }
 
   async setApplied(
@@ -410,7 +440,7 @@ export class MemoryStore implements Store {
   async manageEvent(eventId: string) {
     const event = await this.getEvent(eventId);
     if (!event) return null;
-    const going: { requestId: string; name: string; avatar?: string; at: string }[] = [];
+    const going: GuestRow[] = [];
     const requests: {
       requestId: string;
       name: string;
@@ -427,7 +457,15 @@ export class MemoryStore implements Store {
         ...(this.usernameOf(sid) ? { username: this.usernameOf(sid) } : null),
       };
       const goingAt = g.going.get(eventId);
-      if (goingAt) going.push({ ...identity, at: goingAt });
+      const payment = this.payments.get(`${sid}|${eventId}`);
+      const paidAt = this.confirmed.get(`${sid}|${eventId}`);
+      if (goingAt)
+        going.push({
+          ...identity,
+          at: goingAt,
+          ...(payment ? { payment } : null),
+          ...(paidAt ? { paidAt } : null),
+        });
       const applied = g.applied.get(eventId);
       if (applied)
         requests.push({ ...identity, at: applied.at, message: applied.message });

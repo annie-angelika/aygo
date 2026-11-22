@@ -25,6 +25,7 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
   const canPayHost = paid && hasPaymentChannel({
     payWhatsapp: event.payment?.whatsapp,
     payLink: event.payment?.link,
+    payWallet: event.payment?.wallet,
   });
 
   const requirements: string[] = [];
@@ -33,7 +34,9 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
   if (paid) {
     requirements.push(
       canPayHost
-        ? `Cover is Bs ${event.price} — you pay ${event.host.name} directly (WhatsApp or payment link on the next step). They confirm it by hand.`
+        ? event.payment?.wallet
+          ? `Cover is Bs ${event.price} — you pay it in the app by bank QR once your spot is reserved.`
+          : `Cover is Bs ${event.price} — you pay ${event.host.name} directly (WhatsApp or payment link on the next step). They confirm it by hand.`
         : `Cover is Bs ${event.price}, arranged with ${event.host.name} — message them for how to pay.`,
     );
   } else {
@@ -44,7 +47,9 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
   requirements.push(
     requiresApproval
       ? "Show up on time so the host can save your spot."
-      : "Your spot is held the moment you register.",
+      : paid
+        ? "Your spot is held when you register and confirmed once your payment is."
+        : "Your spot is held the moment you register.",
   );
 
   return { requiresApproval, canPayHost, requirements, asksMessage: requiresApproval };

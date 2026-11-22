@@ -11,6 +11,7 @@ export { api, ApiError, setAuthToken } from "@/lib/api/client";
 export * from "@/lib/api/events";
 export * from "@/lib/api/users";
 export * from "@/lib/api/registrations";
+export * from "@/lib/api/payments";
 export * from "@/lib/api/profile";
 export * from "@/lib/api/preferences";
 export * from "@/lib/api/discover";

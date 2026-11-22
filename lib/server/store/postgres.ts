@@ -21,6 +21,7 @@ import type {
   FeedbackReply,
   AppNotification,
   MetricShare,
+  PaymentReceipt,
 } from "@/types";
 import type { EventDraft } from "@/lib/create-event";
 import type { FeedbackKind } from "@/types";
@@ -69,6 +70,8 @@ const SCHEMA = [
   // Registration timestamps for the host's manage view.
   `ALTER TABLE going ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()`,
   `ALTER TABLE applications ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now()`,
+  // Paid events: when the host confirmed the guest's money by hand.
+  `ALTER TABLE going ADD COLUMN IF NOT EXISTS paid_at timestamptz`,
   // Threads under a question/report (host ↔ guest), and the in-app inbox.
   `CREATE TABLE IF NOT EXISTS report_replies (id text PRIMARY KEY, report_id text NOT NULL, author text NOT NULL, message text NOT NULL, created_at timestamptz NOT NULL DEFAULT now())`,
   `CREATE INDEX IF NOT EXISTS report_replies_report_idx ON report_replies (report_id)`,
@@ -96,8 +99,20 @@ const SCHEMA = [
   // number in the report is counted from the tables above — nothing is typed
   // in, so the short-lived manual table is gone.)
   `DROP TABLE IF EXISTS metric_weeks`,
+  // Verified in-app payments (guest → host, USDC on Stellar). Kept when the
+  // event or the registration goes away: it is a record of money that moved.
+  `CREATE TABLE IF NOT EXISTS payments (session_id text NOT NULL, event_id text NOT NULL, tx_hash text NOT NULL UNIQUE, amount text NOT NULL, asset text NOT NULL, paid_at timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (session_id, event_id))`,
   `CREATE TABLE IF NOT EXISTS metric_shares (id text PRIMARY KEY, label text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz, revoked_at timestamptz)`,
 ];
+
+function receiptOf(r: Record<string, unknown>): PaymentReceipt {
+  return {
+    txHash: r.tx_hash as string,
+    amount: r.amount as string,
+    asset: "USDC",
+    at: new Date(r.paid_at as string).toISOString(),
+  };
+}
 
 export class PostgresStore implements Store {
   private sql: NeonQueryFunction<false, false>;
@@ -468,12 +483,17 @@ export class PostgresStore implements Store {
 
   async getRegistrations(sid: string): Promise<Registrations> {
     const [going, applied, stamps] = await Promise.all([
-      this.sql`SELECT event_id FROM going WHERE session_id = ${sid}`,
+      this.sql`SELECT g.event_id,
+                      (g.paid_at IS NOT NULL OR EXISTS (
+                        SELECT 1 FROM payments p
+                        WHERE p.session_id = g.session_id AND p.event_id = g.event_id)) AS paid
+               FROM going g WHERE g.session_id = ${sid}`,
       this.sql`SELECT event_id FROM applications WHERE session_id = ${sid}`,
       this.sql`SELECT data, created_at FROM stamps WHERE session_id = ${sid}`,
     ]);
     return {
       going: going.map((r) => r.event_id as string),
+      paid: going.filter((r) => r.paid).map((r) => r.event_id as string),
       applied: applied.map((r) => r.event_id as string),
       stamps: stamps.map((r) => ({
         ...(r.data as Stamp),
@@ -492,6 +512,27 @@ export class PostgresStore implements Store {
       await this
         .sql`DELETE FROM going WHERE session_id = ${sid} AND event_id = ${eventId}`;
     }
+  }
+
+  async setPaid(sid: string, eventId: string, on: boolean): Promise<void> {
+    await this
+      .sql`UPDATE going SET paid_at = ${on ? new Date().toISOString() : null}
+           WHERE session_id = ${sid} AND event_id = ${eventId}`;
+  }
+
+  async getPayment(sid: string, eventId: string): Promise<PaymentReceipt | null> {
+    const rows = await this
+      .sql`SELECT tx_hash, amount, paid_at FROM payments WHERE session_id = ${sid} AND event_id = ${eventId}`;
+    return rows.length ? receiptOf(rows[0]) : null;
+  }
+
+  async recordPayment(sid: string, eventId: string, receipt: PaymentReceipt): Promise<"ok" | "duplicate"> {
+    await this
+      .sql`INSERT INTO payments (session_id, event_id, tx_hash, amount, asset, paid_at)
+           VALUES (${sid}, ${eventId}, ${receipt.txHash}, ${receipt.amount}, ${receipt.asset}, ${receipt.at})
+           ON CONFLICT DO NOTHING`;
+    // Either ours landed, this guest had already paid, or the hash is spent.
+    return (await this.getPayment(sid, eventId)) ? "ok" : "duplicate";
   }
 
   async setApplied(
@@ -640,9 +681,11 @@ export class PostgresStore implements Store {
     if (!event) return null;
     const [draftRows, going, requests, stamps, feedback] = await Promise.all([
       this.sql`SELECT data FROM created_events WHERE id = ${eventId}`,
-      this.sql`SELECT g.session_id, g.created_at, p.data AS profile, u.username FROM going g
+      this.sql`SELECT g.session_id, g.created_at, g.paid_at AS confirmed_at, p.data AS profile, u.username,
+                      pay.tx_hash, pay.amount, pay.paid_at FROM going g
                LEFT JOIN profiles p ON p.session_id = g.session_id
                LEFT JOIN usernames u ON u.session_id = g.session_id
+               LEFT JOIN payments pay ON pay.session_id = g.session_id AND pay.event_id = g.event_id
                WHERE g.event_id = ${eventId} ORDER BY g.created_at DESC`,
       this.sql`SELECT a.session_id, a.message, a.created_at, p.data AS profile, u.username FROM applications a
                LEFT JOIN profiles p ON p.session_id = a.session_id
@@ -659,6 +702,8 @@ export class PostgresStore implements Store {
         avatar: profile?.avatar,
         ...(r.username ? { username: r.username as string } : null),
         at: new Date(r.created_at as string).toISOString(),
+        ...(r.tx_hash ? { payment: receiptOf(r) } : null),
+        ...(r.confirmed_at ? { paidAt: new Date(r.confirmed_at as string).toISOString() } : null),
       };
     };
     return {
