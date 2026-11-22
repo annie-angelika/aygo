@@ -52,6 +52,12 @@ export type BankQr = {
   /** Seconds the conversion usually takes, when Pollar says. */
   etaSeconds: number | null;
   error: string | null;
+  /**
+   * Pollar wants this guest verified before it gives them a bank QR (it sets
+   * that per route; apps can't waive it). `open` starts the verification and
+   * asks for the QR again once it's approved.
+   */
+  verify: { message: string; open: () => void } | null;
   /** The order is waiting on a step this card can't walk (it never should on this route). */
   stuck: boolean;
   start: () => void;
@@ -133,6 +139,7 @@ export function useBankQr(
   route: RampRoute | null,
   amount: number,
   onFunded: (amountOut: number | null) => void,
+  openVerification: (options: { corridorId: string; providerId: string; country: string; onApproved: () => void }) => void,
 ): BankQr {
   const { getClient } = usePollar();
   const [step, setStep] = useState<BankQrStep>("idle");
@@ -141,11 +148,15 @@ export function useBankQr(
   const [etaSeconds, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stuck, setStuck] = useState(false);
+  const [need, setNeed] = useState<NonNullable<Rejection["requirement"]> | null>(null);
   const orderId = useRef<string | null>(null);
   const poll = useRef<AbortController | null>(null);
   const funded = useRef(onFunded);
+  const verification = useRef(openVerification);
+  const restart = useRef<() => void>(() => {});
   useEffect(() => {
     funded.current = onFunded;
+    verification.current = openVerification;
   });
 
   const stop = useCallback(() => {
@@ -248,9 +259,23 @@ export function useBankQr(
 
   useEffect(() => stop, [stop]);
 
+  /** No route for this guest: a verification they can do, or the reason in words. */
+  const refused = useCallback((rejected: Rejection[]) => {
+    const requirement = rejected.find((r) => r.requirement)?.requirement ?? null;
+    // Something the guest can act on (not "under review" / "refused").
+    if (requirement && rampRequirementCopy(requirement).action) {
+      setNeed(requirement);
+      setError(null);
+      return;
+    }
+    setNeed(null);
+    setError(whyNot(rejected));
+  }, []);
+
   const start = useCallback(async () => {
     if (!route || step === "starting") return;
     setError(null);
+    setNeed(null);
     setStuck(false);
     setStep("starting");
     try {
@@ -282,7 +307,7 @@ export function useBankQr(
       }
       const quote = quoted.quotes[0];
       if (!quote) {
-        setError(whyNot(quoted.rejected));
+        refused(quoted.rejected);
         setStep("idle");
         return;
       }
@@ -299,15 +324,20 @@ export function useBankQr(
       setStep(orderId.current ? "converting" : "idle");
       // Everything is said here, in the card — never in a Pollar window.
       const rejected = rejectedOf(e);
+      if (rejected.length) {
+        refused(rejected);
+        return;
+      }
       setError(
-        rejected.length
-          ? whyNot(rejected)
-          : isPollarApiError(e) && e.code === "RATE_LIMITED"
-            ? "Too many tries in a row — wait a minute and tap again."
-            : "Couldn't get the bank QR. Check your connection and tap again.",
+        isPollarApiError(e) && e.code === "RATE_LIMITED"
+          ? "Too many tries in a row — wait a minute and tap again."
+          : "Couldn't get the bank QR. Check your connection and tap again.",
       );
     }
-  }, [route, step, getClient, amount, id, show, follow]);
+  }, [route, step, getClient, amount, id, show, follow, refused]);
+  useEffect(() => {
+    restart.current = () => void start();
+  });
 
   const check = useCallback(async () => {
     if (!orderId.current) return;
@@ -335,6 +365,21 @@ export function useBankQr(
     etaSeconds,
     error,
     stuck,
+    verify: need
+      ? {
+          message: rampRequirementCopy(need).message,
+          open: () =>
+            verification.current({
+              corridorId: need.corridorId,
+              providerId: need.optionId,
+              country: route?.fiat.country ?? "BO",
+              onApproved: () => {
+                setNeed(null);
+                restart.current();
+              },
+            }),
+        }
+      : null,
     start: () => void start(),
     check: () => void check(),
     reset,
