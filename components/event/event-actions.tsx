@@ -124,14 +124,9 @@ export function EventActions({ event }: { event: AygoEvent }) {
         {/* Paid events: once the spot is held (instant reserve or approved
             request), paying stays front and centre — it's what turns the
             reservation into "going". A settled in-app payment keeps its receipt. */}
-        {paid && !collected && (!settled || !!event.payment?.wallet) &&
-          (cfg.canPayHost ? (
-            <PaySection event={event} settled={settled} />
-          ) : (
-            <div className="flex w-full flex-col items-center gap-1.5 pt-1">
-              <TicketContact event={event} />
-            </div>
-          ))}
+        {paid && !collected && (!settled || !!event.payment?.wallet) && (
+          <PaySection event={event} settled={settled} />
+        )}
       </div>
     );
   }

@@ -12,7 +12,6 @@ import QRCode from "qrcode";
 import { LuCheck, LuQrCode, LuRefreshCw, LuLoaderCircle, LuExternalLink } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
-import { PayHostButtons, TicketContact } from "@/components/event/ticket-contact";
 import { WalletSetupNote } from "@/components/payment/wallet-setup-note";
 import { useAuth } from "@/hooks/use-auth";
 import { useQrPay, type QrPay } from "@/hooks/use-qr-pay";
@@ -32,7 +31,6 @@ export function PaySection({
 }) {
   const inApp = !!event.payment?.wallet;
   const pay = useQrPay(event, inApp);
-  const hasOther = !!(event.payment?.whatsapp || event.payment?.link);
 
   // Paid: the gold "You're going!" above already says it — this is the quiet
   // proof underneath (what was paid, and the receipt on the public ledger).
@@ -71,18 +69,18 @@ export function PaySection({
       </div>
     );
   }
+  // The organizer's wallet isn't known yet (it registers itself the next
+  // time they open aygo): nothing to pay into, so say so — there is no side
+  // channel to settle a ticket by hand.
   return (
-    <div className="flex w-full flex-col items-center gap-2 pt-1">
-      {hasOther ? (
-        <>
-          <PayHostButtons event={event} prominent className="w-full" />
-          <p className={CAPTION}>
-            Pay Bs {event.price} to {event.host.name} · you&apos;re going once they confirm it
-          </p>
-        </>
-      ) : (
-        <TicketContact event={event} />
-      )}
+    <div data-pay-card className="flex w-full flex-col gap-1 rounded-2xl bg-card p-3.5 text-left ring-1 ring-border">
+      <p className="text-[13.5px] font-semibold text-foreground">
+        {`Paying Bs ${event.price} by bank QR opens soon`}
+      </p>
+      <p className={CAPTION}>
+        {event.host.name} hasn&apos;t opened payments yet. Your spot stays reserved — you&apos;ll pay
+        here, in the app, as soon as they do.
+      </p>
     </div>
   );
 }

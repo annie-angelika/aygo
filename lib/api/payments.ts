@@ -16,6 +16,11 @@ export async function fetchPayment(eventId: string, signal?: AbortSignal): Promi
   return api.get<PaymentState>(`/me/payments/${eventId}`, undefined, signal);
 }
 
+/** Tell the server which wallet you get paid in (your paid events start using it). → `PUT /me/payout-wallet` */
+export async function savePayoutWallet(address: string): Promise<void> {
+  await api.put("/me/payout-wallet", { address });
+}
+
 /** Hand the server a sent transaction to verify. 409 while it confirms. → `POST /me/payments/:eventId` */
 export async function reportPayment(eventId: string, txHash: string): Promise<PaymentReceipt> {
   return api.post<PaymentReceipt>(`/me/payments/${eventId}`, { txHash });

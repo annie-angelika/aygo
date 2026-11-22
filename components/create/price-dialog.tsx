@@ -47,7 +47,9 @@ export function PriceDialog({
   const [whatsapp, setWhatsapp] = useState(value.payWhatsapp ?? "");
   const [link, setLink] = useState(value.payLink ?? "");
   const address = usePayoutWallet();
-  const [inApp, setInApp] = useState(!!value.payWallet);
+  // On by default: paid events are paid in the app. An event being edited
+  // keeps whatever it was saved with.
+  const [inApp, setInApp] = useState(isPaid ? !!value.payWallet : true);
   // Keep a wallet already saved on the event; otherwise it's the signed-in host's.
   const wallet = inApp ? (value.payWallet ?? address ?? undefined) : undefined;
 

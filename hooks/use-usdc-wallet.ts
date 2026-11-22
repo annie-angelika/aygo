@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { usePollar, addressForChain } from "@pollar/react";
 
 import { expectSignature, trustlineFor } from "@/lib/pollar-confirm";
+import { savePayoutWallet } from "@/lib/api";
 import { USDC, usdcAccount } from "@/lib/stellar";
 
 /** A browser's "Failed to fetch" means Pollar's server didn't answer properly. */
@@ -81,4 +82,39 @@ export function useUsdcWallet() {
 export function usePayoutWallet(): string | null {
   const { wallets } = usePollar();
   return addressForChain(wallets, "POLYGON") || null;
+}
+
+const REPORTED = "aygo.payout";
+
+/**
+ * Hosts get paid without setting anything up: once signed in, the wallet
+ * their login created is reported to the server (once per wallet), and their
+ * paid events that had none start taking bank-QR payments into it.
+ */
+export function usePayoutWalletSync(signedIn: boolean): void {
+  const address = usePayoutWallet();
+  useEffect(() => {
+    if (!signedIn || !address) return;
+    try {
+      if (localStorage.getItem(REPORTED) === address) return;
+    } catch {
+      /* private mode — report every load, it's idempotent */
+    }
+    let cancelled = false;
+    void savePayoutWallet(address)
+      .then(() => {
+        if (cancelled) return;
+        try {
+          localStorage.setItem(REPORTED, address);
+        } catch {
+          /* fine */
+        }
+      })
+      .catch(() => {
+        /* next load tries again */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn, address]);
 }

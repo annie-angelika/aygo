@@ -313,6 +313,16 @@ export class MemoryStore implements Store {
     }
   }
 
+  async setPayoutWallet(sid: string, address: string): Promise<number> {
+    let n = 0;
+    for (const c of this.createdEvents) {
+      if (c.sid !== sid || c.draft.payWallet || !(c.draft.price && c.draft.price > 0)) continue;
+      c.draft = { ...c.draft, payWallet: address };
+      n++;
+    }
+    return n;
+  }
+
   async setPaid(sid: string, eventId: string, on: boolean): Promise<void> {
     if (!this.guest(sid).going.has(eventId)) return;
     if (on) this.confirmed.set(`${sid}|${eventId}`, new Date().toISOString());
