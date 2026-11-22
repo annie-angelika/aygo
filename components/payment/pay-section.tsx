@@ -93,7 +93,9 @@ function PayUnavailable({ event, pay }: { event: AygoEvent; pay: QrPay }) {
         {`Paying Bs ${event.price} by bank QR isn't ready yet`}
       </p>
       <p className={CAPTION}>
-        {pay.blocked === "host-wallet"
+        {pay.blocked === "no-wallet"
+          ? "Your account needs a refresh before it can pay: sign out, sign back in, and come back here. Your spot stays reserved."
+          : pay.blocked === "host-wallet"
           ? `${event.host.name}'s wallet can't receive payments yet. Your spot stays reserved — try again in a bit.`
           : pay.error ?? "Bank QR payments aren't available right now. Your spot stays reserved — try again in a bit."}
       </p>
@@ -205,18 +207,13 @@ function BankQrPay({ event, pay }: { event: AygoEvent; pay: QrPay }) {
           <LuLoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden />
           {qr.step === "funded"
             ? `Sending it to ${event.host.name}…`
-            : qr.needsWidget
-              ? "One more step to finish your payment"
-              : `Payment received — finishing up${minutes ? ` (about ${minutes} min)` : ""}`}
+            : `Payment received — finishing up${minutes ? ` (about ${minutes} min)` : ""}`}
         </p>
-        {qr.needsWidget && qr.step === "converting" && (
-          <Button onClick={pay.openWidget} className="h-11 w-full rounded-full text-[13.5px] font-semibold">
-            Continue
-          </Button>
-        )}
-        {qr.step === "converting" && !qr.needsWidget && (
+        {qr.step === "converting" && (
           <p className={`text-center ${CAPTION}`}>
-            You can leave this page; it finishes when you come back.
+            {qr.stuck
+              ? "It's taking longer than usual. Your money is safe — contact us if this doesn't clear in a few minutes."
+              : "You can leave this page; it finishes when you come back."}
           </p>
         )}
       </div>
@@ -225,10 +222,8 @@ function BankQrPay({ event, pay }: { event: AygoEvent; pay: QrPay }) {
 
   return (
     <>
-      {/* One button, one label. When Pollar asks for a step a plain QR can't
-          cover (see use-bank-qr), the same tap opens its window instead. */}
       <Button
-        onClick={qr.needsWidget ? pay.openWidget : qr.start}
+        onClick={qr.start}
         disabled={qr.step === "starting"}
         className="h-11 w-full rounded-full text-[13.5px] font-semibold"
       >
@@ -239,12 +234,7 @@ function BankQrPay({ event, pay }: { event: AygoEvent; pay: QrPay }) {
         )}
         {qr.step === "starting" ? "Getting your QR…" : `Pay Bs ${event.price} by bank QR`}
       </Button>
-      {qr.needsWidget && (
-        <p className={CAPTION}>
-          Your wallet needs a one-time setup before its first bank QR — tap to finish it.
-        </p>
-      )}
-      {qr.error && !qr.needsWidget && (
+      {qr.error && (
         <p role="alert" className="text-[11.5px] font-medium text-amber-700">
           {qr.error}
         </p>

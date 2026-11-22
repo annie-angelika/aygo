@@ -42,12 +42,10 @@ export type QrPay = {
   enough: boolean;
   error: string | null;
   /** Why paying isn't on offer (`phase: "unavailable"`). */
-  blocked: "host-wallet" | "no-route" | null;
+  blocked: "host-wallet" | "no-route" | "no-wallet" | null;
   pay: () => void;
   /** The bank QR for exactly this ticket (scan, pay, done). */
   qr: BankQr;
-  /** Pollar's own window, for the steps a plain QR can't cover. */
-  openWidget: () => void;
   refresh: () => void;
 };
 
@@ -88,7 +86,7 @@ function writeIntent(eventId: string, on: boolean) {
 }
 
 export function useQrPay(event: AygoEvent, enabled: boolean): QrPay {
-  const { isAuthenticated, wallets, getClient, sendPayment, openRampModal } = usePollar();
+  const { isAuthenticated, wallets, getClient, sendPayment } = usePollar();
   const hostWallet = event.payment?.wallet ?? null;
   // The host's wallet says where the money moves: Polygon ("0x…") is where
   // Bolivia's bank QR lands in one step; Stellar ("G…") is the older route.
@@ -173,8 +171,15 @@ export function useQrPay(event: AygoEvent, enabled: boolean): QrPay {
           setPhase("confirming");
           if (await confirm(pending)) return;
         }
-        if (!isAuthenticated || !address) {
+        if (!isAuthenticated) {
           setPhase("signin");
+          return;
+        }
+        // Signed in before this chain was turned on: the wallet appears at the
+        // next sign-in.
+        if (!address) {
+          setBlocked("no-wallet");
+          setPhase("unavailable");
           return;
         }
         const client = getClient();
@@ -261,7 +266,7 @@ export function useQrPay(event: AygoEvent, enabled: boolean): QrPay {
     if (delivered) setDue(delivered);
     setForwarding(true);
     void load();
-  }, openRampModal);
+  });
 
   // An order knows exactly what it delivers; before one exists, the quote.
   const owed = qr.amountOut ?? due;
@@ -352,7 +357,6 @@ export function useQrPay(event: AygoEvent, enabled: boolean): QrPay {
     blocked,
     pay: () => void pay(),
     qr: { ...qr, start: startQr },
-    openWidget: openRampModal,
     refresh: () => void load(),
   };
 }
