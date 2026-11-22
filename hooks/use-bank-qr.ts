@@ -6,14 +6,23 @@
 // turn the best quote into an order, show its QR, and follow the order until
 // the USDC is in the guest's wallet.
 //
-// Only the plain path is handled here. Anything that needs the guest to do
-// more than pay (identity check, extra details, a signature, a wallet to set
-// up) ends in `needsWidget`: Pollar's own window knows how to walk those, and
-// it picks the open order up where this left it.
+// Everything happens in the event's own pay card — Pollar's windows are never
+// opened. Bolivia's route to USDC on Polygon needs nothing but the payment;
+// if Pollar ever asks a guest for more (identity check, extra details), the
+// card says so in words instead.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePollar } from "@pollar/react";
-import { isPollarApiError, rampQuoteFields, type RampOrder, type RampRoute } from "@pollar/core";
+import {
+  isPollarApiError,
+  rampNoRouteText,
+  rampQuoteFields,
+  rampRequirementCopy,
+  rampWalletStep,
+  type RampOrder,
+  type RampQuotesResponse,
+  type RampRoute,
+} from "@pollar/core";
 
 export type BankQrStep =
   | "idle"
@@ -43,8 +52,8 @@ export type BankQr = {
   /** Seconds the conversion usually takes, when Pollar says. */
   etaSeconds: number | null;
   error: string | null;
-  /** This payment needs a step only Pollar's own window can walk. */
-  needsWidget: boolean;
+  /** The order is waiting on a step this card can't walk (it never should on this route). */
+  stuck: boolean;
   start: () => void;
   /** "I've paid" — ask the provider now instead of waiting for the next poll. */
   check: () => void;
@@ -52,6 +61,26 @@ export type BankQr = {
 };
 
 const FINAL = new Set(["completed", "failed", "refunded"]);
+
+type Rejection = RampQuotesResponse["rejected"][number];
+
+/** The routes a refused quote lists, with why each was dropped. */
+function rejectedOf(e: unknown): Rejection[] {
+  if (!isPollarApiError(e) || e.code !== "SDK_RAMPS_NO_ROUTE") return [];
+  const rejected = (e.body as { rejected?: unknown }).rejected;
+  return Array.isArray(rejected) ? (rejected as Rejection[]) : [];
+}
+
+/** Why there is no bank QR right now, in the guest's terms. */
+function whyNot(rejected: Rejection[]): string {
+  const need = rejected.find((r) => r.requirement)?.requirement;
+  if (need)
+    return `${rampRequirementCopy(need).message}. Bank QR payments aren't available for your account yet — contact us and we'll help.`;
+  const action = rejected[0]?.failure.resolutionAction;
+  if (action === "create_wallet" || action === "set_up_wallet" || action === "migrate_custody" || action === "set_up_recovery")
+    return "Your account needs a refresh before it can pay: sign out, sign back in, and tap again.";
+  return rejected.length ? rampNoRouteText(rejected) : "Bank QR payments aren't available right now. Try again in a bit.";
+}
 
 const orderKey = (id: string) => `aygo.pay.order.${id}`;
 function savedOrder(id: string): string | null {
@@ -98,14 +127,12 @@ function codeOf(order: RampOrder): BankQrCode | null {
  * @param route   the BOB → USDC-on-Stellar route (null while unknown)
  * @param amount  Bolivianos to pay
  * @param onFunded called once the USDC has landed in the guest's wallet
- * @param openWidget opens Pollar's own window, for what a plain QR can't cover
  */
 export function useBankQr(
   id: string,
   route: RampRoute | null,
   amount: number,
   onFunded: (amountOut: number | null) => void,
-  openWidget: () => void,
 ): BankQr {
   const { getClient } = usePollar();
   const [step, setStep] = useState<BankQrStep>("idle");
@@ -113,14 +140,12 @@ export function useBankQr(
   const [amountOut, setAmountOut] = useState<number | null>(null);
   const [etaSeconds, setEta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [needsWidget, setNeedsWidget] = useState(false);
+  const [stuck, setStuck] = useState(false);
   const orderId = useRef<string | null>(null);
   const poll = useRef<AbortController | null>(null);
   const funded = useRef(onFunded);
-  const widget = useRef(openWidget);
   useEffect(() => {
     funded.current = onFunded;
-    widget.current = openWidget;
   });
 
   const stop = useCallback(() => {
@@ -166,8 +191,7 @@ export function useBankQr(
       }
       // A signature, an approval, an identity check, bank coordinates…: more
       // than "scan and pay" — Pollar's window takes it from here.
-      if (action && action.kind !== "NONE" && action.kind !== "FIAT_PAYMENT") setNeedsWidget(true);
-      else if (action?.kind === "FIAT_PAYMENT") setNeedsWidget(true);
+      if (action && action.kind !== "NONE") setStuck(true);
       setCode(null);
       setStep("converting");
       return false;
@@ -227,7 +251,7 @@ export function useBankQr(
   const start = useCallback(async () => {
     if (!route || step === "starting") return;
     setError(null);
-    setNeedsWidget(false);
+    setStuck(false);
     setStep("starting");
     try {
       const client = getClient();
@@ -237,19 +261,34 @@ export function useBankQr(
         if (!show(await client.getRampOrder(open))) follow(open);
         return;
       }
-      const quoted = await client.quoteRamp({
-        direction: "ONRAMP",
-        fiat: { currency: route.fiat.currency, rail: route.fiat.rail, country: route.fiat.country },
-        asset: { code: route.asset.code, identifier: route.asset.identifier, chain: route.asset.chain },
-        amount: { value: String(amount), denomination: "in" },
-      });
+      const ask = () =>
+        client.quoteRamp({
+          direction: "ONRAMP",
+          fiat: { currency: route.fiat.currency, rail: route.fiat.rail, country: route.fiat.country },
+          asset: { code: route.asset.code, identifier: route.asset.identifier, chain: route.asset.chain },
+          amount: { value: String(amount), denomination: "in" },
+        });
+      let quoted;
+      try {
+        quoted = await ask();
+      } catch (e) {
+        // "No route" because this account has no wallet on the app's chains
+        // yet (it signed in before they were turned on): Pollar creates it in
+        // its own custody, nothing for the guest to do — then ask again.
+        const step = rejectedOf(e).map(rampWalletStep).find(Boolean);
+        if (step?.action !== "create_wallet") throw e;
+        await client.runRampWalletStep(step);
+        quoted = await ask();
+      }
       const quote = quoted.quotes[0];
-      // No quote (a verification, a wallet to set up, a limit) or one that
-      // asks the guest for details: Pollar's window handles those.
-      if (!quote || rampQuoteFields(quote).length > 0) {
-        setNeedsWidget(true);
+      if (!quote) {
+        setError(whyNot(quoted.rejected));
         setStep("idle");
-        widget.current();
+        return;
+      }
+      if (rampQuoteFields(quote).length > 0) {
+        setError("Your bank QR needs extra details we can't collect here yet. Contact us and we'll sort it out.");
+        setStep("idle");
         return;
       }
       const order = await client.createRampOrder({ quoteId: quote.quoteId });
@@ -258,18 +297,14 @@ export function useBankQr(
       if (!show(order)) follow(order.id);
     } catch (e) {
       setStep(orderId.current ? "converting" : "idle");
-      // Pollar's window is only for a step it asks of the guest (a wallet or a
-      // verification behind "no route"). A rate limit or a bad connection is
-      // just "try again".
-      if (isPollarApiError(e) && e.code === "SDK_RAMPS_NO_ROUTE") {
-        setNeedsWidget(true);
-        widget.current();
-        return;
-      }
+      // Everything is said here, in the card — never in a Pollar window.
+      const rejected = rejectedOf(e);
       setError(
-        isPollarApiError(e) && e.code === "RATE_LIMITED"
-          ? "Too many tries in a row — wait a minute and tap again."
-          : "Couldn't get the bank QR. Check your connection and tap again.",
+        rejected.length
+          ? whyNot(rejected)
+          : isPollarApiError(e) && e.code === "RATE_LIMITED"
+            ? "Too many tries in a row — wait a minute and tap again."
+            : "Couldn't get the bank QR. Check your connection and tap again.",
       );
     }
   }, [route, step, getClient, amount, id, show, follow]);
@@ -289,7 +324,7 @@ export function useBankQr(
     orderId.current = null;
     setCode(null);
     setError(null);
-    setNeedsWidget(false);
+    setStuck(false);
     setStep("idle");
   }, [id, stop]);
 
@@ -299,7 +334,7 @@ export function useBankQr(
     amountOut,
     etaSeconds,
     error,
-    needsWidget,
+    stuck,
     start: () => void start(),
     check: () => void check(),
     reset,
