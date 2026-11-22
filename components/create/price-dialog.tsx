@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useUsdcWallet } from "@/hooks/use-usdc-wallet";
+import { usePayoutWallet } from "@/hooks/use-usdc-wallet";
 import { normalizeWhatsapp } from "@/lib/payment";
 
 export type PriceSettings = {
@@ -46,7 +46,7 @@ export function PriceDialog({
   const [amount, setAmount] = useState(isPaid ? String(value.price) : "50");
   const [whatsapp, setWhatsapp] = useState(value.payWhatsapp ?? "");
   const [link, setLink] = useState(value.payLink ?? "");
-  const { address } = useUsdcWallet();
+  const address = usePayoutWallet();
   const [inApp, setInApp] = useState(!!value.payWallet);
   // Keep a wallet already saved on the event; otherwise it's the signed-in host's.
   const wallet = inApp ? (value.payWallet ?? address ?? undefined) : undefined;

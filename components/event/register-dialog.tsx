@@ -7,6 +7,7 @@ import {
   LuCheck,
   LuLoaderCircle,
   LuMessageCircle,
+  LuQrCode,
   LuShieldCheck,
 } from "react-icons/lu";
 import { FaWhatsapp } from "react-icons/fa6";
@@ -104,7 +105,9 @@ export function RegisterDialog({
               <DialogDescription className="mt-1 text-[13px] leading-snug">
                 {cfg.requiresApproval
                   ? `${event.host.name} reviews each request before confirming.`
-                  : "One tap and you're on the list. No approval needed."}
+                  : paid
+                    ? "Reserve now, then pay to confirm your spot."
+                    : "One tap and you're on the list. No approval needed."}
               </DialogDescription>
             </div>
 
@@ -202,7 +205,10 @@ function EventRecap({ event }: { event: AygoEvent }) {
 function TicketCard({ event }: { event: AygoEvent }) {
   const wa = event.payment?.whatsapp;
   const link = event.payment?.link;
-  const channel = wa
+  // In-app payments on → the bank QR is the only way to pay.
+  const channel = event.payment?.wallet
+    ? { Icon: LuQrCode, title: "Pay by bank QR", detail: "In the app, right after you reserve" }
+    : wa
     ? { Icon: FaWhatsapp, title: "Pay via WhatsApp", detail: `${event.host.name} · ${formatWhatsapp(wa)}` }
     : link
       ? { Icon: LuCheck, title: "Pay with the host's link", detail: `${event.host.name} confirms your payment by hand` }

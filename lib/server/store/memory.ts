@@ -84,6 +84,8 @@ export class MemoryStore implements Store {
   private notifications = new Map<string, AppNotification[]>();
   /** Verified in-app payments, keyed "sid|eventId". */
   private payments = new Map<string, PaymentReceipt>();
+  /** Host-confirmed payments (WhatsApp / link): "sid|eventId" → when. */
+  private confirmed = new Map<string, string>();
   private createdEvents: { sid: string; draft: EventDraft; createdAt: string }[] =
     [];
   // When a session finished sign-up / first bound a login — the metrics source.
@@ -294,6 +296,9 @@ export class MemoryStore implements Store {
     const g = this.guest(sid);
     return {
       going: [...g.going.keys()],
+      paid: [...g.going.keys()].filter(
+        (id) => this.payments.has(`${sid}|${id}`) || this.confirmed.has(`${sid}|${id}`),
+      ),
       applied: [...g.applied.keys()],
       stamps: [...g.stamps.values()],
     };
@@ -302,7 +307,16 @@ export class MemoryStore implements Store {
   async setGoing(sid: string, eventId: string, on: boolean): Promise<void> {
     const g = this.guest(sid);
     if (on) g.going.set(eventId, new Date().toISOString());
-    else g.going.delete(eventId);
+    else {
+      g.going.delete(eventId);
+      this.confirmed.delete(`${sid}|${eventId}`);
+    }
+  }
+
+  async setPaid(sid: string, eventId: string, on: boolean): Promise<void> {
+    if (!this.guest(sid).going.has(eventId)) return;
+    if (on) this.confirmed.set(`${sid}|${eventId}`, new Date().toISOString());
+    else this.confirmed.delete(`${sid}|${eventId}`);
   }
 
   async getPayment(sid: string, eventId: string): Promise<PaymentReceipt | null> {
@@ -444,7 +458,14 @@ export class MemoryStore implements Store {
       };
       const goingAt = g.going.get(eventId);
       const payment = this.payments.get(`${sid}|${eventId}`);
-      if (goingAt) going.push({ ...identity, at: goingAt, ...(payment ? { payment } : null) });
+      const paidAt = this.confirmed.get(`${sid}|${eventId}`);
+      if (goingAt)
+        going.push({
+          ...identity,
+          at: goingAt,
+          ...(payment ? { payment } : null),
+          ...(paidAt ? { paidAt } : null),
+        });
       const applied = g.applied.get(eventId);
       if (applied)
         requests.push({ ...identity, at: applied.at, message: applied.message });

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { LuCheck, LuMapPin } from "react-icons/lu";
+import { LuMapPin } from "react-icons/lu";
 
 import { Card } from "@/components/ui/card";
+import { GoingBadge } from "@/components/event/going-badge";
 import { ThemeCover } from "@/components/event/theme-cover";
 import { CATEGORY_META, eventCode } from "@/lib/events-data";
 import { cn } from "@/lib/utils";
@@ -46,10 +47,7 @@ export function EventRow({
             </div>
             <div className="mt-0.5 flex items-center gap-2">
               {going ? (
-                <span className="inline-flex h-[22px] items-center gap-1 rounded-full bg-gold pl-1.5 pr-2 text-[11.5px] font-bold text-navy">
-                  <LuCheck className="size-3" strokeWidth={2.5} aria-hidden />
-                  Going
-                </span>
+                <GoingBadge event={event} />
               ) : (
                 <span
                   className={cn(

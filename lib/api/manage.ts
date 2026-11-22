@@ -36,6 +36,15 @@ export async function removeGuest(
   await api.delete(`/events/${eventId}/guests/${requestId}`);
 }
 
+/** Confirm (or take back) that a guest paid you outside the app. */
+export async function setGuestPaid(
+  eventId: string,
+  requestId: string,
+  paid: boolean,
+): Promise<void> {
+  await api.post(`/events/${eventId}/guests/${requestId}`, { paid });
+}
+
 /** Permanently delete your event (page, guest list and requests included). */
 export async function deleteManagedEvent(eventId: string): Promise<void> {
   await api.delete(`/events/${eventId}`);

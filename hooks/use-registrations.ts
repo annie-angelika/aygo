@@ -18,6 +18,7 @@ import type { AygoEvent, Stamp } from "@/types";
 // Stable module-level fallbacks (required by useSyncExternalStore).
 const NO_GOING: string[] = [];
 const NO_APPLIED: string[] = [];
+const NO_PAID: string[] = [];
 const NO_STAMPS: Stamp[] = [];
 
 /**
@@ -69,10 +70,19 @@ export function useRegistrationRefresh(enabled = true): void {
 export function useRegistrations() {
   const going = useStorageValue<string[]>(STORAGE_KEYS.going, NO_GOING);
   const applied = useStorageValue<string[]>(STORAGE_KEYS.applied, NO_APPLIED);
+  const paidIds = useStorageValue<string[]>(STORAGE_KEYS.paid, NO_PAID);
   const stamps = useStorageValue<Stamp[]>(STORAGE_KEYS.stamps, NO_STAMPS);
   const hydrated = useHydrated();
 
   const isGoing = (id: string) => going.includes(id);
+  /** Your payment for this spot is confirmed (in the app, or by the host). */
+  const isPaid = (id: string) => paidIds.includes(id);
+  /**
+   * A spot on a paid event is only held until its payment is confirmed —
+   * "going" is for free events and paid-up tickets.
+   */
+  const awaitsPayment = (event: Pick<AygoEvent, "id" | "price">) =>
+    (event.price ?? 0) > 0 && isGoing(event.id) && !isPaid(event.id);
   const toggleGoing = (id: string) => {
     const next = isGoing(id);
     syncList(
@@ -151,6 +161,8 @@ export function useRegistrations() {
     stamps,
     hydrated,
     isGoing,
+    isPaid,
+    awaitsPayment,
     toggleGoing,
     isApplied,
     apply,

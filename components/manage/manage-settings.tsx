@@ -25,7 +25,7 @@ import { ImagePickerDialog } from "@/components/create/image-picker-dialog";
 import { PhotoStrip } from "@/components/create/photo-strip";
 import { DeleteEvent } from "@/components/manage/delete-event";
 import { WalletSetupNote } from "@/components/payment/wallet-setup-note";
-import { useUsdcWallet } from "@/hooks/use-usdc-wallet";
+import { usePayoutWallet } from "@/hooks/use-usdc-wallet";
 import { createEvent, ApiError } from "@/lib/api";
 import { MAX_IMAGES, type EventDraft, type Visibility } from "@/lib/create-event";
 import { hasPaymentChannel, normalizeWhatsapp, formatWhatsapp } from "@/lib/payment";
@@ -62,7 +62,7 @@ function SettingsForm({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; error?: boolean } | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const { address: myWallet } = useUsdcWallet();
+  const myWallet = usePayoutWallet();
   const set = (patch: Partial<EventDraft>) =>
     setDraft((d) => ({ ...d, ...patch }));
   const images = draft.images ?? [];

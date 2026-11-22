@@ -56,7 +56,16 @@ export async function usdcAccount(
 
 /** Where anyone can look a transaction up. */
 export function txExplorerUrl(hash: string): string {
+  // "0x…" is a Polygon transaction (lib/polygon), anything else a Stellar one.
+  if (hash.startsWith("0x"))
+    return `https://${STELLAR_NETWORK === "mainnet" ? "" : "amoy."}polygonscan.com/tx/${hash}`;
   return `https://stellar.expert/explorer/${STELLAR_NETWORK === "mainnet" ? "public" : "testnet"}/tx/${hash}`;
+}
+
+/** How an amount reads to a person: "2.914238" → "2.91 USDC". */
+export function usdcLabel(amount: string | number): string {
+  const n = Number(amount);
+  return `${Number.isFinite(n) ? n.toFixed(2) : amount} USDC`;
 }
 
 /** "7.1800000" → "7.18"; keeps at least two decimals. */

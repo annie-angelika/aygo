@@ -64,6 +64,7 @@ export function trackRegistrationWrite<T>(op: Promise<T>): Promise<T> {
 export function applyRegistrations(server: Registrations): void {
   const going = readStorage<string[]>(STORAGE_KEYS.going, []);
   const applied = readStorage<string[]>(STORAGE_KEYS.applied, []);
+  const paid = readStorage<string[]>(STORAGE_KEYS.paid, []);
   const stamps = readStorage<Stamp[]>(STORAGE_KEYS.stamps, []);
 
   // A stamped event is done — it never shows as going/applied again.
@@ -72,6 +73,7 @@ export function applyRegistrations(server: Registrations): void {
   const nextApplied = server.applied.filter((id) => !stamped.has(id));
 
   if (changed(going, nextGoing)) writeStorage(STORAGE_KEYS.going, nextGoing);
+  if (changed(paid, server.paid ?? [])) writeStorage(STORAGE_KEYS.paid, server.paid ?? []);
   if (changed(applied, nextApplied)) writeStorage(STORAGE_KEYS.applied, nextApplied);
   if (changed(stamps, server.stamps)) writeStorage(STORAGE_KEYS.stamps, server.stamps);
 }
