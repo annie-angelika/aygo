@@ -6,11 +6,9 @@ import {
   LuMapPin,
   LuCheck,
   LuLoaderCircle,
-  LuMessageCircle,
   LuQrCode,
   LuShieldCheck,
 } from "react-icons/lu";
-import { FaWhatsapp } from "react-icons/fa6";
 
 import { useRegistrations } from "@/hooks/use-registrations";
 import { useMe } from "@/hooks/use-me";
@@ -25,7 +23,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { RegisterTicket } from "@/components/event/register-ticket";
 import { applyConfigFor } from "@/lib/apply";
-import { formatWhatsapp } from "@/lib/payment";
 import { initials } from "@/lib/utils";
 import type { Identity } from "@/lib/identity";
 import { ThemeCover } from "@/components/event/theme-cover";
@@ -203,16 +200,8 @@ function EventRecap({ event }: { event: AygoEvent }) {
  * generic "at the door" promise.
  */
 function TicketCard({ event }: { event: AygoEvent }) {
-  const wa = event.payment?.whatsapp;
-  const link = event.payment?.link;
-  // In-app payments on → the bank QR is the only way to pay.
-  const channel = event.payment?.wallet
-    ? { Icon: LuQrCode, title: "Pay by bank QR", detail: "In the app, right after you reserve" }
-    : wa
-    ? { Icon: FaWhatsapp, title: "Pay via WhatsApp", detail: `${event.host.name} · ${formatWhatsapp(wa)}` }
-    : link
-      ? { Icon: LuCheck, title: "Pay with the host's link", detail: `${event.host.name} confirms your payment by hand` }
-      : { Icon: LuMessageCircle, title: "Arrange with the host", detail: `Message ${event.host.name} for how to pay` };
+  // Paid events are paid one way: in the app, by bank QR, after reserving.
+  const channel = { Icon: LuQrCode, title: "Pay by bank QR", detail: "In the app, right after you reserve" };
   return (
     <div className="flex flex-col gap-2.5">
       <p className={`${EYEBROW} text-gold-deep`}>Ticket · Bs {event.price}</p>

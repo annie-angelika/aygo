@@ -6,12 +6,9 @@
 // payment by hand. When the host left no channel, fall back to an in-app
 // question. Also used by the confirmation sheet right after reserving.
 
-import { LuTicket, LuExternalLink } from "react-icons/lu";
+import { LuExternalLink } from "react-icons/lu";
 import { FaWhatsapp } from "react-icons/fa6";
 
-import { ActionDialog } from "@/components/event/action-dialog";
-import { useAuth } from "@/hooks/use-auth";
-import { sendEventFeedback } from "@/lib/api";
 import { whatsappLink, payMessage } from "@/lib/payment";
 import { cn } from "@/lib/utils";
 import type { AygoEvent } from "@/types";
@@ -66,53 +63,12 @@ export function PayHostButtons({
 }
 
 export function TicketContact({ event }: { event: AygoEvent }) {
-  const { isAuthenticated, openLoginModal } = useAuth();
   if (event.price == null || event.price <= 0) return null;
-  const hasChannel = !!(event.payment?.whatsapp || event.payment?.link);
-  const inApp = !!event.payment?.wallet;
-
+  // Paid events are paid in the app by bank QR, after reserving — the host's
+  // WhatsApp / link are no longer a way to pay.
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      {/* Signed out, every path leads to the login modal first: paying rides
-          on a registration, and the host's WhatsApp number isn't for anonymous
-          visitors to harvest. */}
-      {inApp && isAuthenticated ? null : hasChannel && isAuthenticated ? (
-        <PayHostButtons event={event} />
-      ) : hasChannel || inApp ? (
-        <button type="button" onClick={openLoginModal} className={LINK}>
-          <LuTicket className="size-4" aria-hidden />
-          Sign in to reserve &amp; pay
-        </button>
-      ) : isAuthenticated ? (
-        <ActionDialog
-          label="Ask about tickets"
-          trigger={
-            <button type="button" className={LINK}>
-              <LuTicket className="size-4" aria-hidden />
-              Ask about tickets
-            </button>
-          }
-          icon={<LuTicket className="size-5" aria-hidden />}
-          title="Buy a ticket"
-          description={`Tickets are Bs ${event.price}, paid directly to ${event.host.name}. Send them a message to arrange it.`}
-          placeholder="How can I pay for my ticket?"
-          submitLabel="Send message"
-          successTitle="Message sent"
-          successBody={`${event.host.name} will reply with how to pay. Watch your inbox.`}
-          defaultMessage={`Hi ${event.host.name}! I'd like to buy a ticket for "${event.title}". How do I pay?`}
-          onSubmit={(m) => sendEventFeedback(event.id, "question", m)}
-        />
-      ) : (
-        <button type="button" onClick={openLoginModal} className={LINK}>
-          <LuTicket className="size-4" aria-hidden />
-          Ask about tickets
-        </button>
-      )}
-      <p className="text-[11px] text-muted-foreground">
-        {inApp
-          ? "Reserve first, then pay by bank QR in the app"
-          : "You pay the host directly · they confirm it by hand"}
-      </p>
-    </div>
+    <p className="text-center text-[11px] text-muted-foreground">
+      Reserve first, then pay by bank QR in the app
+    </p>
   );
 }

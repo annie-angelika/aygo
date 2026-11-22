@@ -199,6 +199,11 @@ export interface Store {
   getRegistrations(sid: string): Promise<Registrations>;
   /** Add (`on`) or remove the event from the guest's "going" list. */
   setGoing(sid: string, eventId: string, on: boolean): Promise<void>;
+  /**
+   * Point every paid event this session hosts that has no wallet yet at
+   * `address` (the host's own). Returns how many events it switched on.
+   */
+  setPayoutWallet(sid: string, address: string): Promise<number>;
   /** The host confirms (`on`) or takes back that a guest on the list paid. */
   setPaid(sid: string, eventId: string, on: boolean): Promise<void>;
   /** Add (`on`) or remove a pending join request, with an optional note. */

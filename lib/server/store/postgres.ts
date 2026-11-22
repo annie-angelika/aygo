@@ -514,6 +514,19 @@ export class PostgresStore implements Store {
     }
   }
 
+  async setPayoutWallet(sid: string, address: string): Promise<number> {
+    const rows = await this
+      .sql`UPDATE created_events
+           SET data = jsonb_set(data, '{payWallet}', to_jsonb(${address}::text))
+           WHERE session_id = ${sid}
+             AND NOT (data ? 'payWallet')
+             AND jsonb_typeof(data->'price') = 'number'
+             AND (data->>'price')::numeric > 0
+           RETURNING id`;
+    if (rows.length) this.bustEvents();
+    return rows.length;
+  }
+
   async setPaid(sid: string, eventId: string, on: boolean): Promise<void> {
     await this
       .sql`UPDATE going SET paid_at = ${on ? new Date().toISOString() : null}

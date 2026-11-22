@@ -33,11 +33,7 @@ export function applyConfigFor(event: AygoEvent): ApplyConfig {
   // What it costs, up front — and how it's settled.
   if (paid) {
     requirements.push(
-      canPayHost
-        ? event.payment?.wallet
-          ? `Cover is Bs ${event.price} — you pay it in the app by bank QR once your spot is reserved.`
-          : `Cover is Bs ${event.price} — you pay ${event.host.name} directly (WhatsApp or payment link on the next step). They confirm it by hand.`
-        : `Cover is Bs ${event.price}, arranged with ${event.host.name} — message them for how to pay.`,
+      `Cover is Bs ${event.price} — you pay it in the app by bank QR once your spot is reserved.`,
     );
   } else {
     requirements.push("Free to join, no cover.");
