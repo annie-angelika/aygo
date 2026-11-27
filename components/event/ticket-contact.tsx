@@ -64,11 +64,19 @@ export function PayHostButtons({
 
 export function TicketContact({ event }: { event: AygoEvent }) {
   if (event.price == null || event.price <= 0) return null;
-  // Paid events are paid in the app by bank QR, after reserving — the host's
-  // WhatsApp / link are no longer a way to pay.
+  // Reserve first, then pay: in the app by bank QR and/or the host's own
+  // WhatsApp / link (the number is only shown once you've reserved).
+  const inApp = !!event.payment?.wallet;
+  const hasChannel = !!(event.payment?.whatsapp || event.payment?.link);
   return (
     <p className="text-center text-[11px] text-muted-foreground">
-      Reserve first, then pay by bank QR in the app
+      {inApp && hasChannel
+        ? "Reserve first, then pay by bank QR or WhatsApp"
+        : inApp
+          ? "Reserve first, then pay by bank QR in the app"
+          : hasChannel
+            ? "Reserve first, then pay the host directly · they confirm it by hand"
+            : "Reserve first, then pay by bank QR in the app"}
     </p>
   );
 }

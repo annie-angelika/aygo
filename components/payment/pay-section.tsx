@@ -12,6 +12,7 @@ import QRCode from "qrcode";
 import { LuCheck, LuQrCode, LuRefreshCw, LuLoaderCircle, LuExternalLink } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
+import { PayHostButtons } from "@/components/event/ticket-contact";
 import { WalletSetupNote } from "@/components/payment/wallet-setup-note";
 import { useAuth } from "@/hooks/use-auth";
 import { useQrPay, type QrPay } from "@/hooks/use-qr-pay";
@@ -31,6 +32,9 @@ export function PaySection({
 }) {
   const inApp = !!event.payment?.wallet;
   const pay = useQrPay(event, inApp);
+  // The host's own channels (WhatsApp / payment link): they confirm by hand
+  // from Manage → Guests → "Mark paid".
+  const hasOther = !!(event.payment?.whatsapp || event.payment?.link);
 
   // Paid: the gold "You're going!" above already says it — this is the quiet
   // proof underneath (what was paid, and the receipt on the public ledger).
@@ -66,6 +70,23 @@ export function PaySection({
     return (
       <div className="flex w-full flex-col items-center gap-2 pt-1">
         {pay.phase === "unavailable" ? <PayUnavailable event={event} pay={pay} /> : <InAppPay event={event} pay={pay} />}
+        {hasOther && pay.phase !== "paying" && pay.phase !== "confirming" && (
+          <>
+            <p className={CAPTION}>Or pay {event.host.name} directly</p>
+            <PayHostButtons event={event} prominent className="w-full" />
+          </>
+        )}
+      </div>
+    );
+  }
+  // No in-app payments: the host's WhatsApp / link, confirmed by hand.
+  if (hasOther) {
+    return (
+      <div className="flex w-full flex-col items-center gap-2 pt-1">
+        <PayHostButtons event={event} prominent className="w-full" />
+        <p className={CAPTION}>
+          Pay Bs {event.price} to {event.host.name} · you&apos;re going once they confirm it
+        </p>
       </div>
     );
   }

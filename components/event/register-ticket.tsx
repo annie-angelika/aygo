@@ -4,6 +4,7 @@ import { AygoStar } from "@/components/ui/brand-icons";
 import { Button } from "@/components/ui/button";
 import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CategoryChip } from "@/components/event/category-chip";
+import { PayHostButtons } from "@/components/event/ticket-contact";
 import type { ApplyConfig } from "@/lib/apply";
 import type { AygoEvent } from "@/types";
 
@@ -37,6 +38,7 @@ export function RegisterTicket({
   const paid = event.price != null && event.price > 0;
   const canPay = paid && !pending;
   const inApp = !!event.payment?.wallet;
+  const hasOther = !!(event.payment?.whatsapp || event.payment?.link);
   // A paid event isn't "going" yet: the spot is held until the money is in.
   const unpaid = paid && !pending;
   return (
@@ -103,7 +105,7 @@ export function RegisterTicket({
           )}
           {paid && (
             <span className="inline-flex h-[22px] items-center rounded-full bg-secondary px-2 text-[11.5px] font-semibold text-foreground">
-              Bs {event.price} · pay by bank QR
+              Bs {event.price} · {inApp ? "pay by bank QR" : hasOther ? "pay the host" : "pay by bank QR"}
             </span>
           )}
         </div>
@@ -124,6 +126,8 @@ export function RegisterTicket({
             <LuQrCode className="size-4" aria-hidden />
             Pay Bs {event.price} by bank QR
           </Button>
+        ) : hasOther ? (
+          <PayHostButtons event={event} prominent className="w-full" />
         ) : (
           <p className="text-[12px] leading-snug text-muted-foreground">
             You&apos;ll pay Bs {event.price} by bank QR on the event page as soon as {event.host.name} opens payments.
